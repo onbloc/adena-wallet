@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, ViewStyle } from 'react-native';
 
-import { colors, sizes } from '../../../theme';
+import { sizes, ThemeColors, useThemeColors } from '../../../theme';
 import { Icon, IconName } from '../icon';
 import { styles } from './icon-button.styles';
 
@@ -17,11 +17,11 @@ export interface IconButtonProps {
   testID?: string;
 }
 
-const VARIANTS: Record<IconButtonVariant, { background: string; pressed: string; icon: string }> = {
+const variants = (colors: ThemeColors): Record<IconButtonVariant, { background: string; pressed: string; icon: string }> => ({
   plain: { background: 'transparent', pressed: colors.background.pressed, icon: colors.icon.primary },
   surface: { background: colors.action.secondary, pressed: colors.action.secondaryPressed, icon: colors.icon.primary },
   primary: { background: colors.action.primary, pressed: colors.action.primaryPressed, icon: colors.text.inverse },
-};
+});
 
 // 44 x 44 target with a 24px glyph.
 export const IconButton = ({
@@ -33,9 +33,10 @@ export const IconButton = ({
   size = sizes.touchTarget,
   testID,
 }: IconButtonProps): ReactElement => {
-  const palette = VARIANTS[variant];
+  const colors = useThemeColors();
+  const palette = variants(colors)[variant];
 
-  const stylePressable = ({ pressed }: PressableStateCallbackType): ({ borderRadius: 999; alignItems: 'center'; justifyContent: 'center' } | { width: number; height: number; backgroundColor?: undefined } | { backgroundColor: string; width?: undefined; height?: undefined })[] => [
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
     styles.base,
     { width: size, height: size },
     {

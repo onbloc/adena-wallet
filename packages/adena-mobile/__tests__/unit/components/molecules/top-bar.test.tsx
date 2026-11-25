@@ -14,6 +14,17 @@ describe('TopBar', () => {
     expect(screen.getByRole('header', { name: 'Settings' })).toBeTruthy();
   });
 
+  it('renders the large modal title', async () => {
+    await render(<TopBar title='Send to' variant='large' />);
+    expect(screen.getByRole('header', { name: 'Send to' })).toHaveStyle({ fontSize: 34 });
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it('uses the title scale on drill-down pages', async () => {
+    await render(<TopBar title='Settings' onBack={jest.fn()} />);
+    expect(screen.getByRole('header', { name: 'Settings' })).toHaveStyle({ fontSize: 26 });
+  });
+
   it('renders root pages without back or title', async () => {
     const { rerender } = await render(<TopBar title='Wallet' />);
 

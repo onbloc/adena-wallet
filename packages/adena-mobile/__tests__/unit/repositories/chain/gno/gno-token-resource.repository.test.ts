@@ -105,7 +105,7 @@ describe('GnoTokenResourceRepository', () => {
     let now = 1_000_000;
 
     jest.spyOn(Date, 'now').mockImplementation(() => now);
-    const http = new FakeHttpClient();
+    const http = new FakeHttpClient().on(GRC20_URL, []);
     const repository = new GnoTokenResourceRepository(http, BASE);
     const first = repository.get(network);
 
@@ -134,5 +134,15 @@ describe('GnoTokenResourceRepository', () => {
     await expect(repository.get(broken)).rejects.toThrow('native token missing is not defined');
     await Promise.resolve();
     await expect(repository.get(broken)).rejects.toThrow('native token missing is not defined');
+  });
+
+  it('marks a list without GRC20 items as incomplete and does not cache it', async () => {
+    const http = new FakeHttpClient();
+    const repository = new GnoTokenResourceRepository(http, BASE);
+
+    await expect(repository.get(network)).resolves.toMatchObject({ complete: false });
+    await Promise.resolve();
+    http.on(GRC20_URL, [grc20()]);
+    await expect(repository.get(network)).resolves.toMatchObject({ complete: true });
   });
 });

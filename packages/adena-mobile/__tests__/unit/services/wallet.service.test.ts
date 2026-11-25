@@ -1,6 +1,7 @@
 import { isAppError } from '../../../src/core/errors';
 import { deriveKeyPair } from '../../../src/crypto/key-pair';
 import { isValidMnemonic, mnemonicToSeed } from '../../../src/crypto/mnemonic';
+import { isAvatarColor } from '../../../src/domain/account';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { SecureBiometricCredentialRepository } from '../../../src/repositories/biometric-credential.repository';
 import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
@@ -118,7 +119,7 @@ describe('WalletService', () => {
 
     it('rebuilds one account per keyring when general storage was lost', async () => {
       const { wallet, accounts, account, keyValueStore } = await setup();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       await accounts.createAccount(account.keyringId, 'HD_WALLET');
       wallet.lock();
@@ -291,7 +292,7 @@ describe('WalletService', () => {
       it('verifies again after another vault write', async () => {
         const { wallet } = await setup();
 
-        await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+        await wallet.importPrivateKey(PRIVATE_KEY);
         await wallet.enableBiometricUnlock(TEST_PASSWORD);
         expect(verify).toHaveBeenCalledTimes(1);
       });
@@ -314,10 +315,79 @@ describe('WalletService', () => {
     });
   });
 
+  describe('changePassword', () => {
+    const NEXT_PASSWORD = 'another sturdy passphrase 42';
+
+    it('re-encrypts the vault with the new password', async () => {
+      const { wallet } = await setup();
+
+      await wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+      wallet.lock();
+      expect(await codeOf(() => wallet.unlock(TEST_PASSWORD))).toBe('INVALID_PASSWORD');
+      await expect(wallet.unlock(NEXT_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('rejects a wrong current password and a weak or unchanged new one', async () => {
+      const { wallet } = await setup();
+
+      expect(await codeOf(() => wallet.changePassword('wrong password', NEXT_PASSWORD))).toBe('INVALID_PASSWORD');
+      expect(await codeOf(() => wallet.changePassword(TEST_PASSWORD, '12345678'))).toBe('WEAK_PASSWORD');
+      expect(await codeOf(() => wallet.changePassword(TEST_PASSWORD, TEST_PASSWORD))).toBe('WEAK_PASSWORD');
+      wallet.lock();
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('drops a change queued before a lock', async () => {
+      const { wallet } = await setup();
+      const changing = wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+
+      wallet.lock();
+      expect(await codeOf(() => changing)).toBe('WALLET_LOCKED');
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('removes the escrowed password before re-encrypting so the old one is never left stored', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      await wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD);
+      expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(false);
+      wallet.lock();
+      // The stale setting is turned off instead of failing on every lock.
+      expect(await codeOf(() => wallet.unlockWithBiometrics({ title: 'Unlock' }))).toBe('BIOMETRICS_INVALIDATED');
+      expect(await wallet.isBiometricUnlockEnabled()).toBe(false);
+
+      await wallet.unlock(NEXT_PASSWORD);
+      await wallet.enableBiometricUnlock(NEXT_PASSWORD);
+      wallet.lock();
+      await expect(wallet.unlockWithBiometrics({ title: 'Unlock' })).resolves.toBeUndefined();
+    });
+
+    it('keeps the escrowed password when the current password is wrong', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      expect(await codeOf(() => wallet.changePassword('wrong password', NEXT_PASSWORD))).toBe('INVALID_PASSWORD');
+      expect(await secureStore.hasItem(SecureKey.BIOMETRIC_PASSWORD)).toBe(true);
+    });
+
+    it('does not re-encrypt when the escrowed password cannot be removed', async () => {
+      const { wallet, secureStore } = await setup();
+
+      await wallet.enableBiometricUnlock(TEST_PASSWORD);
+      const removeItem = jest.spyOn(secureStore, 'removeItem').mockRejectedValueOnce(new Error('keychain busy'));
+
+      await expect(wallet.changePassword(TEST_PASSWORD, NEXT_PASSWORD)).rejects.toThrow('keychain busy');
+      removeItem.mockRestore();
+      wallet.lock();
+      await expect(wallet.unlockWithBiometrics({ title: 'Unlock' })).resolves.toBeUndefined();
+    });
+  });
+
   describe('revealMnemonic', () => {
     it('requires the password and an HD keyring', async () => {
       const { wallet, account } = await setup();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       expect(await codeOf(() => wallet.revealMnemonic(account.keyringId, 'wrong password'))).toBe('INVALID_PASSWORD');
       expect(await codeOf(() => wallet.revealMnemonic(imported.keyringId, TEST_PASSWORD))).toBe('INVALID_REQUEST');
@@ -331,10 +401,20 @@ describe('WalletService', () => {
     });
   });
 
+  it('gives the wallet\'s first account the default color and later created or imported ones a preset', async () => {
+    const { wallet, account } = await setup();
+    const added = await wallet.addMnemonicKeyring(OTHER_MNEMONIC);
+    const imported = await wallet.importPrivateKey(PRIVATE_KEY);
+
+    expect(account.avatarColor).toBeUndefined();
+    expect(isAvatarColor(added.avatarColor)).toBe(true);
+    expect(isAvatarColor(imported.avatarColor)).toBe(true);
+  });
+
   describe('addMnemonicKeyring', () => {
     it('adds and selects the first account of a new recovery phrase', async () => {
       const { wallet, accounts, account } = await setup();
-      const added = await wallet.addMnemonicKeyring(OTHER_MNEMONIC, TEST_PASSWORD, 'Second');
+      const added = await wallet.addMnemonicKeyring(OTHER_MNEMONIC, 'Second');
 
       expect(added).toMatchObject({ name: 'Second', hdIndex: 0, keyringType: 'HD_WALLET' });
       expect(added.keyringId).not.toBe(account.keyringId);
@@ -345,15 +425,14 @@ describe('WalletService', () => {
     it('defaults the account name', async () => {
       const { wallet } = await setup();
 
-      expect((await wallet.addMnemonicKeyring(OTHER_MNEMONIC, TEST_PASSWORD)).name).toBe('Account 2');
+      expect((await wallet.addMnemonicKeyring(OTHER_MNEMONIC)).name).toBe('Account 2');
     });
 
     it('rejects invalid, duplicate and unauthorized phrases', async () => {
       const { wallet, accounts } = await setup();
 
-      expect(await codeOf(() => wallet.addMnemonicKeyring('not a phrase', TEST_PASSWORD))).toBe('INVALID_MNEMONIC');
-      expect(await codeOf(() => wallet.addMnemonicKeyring(TEST_MNEMONIC, TEST_PASSWORD))).toBe('WALLET_ALREADY_EXISTS');
-      expect(await codeOf(() => wallet.addMnemonicKeyring(OTHER_MNEMONIC, 'wrong password'))).toBe('INVALID_PASSWORD');
+      expect(await codeOf(() => wallet.addMnemonicKeyring('not a phrase'))).toBe('INVALID_MNEMONIC');
+      expect(await codeOf(() => wallet.addMnemonicKeyring(TEST_MNEMONIC))).toBe('WALLET_ALREADY_EXISTS');
       expect(accounts.getAccounts()).toHaveLength(1);
     });
 
@@ -362,27 +441,27 @@ describe('WalletService', () => {
 
       await accounts.createAccount(account.keyringId, 'HD_WALLET');
       await wallet.removeAccount(account.id, TEST_PASSWORD);
-      expect(await codeOf(() => wallet.addMnemonicKeyring(TEST_MNEMONIC, TEST_PASSWORD))).toBe('WALLET_ALREADY_EXISTS');
+      expect(await codeOf(() => wallet.addMnemonicKeyring(TEST_MNEMONIC))).toBe('WALLET_ALREADY_EXISTS');
     });
 
-    it('needs an unlocked session and recovers the account on the next unlock', async () => {
+    it('needs an unlocked session and leaves the vault untouched while locked', async () => {
       const { wallet, accounts } = await setup();
 
       wallet.lock();
-      expect(await codeOf(() => wallet.addMnemonicKeyring(OTHER_MNEMONIC, TEST_PASSWORD))).toBe('WALLET_LOCKED');
+      expect(await codeOf(() => wallet.addMnemonicKeyring(OTHER_MNEMONIC))).toBe('WALLET_LOCKED');
       expect(accounts.getAccounts()).toHaveLength(1);
       await wallet.unlock(TEST_PASSWORD);
-      expect(accounts.getAccounts()).toHaveLength(2);
+      expect(accounts.getAccounts()).toHaveLength(1);
     });
   });
 
   describe('importPrivateKey', () => {
     it('accepts 0x-prefixed upper-case hex', async () => {
       const { wallet } = await setup();
-      const imported = await wallet.importPrivateKey(` 0x${'A'.repeat(64)} `, TEST_PASSWORD, 'Imported');
+      const imported = await wallet.importPrivateKey(` 0x${'A'.repeat(64)} `, 'Imported');
 
       expect(imported).toMatchObject({ name: 'Imported', keyringType: 'PRIVATE_KEY', hdIndex: 0 });
-      expect(await codeOf(() => wallet.importPrivateKey('a'.repeat(64), TEST_PASSWORD))).toBe('WALLET_ALREADY_EXISTS');
+      expect(await codeOf(() => wallet.importPrivateKey('a'.repeat(64)))).toBe('WALLET_ALREADY_EXISTS');
     });
 
     it.each([['too short', 'abcd'], ['zero key', '0'.repeat(64)], ['above the curve order', 'f'.repeat(64)], ['not hex', 'z'.repeat(64)]])(
@@ -390,7 +469,7 @@ describe('WalletService', () => {
       async (_, key) => {
         const { wallet } = await setup();
 
-        expect(await codeOf(() => wallet.importPrivateKey(key, TEST_PASSWORD))).toBe('INVALID_REQUEST');
+        expect(await codeOf(() => wallet.importPrivateKey(key))).toBe('INVALID_REQUEST');
       },
     );
 
@@ -398,7 +477,7 @@ describe('WalletService', () => {
       const { container, wallet, account } = await setup();
       const hex = await container.keyringSession.withKeyPair(account.keyringId, 0, async pair => Buffer.from(pair.privateKey).toString('hex'));
 
-      expect(await codeOf(() => wallet.importPrivateKey(hex, TEST_PASSWORD))).toBe('WALLET_ALREADY_EXISTS');
+      expect(await codeOf(() => wallet.importPrivateKey(hex))).toBe('WALLET_ALREADY_EXISTS');
     });
   });
 
@@ -407,11 +486,11 @@ describe('WalletService', () => {
     const session = new KeyringSession();
     const secureStore = new MemorySecureStore();
     const accountService = new AccountService(new StorageAccountRepository(store), session, createFakeRegistry().registry);
-    const vault = { addKeyring: jest.fn(async () => ({ keyrings: [] })) } as unknown as VaultService;
+    const vault = { addKeyringWithSessionKey: jest.fn(async () => ({ keyrings: [] })) } as unknown as VaultService;
     const wallet = new WalletService(vault, session, accountService, [], new SecureBiometricCredentialRepository(secureStore), new StoragePreferenceRepository(store));
 
     session.open([]);
-    const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+    const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
     expect(accountService.getCurrentAccount()?.id).toBe(imported.id);
     await expect(session.withKeyPair(imported.keyringId, 0, async () => 'loaded')).resolves.toBe('loaded');
@@ -420,7 +499,7 @@ describe('WalletService', () => {
   describe('removeAccount', () => {
     it('requires the password and keeps everything on failure', async () => {
       const { wallet, accounts } = await setup();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       expect(await codeOf(() => wallet.removeAccount(imported.id, 'wrong password'))).toBe('INVALID_PASSWORD');
       expect(accounts.getAccounts()).toHaveLength(2);
@@ -435,14 +514,19 @@ describe('WalletService', () => {
     it('drops per-account data of the removed account only', async () => {
       const { container, wallet, account } = await setup();
       const network = container.networkService.getCurrentNetwork();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       for (const owner of [account, imported]) {
         container.nftService.setPinned(owner, network, 'gno.land/r/demo/nft', true);
         container.tokenService.setVisibility(owner, network, 'x', true);
       }
 
+      container.accountPhotoService.save(account.id, 'data:image/jpeg;base64,AAAA');
+      container.accountPhotoService.save(imported.id, 'data:image/jpeg;base64,BBBB');
+
       await wallet.removeAccount(imported.id, TEST_PASSWORD);
+      expect(container.accountPhotoService.get(imported.id)).toBeUndefined();
+      expect(container.accountPhotoService.get(account.id)).toBe('data:image/jpeg;base64,AAAA');
       expect(container.nftService.getPreferences(imported, network).pinned).toEqual([]);
       expect(container.nftService.getPreferences(account, network).pinned).toEqual(['gno.land/r/demo/nft']);
       expect(container.tokenService.getStoredToken(imported, network, 'x')).toBeUndefined();
@@ -462,7 +546,7 @@ describe('WalletService', () => {
 
     it('removes the keyring with its last account', async () => {
       const { container, wallet, accounts } = await setup();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       await wallet.removeAccount(imported.id, TEST_PASSWORD);
       wallet.lock();
@@ -473,7 +557,7 @@ describe('WalletService', () => {
 
     it('wipes the removed keyring from the live session without a lock', async () => {
       const { container, wallet } = await setup();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       await wallet.removeAccount(imported.id, TEST_PASSWORD);
       expect(await codeOf(() => container.keyringSession.withKeyPair(imported.keyringId, 0, async () => 0))).toBe('WALLET_NOT_FOUND');
@@ -481,7 +565,7 @@ describe('WalletService', () => {
 
     it('keeps the account when the vault update fails', async () => {
       const { container, wallet, accounts, secureStore } = await setup();
-      const imported = await wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(PRIVATE_KEY);
 
       const setItem = secureStore.setItem.bind(secureStore);
 
@@ -501,7 +585,7 @@ describe('WalletService', () => {
   describe('concurrency', () => {
     it('does not let an account creation outlive the removal of its keyring', async () => {
       const { wallet, accounts, container } = await setup();
-      const other = await wallet.addMnemonicKeyring(OTHER_MNEMONIC, TEST_PASSWORD);
+      const other = await wallet.addMnemonicKeyring(OTHER_MNEMONIC);
       const removing = wallet.removeAccount(other.id, TEST_PASSWORD);
       const creating = accounts.createAccount(other.keyringId, 'HD_WALLET');
 
@@ -544,8 +628,8 @@ describe('WalletService', () => {
     it('accepts only one of two overlapping imports of the same key', async () => {
       const { wallet, accounts } = await setup();
       const results = await Promise.allSettled([
-        wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD),
-        wallet.importPrivateKey(PRIVATE_KEY, TEST_PASSWORD),
+        wallet.importPrivateKey(PRIVATE_KEY),
+        wallet.importPrivateKey(PRIVATE_KEY),
       ]);
 
       expect(results.map(result => result.status).sort()).toEqual(['fulfilled', 'rejected']);
@@ -600,5 +684,86 @@ describe('WalletService', () => {
       expect(accounts.getAccounts()).toEqual([]);
       expect(await wallet.getStatus()).toBe('empty');
     });
+  });
+});
+
+describe('WalletService.readBiometricPassword', () => {
+  it('releases the verified password once biometric unlock is enabled', async () => {
+    const { wallet } = await setup();
+
+    expect(await codeOf(() => wallet.readBiometricPassword({ title: 'Confirm' }))).toBe('BIOMETRICS_UNAVAILABLE');
+    await wallet.enableBiometricUnlock(TEST_PASSWORD);
+    await expect(wallet.readBiometricPassword({ title: 'Confirm' })).resolves.toBe(TEST_PASSWORD);
+  });
+
+  it('surfaces a canceled prompt and a stale escrowed password', async () => {
+    const { wallet, secureStore } = await setup();
+
+    await wallet.enableBiometricUnlock(TEST_PASSWORD);
+    secureStore.biometricOutcome = BiometricOutcome.CANCEL;
+    expect(await codeOf(() => wallet.readBiometricPassword({ title: 'Confirm' }))).toBe('BIOMETRICS_CANCELED');
+    secureStore.biometricOutcome = BiometricOutcome.SUCCESS;
+    await secureStore.setItem(SecureKey.BIOMETRIC_PASSWORD, 'old password');
+    expect(await codeOf(() => wallet.readBiometricPassword({ title: 'Confirm' }))).toBe('INVALID_PASSWORD');
+  });
+
+  it('is not throttled and clears earlier typed failures', async () => {
+    const { wallet, account } = await setup();
+
+    await wallet.enableBiometricUnlock(TEST_PASSWORD);
+
+    for (let i = 0; i < 5; i += 1) {
+      await codeOf(() => wallet.revealMnemonic(account.keyringId, 'wrong password'));
+    }
+
+    expect(await codeOf(() => wallet.revealMnemonic(account.keyringId, TEST_PASSWORD))).toBe('PASSWORD_ATTEMPTS_EXCEEDED');
+    const password = await wallet.readBiometricPassword({ title: 'Confirm' });
+
+    await expect(wallet.revealMnemonic(account.keyringId, password)).resolves.toBe(TEST_MNEMONIC);
+  });
+});
+
+describe('WalletService import without the password', () => {
+  const vaultOf = (wallet: WalletService): VaultService => (wallet as unknown as { vaultService: VaultService }).vaultService;
+
+  it('adds keyrings with the unlocked session key, and the vault still opens with the password', async () => {
+    const { wallet, accounts } = await setup();
+
+    await wallet.addMnemonicKeyring(OTHER_MNEMONIC, 'Second');
+    await wallet.importPrivateKey(PRIVATE_KEY);
+    wallet.lock();
+    expect(vaultOf(wallet).hasSessionKey()).toBe(false);
+    expect(await codeOf(() => wallet.importPrivateKey('02'.repeat(32)))).toBe('WALLET_LOCKED');
+
+    await wallet.unlock(TEST_PASSWORD);
+    expect(accounts.getAccounts()).toHaveLength(3);
+    await expect(wallet.revealMnemonic(accounts.getAccounts()[1].keyringId, TEST_PASSWORD)).resolves.toBe(OTHER_MNEMONIC);
+  });
+
+  it('keeps importing after a password change, a removal and a biometric unlock', async () => {
+    const { wallet, accounts } = await setup();
+    const NEXT = 'another sturdy passphrase 42';
+
+    await wallet.changePassword(TEST_PASSWORD, NEXT);
+    const imported = await wallet.importPrivateKey(PRIVATE_KEY);
+
+    await wallet.removeAccount(imported.id, NEXT);
+    await wallet.addMnemonicKeyring(OTHER_MNEMONIC);
+    await wallet.enableBiometricUnlock(NEXT);
+    wallet.lock();
+    await wallet.unlockWithBiometrics({ title: 'Unlock' });
+    await wallet.importPrivateKey(PRIVATE_KEY);
+    wallet.lock();
+    await wallet.unlock(NEXT);
+    expect(accounts.getAccounts()).toHaveLength(3);
+    expect(vaultOf(wallet).hasSessionKey()).toBe(true);
+  });
+
+  it('wipes the session key on reset', async () => {
+    const { container, wallet } = await setup();
+
+    expect(vaultOf(wallet).hasSessionKey()).toBe(true);
+    await container.appResetService.resetAll();
+    expect(vaultOf(wallet).hasSessionKey()).toBe(false);
   });
 });

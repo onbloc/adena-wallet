@@ -7,7 +7,7 @@ import { LocalTokenIcon } from '../../../domain/token';
 import { radius } from '../../../theme';
 import { ImageSourceKind, resolveImageSource } from '../../../utils/image-source';
 import { Text } from '../../atoms';
-import { styles } from './token-image.styles';
+import { useStyles } from './token-image.styles';
 
 export interface TokenImageProps {
   symbol: string;
@@ -19,6 +19,7 @@ export interface TokenImageProps {
 // Bundled icon → remote image → monogram fallback.
 export const TokenImage = ({ symbol, localIcon, imageUrl, size = 32 }: TokenImageProps): ReactElement => {
   // Failure belongs to one source; keyed elements remount per URI so an old element cannot report late errors.
+  const styles = useStyles();
   const [failedSource, setFailedSource] = useState<string | null | undefined>(null);
   const frame = { width: size, height: size, borderRadius: radius.circle };
 

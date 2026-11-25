@@ -21,6 +21,7 @@ export * from './password-sheet';
 export * from './price-chart';
 export * from './qr-code';
 export * from './range-selector';
+export * from './recipient-field';
 export * from './review-sheet';
 export * from './screen';
 export * from './search-field';

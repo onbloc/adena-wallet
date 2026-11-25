@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-import { colors, radius, spacing } from '../../../theme';
+import { makeStyles, radius, spacing } from '../../../theme';
 
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   card: {
     borderRadius: radius.surface,
     padding: spacing.space16,
@@ -12,4 +12,4 @@ export const styles = StyleSheet.create({
     gap: spacing.space4,
   },
   slot: { marginTop: spacing.space12, gap: spacing.space8 },
-});
+}));

@@ -1,3 +1,4 @@
+import { nativeHapticEngine } from '../infrastructure/haptics/native-haptic-engine';
 import { KeychainSecureStore } from '../security/keychain-secure-store';
 import { createNativeScryptKdf } from '../security/native-scrypt-kdf';
 import { DEFAULT_KDF_SETTINGS, ScryptXChaChaVaultCipher } from '../security/vault-cipher';
@@ -18,6 +19,7 @@ export const createNativeContainer = async (): Promise<AppContainer> => {
     secureStore,
     keyValueStore,
     vaultCipher: new ScryptXChaChaVaultCipher(DEFAULT_KDF_SETTINGS, kdf),
+    hapticEngine: nativeHapticEngine,
   });
 
   await container.migrationService.migrateAll();

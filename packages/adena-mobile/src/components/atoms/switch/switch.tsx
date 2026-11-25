@@ -1,7 +1,9 @@
 import React, { ReactElement, useEffect, useRef } from 'react';
 import { Animated, Pressable } from 'react-native';
 
-import { colors, motion } from '../../../theme';
+import { HapticKind } from '../../../domain/haptics';
+import { useHaptics } from '../../../hooks/use-haptics';
+import { motion, useThemeColors } from '../../../theme';
 import { OFFSET, styles, THUMB, TRACK_WIDTH } from './switch.styles';
 
 export interface SwitchProps {
@@ -12,7 +14,9 @@ export interface SwitchProps {
 }
 
 export const Switch = ({ value, onValueChange, disabled = false, accessibilityLabel }: SwitchProps): ReactElement => {
+  const colors = useThemeColors();
   const position = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const playHaptic = useHaptics();
 
   useEffect(() => {
     Animated.timing(position, { toValue: value ? 1 : 0, duration: motion.press, useNativeDriver: true }).start();
@@ -20,9 +24,12 @@ export const Switch = ({ value, onValueChange, disabled = false, accessibilityLa
 
   const translateX = position.interpolate({ inputRange: [0, 1], outputRange: [0, TRACK_WIDTH - THUMB - OFFSET * 2] });
   const trackColor = disabled ? colors.action.disabled : value ? colors.action.primary : colors.action.secondary;
-  const thumbColor = disabled ? colors.text.secondary : colors.background.surface;
+  const thumbColor = disabled ? colors.text.disabled : value ? colors.text.inverse : colors.action.thumb;
 
-  const handlePress = (): void | undefined => onValueChange?.(!value);
+  const handlePress = (): void => {
+    playHaptic(HapticKind.SELECTION);
+    onValueChange?.(!value);
+  };
 
   return (
     <Pressable

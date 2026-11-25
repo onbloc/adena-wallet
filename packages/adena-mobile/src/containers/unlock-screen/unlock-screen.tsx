@@ -1,27 +1,31 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import { TextInputInstance } from 'react-native';
 
 import { UnlockPage } from '../../components/pages';
 import { toErrorMessage } from '../../core/error-message';
 import { AppErrorCode, isAppError } from '../../core/errors';
 import { useContainer } from '../../di/container-provider';
+import { describeBiometricFailure } from '../../hooks/use-biometric-password';
 import { LockedStackParamList } from '../../navigation/types';
 import { queryKeys } from '../../queries/query-keys';
 import { useBiometricStatusQuery } from '../../queries/wallet.queries';
+import { BiometryKind } from '../../security/secure-store';
 import { SessionStatus, useSessionStore } from '../../stores/session.store';
 import { getBiometryLabel } from '../../utils/biometry';
 
-export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackParamList, 'Unlock'>): ReactElement => {
+// Reached from the splash, which already made this lock episode's biometric attempt, so only the button offers it again.
+export const UnlockScreen = ({ navigation, route }: NativeStackScreenProps<LockedStackParamList, 'Unlock'>): ReactElement => {
   const { walletService } = useContainer();
   const queryClient = useQueryClient();
   const { setStatus, bumpRevision } = useSessionStore();
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState(route.params?.error);
   const [submitting, setSubmitting] = useState(false);
   const biometric = useBiometricStatusQuery();
   const biometricLabel = biometric.data?.enabled ? getBiometryLabel(biometric.data.kind) : undefined;
-  const autoPromptedRef = useRef(false);
+  const passwordRef = useRef<TextInputInstance>(null);
   // Password and biometric unlocks share one in-flight slot, so they never queue up behind each other.
   const unlockingRef = useRef(false);
 
@@ -42,28 +46,27 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       onUnlocked();
     }
     catch (unlockError) {
-      // Only a permanent invalidation drops the setting; lockouts and missing enrollment are transient.
+      // The service already turned the setting off; refresh so the prompt is not offered again.
       if (isAppError(unlockError, AppErrorCode.BIOMETRICS_INVALIDATED)) {
-        await walletService.disableBiometricUnlock().catch(() => undefined);
         await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
       }
 
-      if (!isAppError(unlockError, AppErrorCode.BIOMETRICS_CANCELED)) {
-        setError(toErrorMessage(unlockError));
+      const message = describeBiometricFailure(unlockError, biometricLabel);
+
+      if (message) {
+        setError(message);
       }
+
+      passwordRef.current?.focus();
     }
     finally {
       unlockingRef.current = false;
     }
-  }, [onUnlocked, queryClient, walletService]);
+  }, [biometricLabel, onUnlocked, queryClient, walletService]);
 
-  // Offer the biometric prompt once as soon as the status query reports it is enabled.
   useEffect(() => {
-    if (biometric.data?.enabled && !autoPromptedRef.current) {
-      autoPromptedRef.current = true;
-      unlockWithBiometrics();
-    }
-  }, [biometric.data?.enabled, unlockWithBiometrics]);
+    passwordRef.current?.focus();
+  }, []);
 
   const unlock = async (): Promise<void> => {
     if (!password || unlockingRef.current) {
@@ -102,6 +105,8 @@ export const UnlockScreen = ({ navigation }: NativeStackScreenProps<LockedStackP
       submitting={submitting}
       onUnlock={unlock}
       biometricLabel={biometricLabel}
+      biometricIcon={biometric.data?.kind === BiometryKind.FINGERPRINT ? 'fingerprint' : 'faceId'}
+      passwordRef={passwordRef}
       onBiometricUnlock={biometricLabel ? unlockWithBiometrics : undefined}
       onResetWallet={handleResetWallet}
     />

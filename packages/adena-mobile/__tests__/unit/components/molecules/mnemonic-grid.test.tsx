@@ -10,6 +10,14 @@ describe('MnemonicGrid', () => {
     expect(screen.getByText('3')).toBeTruthy();
   });
 
+  it('masks every word while hidden', async () => {
+    await render(<MnemonicGrid words={['abandon', 'about']} masked />);
+    expect(screen.getByLabelText('Recovery phrase hidden')).toBeTruthy();
+    expect(screen.getAllByText('••••••')).toHaveLength(2);
+    expect(screen.queryByText('abandon')).toBeNull();
+    expect(screen.getByText('2')).toBeTruthy();
+  });
+
   it('renders an empty grid', async () => {
     await render(<MnemonicGrid words={[]} />);
     expect(screen.getByLabelText('Recovery phrase')).toBeTruthy();

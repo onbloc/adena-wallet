@@ -1,10 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, sizes, spacing } from '../../../theme';
 
-import { colors, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   root: { flex: 1, backgroundColor: colors.background.canvas },
-  content: { paddingHorizontal: sizes.screenInset, paddingBottom: spacing.space24, gap: spacing.space16 },
+  content: { paddingHorizontal: sizes.screenInset, paddingTop: sizes.contentTop, paddingBottom: spacing.space24, gap: spacing.space16 },
   fill: { flex: 1 },
-  footer: { paddingHorizontal: sizes.screenInset, paddingTop: spacing.space12, paddingBottom: spacing.space8, gap: spacing.space8 },
-});
+  footer: { paddingHorizontal: sizes.screenInset, paddingTop: spacing.space12, paddingBottom: sizes.footerBottom, gap: spacing.space8 },
+}));

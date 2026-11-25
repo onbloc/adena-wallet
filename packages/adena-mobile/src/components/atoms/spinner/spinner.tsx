@@ -1,18 +1,19 @@
 import React, { ReactElement, useEffect, useRef } from 'react';
 import { AccessibilityInfo, Animated, Easing } from 'react-native';
 
-import { colors } from '../../../theme';
+import { ThemeColors, useThemeColors } from '../../../theme';
 import { Icon } from '../icon';
 
 export type SpinnerTone = 'primary' | 'inverse' | 'muted';
 
-const TONE_COLOR: Record<SpinnerTone, string> = {
+const toneColor = (colors: ThemeColors): Record<SpinnerTone, string> => ({
   primary: colors.icon.primary,
   inverse: colors.text.inverse,
   muted: colors.text.disabled,
-};
+});
 
 export const Spinner = ({ tone = 'primary', size = 20 }: { tone?: SpinnerTone; size?: number }): ReactElement => {
+  const colors = useThemeColors();
   const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export const Spinner = ({ tone = 'primary', size = 20 }: { tone?: SpinnerTone; s
 
   return (
     <Animated.View accessibilityRole='progressbar' style={{ transform: [{ rotate }] }}>
-      <Icon name='loader' size={size} color={TONE_COLOR[tone]} />
+      <Icon name='loader' size={size} color={toneColor(colors)[tone]} />
     </Animated.View>
   );
 };

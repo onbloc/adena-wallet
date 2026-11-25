@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { Toast } from '../../../../src/components/molecules';
-import { colors, StatusTone } from '../../../../src/theme';
+import { lightColors, StatusTone } from '../../../../src/theme';
 
 describe('Toast', () => {
   it('dismisses', async () => {
@@ -14,10 +14,10 @@ describe('Toast', () => {
   });
 
   it.each<[StatusTone | undefined, string]>([
-    [undefined, colors.text.primary],
-    ['neutral', colors.text.primary],
-    ['warning', colors.status.warning],
-    ['error', colors.status.error],
+    [undefined, lightColors.text.primary],
+    ['neutral', lightColors.text.primary],
+    ['warning', lightColors.status.warning],
+    ['error', lightColors.status.error],
   ])('renders tone %p without dismiss', async (tone, color) => {
     await render(<Toast message='Message' tone={tone} />);
     expect(screen.getByText('Message')).toHaveStyle({ color });

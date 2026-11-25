@@ -23,4 +23,4 @@ export const WithHelper: Story = { args: { helper: 'At least 8 characters.' } };
 
 export const WithError: Story = { args: { value: 'short', error: 'Use at least 8 characters.' } };
 
-export const Disabled: Story = { args: { value: 'g1jg8m…sqf5', disabled: true } };
+export const Disabled: Story = { args: { value: 'g1jg8m...fvsqf5', disabled: true } };

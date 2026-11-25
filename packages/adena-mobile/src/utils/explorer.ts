@@ -28,3 +28,12 @@ export const accountExplorerUrl = (network: Network, address: string): string | 
 
 export const tokenExplorerUrl = (network: Network, tokenId: string): string | null =>
   network.family === ChainFamily.GNO ? gnoscanUrl(network, `/tokens/${tokenId}`) : null;
+
+// Button copy such as "View on Mintscan"; unknown Cosmos explorers get a generic name.
+export const explorerName = (network: Network): string => {
+  if (network.family === ChainFamily.GNO) {
+    return 'Gnoscan';
+  }
+
+  return /^https?:\/\/([^/]+\.)?mintscan\.io(\/|$)/i.test(network.linkUrl ?? '') ? 'Mintscan' : 'explorer';
+};

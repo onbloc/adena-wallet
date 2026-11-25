@@ -1,20 +1,30 @@
-import { ChartRange, MarketLink, TokenMarketData } from '../domain/market';
+import { ChartRange, MarketLink, TokenMarketData, TokenMarketInfo } from '../domain/market';
 import { Network } from '../domain/network';
-import { Token, tokenPriceKey, TokenType } from '../domain/token';
+import { Token, TokenType } from '../domain/token';
 import { MarketDataRepository } from '../repositories/market-data.repository';
 import { tokenExplorerUrl } from '../utils/explorer';
-import { PriceService } from './price.service';
 
 export class MarketDataService {
-  constructor(private readonly repository: MarketDataRepository, private readonly priceService: PriceService) {}
+  constructor(private readonly repository: MarketDataRepository) {}
 
-  async getMarketData(token: Token, network: Network, range: ChartRange): Promise<TokenMarketData> {
-    const referencePriceUsd = this.priceService.isSupported(network)
-      ? (await this.priceService.getPrices([token], network).catch(() => ({})) as Record<string, { usd: number }>)[tokenPriceKey(token.id, network.id)]?.usd
-      : undefined;
-    const data = await this.repository.getMarketData({ token, network, range, referencePriceUsd });
+  isSupported(network: Network): boolean {
+    return this.repository.isSupported(network);
+  }
 
-    return { ...data, about: data.about ?? token.description, links: [...this.walletLinks(token, network), ...data.links] };
+  getMarketData(token: Token, network: Network, range: ChartRange): Promise<TokenMarketData> {
+    return this.repository.getMarketData({ token, network, range });
+  }
+
+  async getTokenInfo(token: Token, network: Network): Promise<TokenMarketInfo> {
+    const info = await this.repository.getTokenInfo({ token, network });
+    const links = [...this.walletLinks(token, network), ...info.links];
+
+    // Keep the first link per URL; the wallet's own links win over the source's.
+    return {
+      ...info,
+      about: info.about ?? token.description,
+      links: links.filter((link, index) => links.findIndex(other => other.url === link.url) === index),
+    };
   }
 
   // Links the wallet can vouch for (explorer, curated website); sources may add more.

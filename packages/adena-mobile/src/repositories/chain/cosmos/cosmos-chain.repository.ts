@@ -1,13 +1,22 @@
 import { ripemd160, Secp256k1, sha256 } from '@cosmjs/crypto';
 import { fromBase64, toBase64, toBech32, toHex } from '@cosmjs/encoding';
 
-import { AppError, AppErrorCode } from '../../../core/errors';
+import { AppError, AppErrorCode, PINNED_SEQUENCE_MISMATCH_MESSAGE, TransactionPendingError } from '../../../core/errors';
 import { TokenBalance } from '../../../domain/account';
 import { COSMOS_FEE_POLICY, FeeEstimate } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
-import { BroadcastResult, MessageSummary, SignedTransaction, TransactionDraft } from '../../../domain/transaction';
-import { CosmosAccountInfo, CosmosLcdClient } from '../../../infrastructure/http/cosmos-lcd.client';
-import { isValidAddress } from '../../../utils/address';
+import {
+  BroadcastResult,
+  MessageSummary,
+  SignedTransaction,
+  SignerSequence,
+  TransactionDraft,
+  TransactionLookup,
+  TransactionStatus,
+} from '../../../domain/transaction';
+import { CosmosAccountInfo, CosmosLcdClient, CosmosTxRejectedError } from '../../../infrastructure/http/cosmos-lcd.client';
+import { HttpStatusError } from '../../../infrastructure/http/http-client';
+import { isValidAddress, normalizeAddress } from '../../../utils/address';
 import { formatTokenAmount, parseCoin } from '../../../utils/amount';
 import { BigNumber } from '../../../utils/big-number';
 import { ChainRepository, SigningKey, SimulationSigner } from '../chain-repository';
@@ -38,6 +47,18 @@ const toCosmosFee = (fee: { gasWanted: string; gasFee: string }): CosmosFee => {
 const networkError = (error: unknown): AppError =>
   error instanceof AppError ? error : new AppError(AppErrorCode.NETWORK_ERROR, (error as Error)?.message, { cause: error });
 
+// ABCI code 19: the tx is already in the mempool, so it may still commit.
+const TX_IN_MEMPOOL_CACHE = 19;
+
+// Only a CheckTx verdict or a client-side 4xx proves the tx was not accepted; transport errors leave it unknown.
+const isDefinitiveRejection = (error: unknown): boolean => {
+  if (error instanceof CosmosTxRejectedError) {
+    return error.abciCode !== TX_IN_MEMPOOL_CACHE;
+  }
+
+  return error instanceof HttpStatusError && error.status >= 400 && error.status < 500 && error.status !== 408 && error.status !== 429;
+};
+
 // AtomOne (Cosmos SDK) signing over LCD REST with SIGN_MODE_DIRECT, like the extension's wallet sends.
 export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
   readonly family = ChainFamily.COSMOS;
@@ -50,6 +71,10 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
 
   isValidAddress(address: string, network: Network): boolean {
     return isValidAddress(address, network.addressPrefix);
+  }
+
+  normalizeAddress(address: string, network: Network): string | null {
+    return normalizeAddress(address, network.addressPrefix);
   }
 
   getChainId(network: Network): Promise<string> {
@@ -121,7 +146,7 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     return { gasUsed, gasPrice: new BigNumber(gasPrice).toFixed(), denom: feeDenom, policy: COSMOS_FEE_POLICY };
   }
 
-  async signTransaction(draft: TransactionDraft<CosmosMessage>, key: SigningKey, network: Network): Promise<SignedTransaction> {
+  async signTransaction(draft: TransactionDraft<CosmosMessage>, key: SigningKey, network: Network, pin?: SignerSequence): Promise<SignedTransaction> {
     const chainId = await this.getChainId(network);
 
     if (chainId !== draft.chainId) {
@@ -133,24 +158,61 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     }
 
     const { accountNumber, sequence } = await this.resolveAccount(network, this.deriveAddress(key.publicKey, network));
+
+    if (pin && (pin.sequence !== sequence || (pin.accountNumber !== undefined && pin.accountNumber !== accountNumber))) {
+      throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PINNED_SEQUENCE_MISMATCH_MESSAGE);
+    }
+
     const bodyBytes = encodeTxBody(draft.messages, draft.memo);
     const authInfoBytes = encodeAuthInfo(key.publicKey, sequence, toCosmosFee(draft.fee));
     const signBytes = encodeSignDoc(bodyBytes, authInfoBytes, draft.chainId, accountNumber);
     const signature = await Secp256k1.createSignature(sha256(signBytes), key.privateKey);
     const txBytes = encodeTxRaw(bodyBytes, authInfoBytes, new Uint8Array([...signature.r(32), ...signature.s(32)]));
 
-    return { encoded: toBase64(txBytes) };
+    return { encoded: toBase64(txBytes), accountNumber, sequence };
   }
 
-  // BROADCAST_MODE_SYNC: success means the tx passed CheckTx, as in the extension.
-  async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
-    try {
-      const result = await this.lcd.broadcastSync(restUrlOf(network), signed.encoded);
+  transactionHash(signed: SignedTransaction): string {
+    return cosmosTxHash(signed);
+  }
 
-      return { hash: result.txhash || toHex(sha256(fromBase64(signed.encoded))).toUpperCase(), height: result.height };
+  // BROADCAST_MODE_SYNC: success only means the tx passed CheckTx, so it is reported as not committed yet.
+  async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
+    const restUrl = restUrlOf(network);
+    const hash = cosmosTxHash(signed);
+
+    try {
+      const result = await this.lcd.broadcastSync(restUrl, signed.encoded);
+
+      return { hash: result.txhash || hash, height: result.height, committed: false };
     }
     catch (error) {
-      throw error instanceof AppError ? error : new AppError(AppErrorCode.TRANSACTION_FAILED, (error as Error)?.message, { cause: error });
+      if (isDefinitiveRejection(error)) {
+        throw error instanceof AppError ? error : new AppError(AppErrorCode.TRANSACTION_FAILED, (error as Error)?.message, { cause: error });
+      }
+
+      throw new TransactionPendingError(hash, undefined, { cause: error });
     }
   }
+
+  getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
+    return this.findTransaction(hash, network).then(found => found ?? 'pending', () => 'pending');
+  }
+
+  async findTransaction(hash: string, network: Network): Promise<TransactionLookup> {
+    const tx = await this.lcd.getTx(restUrlOf(network), hash).catch((error) => {
+      throw networkError(error);
+    });
+
+    return tx === null ? null : tx.code === 0 ? 'committed' : 'failed';
+  }
+
+  async getAccountSequence(address: string, network: Network): Promise<string> {
+    return (await this.resolveAccount(network, address).catch((error) => {
+      throw networkError(error);
+    })).sequence;
+  }
 }
+
+// sha256 of the TxRaw bytes, uppercase hex like the LCD reports `txhash`.
+export const cosmosTxHash = (signed: SignedTransaction): string => toHex(sha256(fromBase64(signed.encoded))).toUpperCase();

@@ -5,7 +5,10 @@ import {
   BroadcastResult,
   MessageSummary,
   SignedTransaction,
+  SignerSequence,
   TransactionDraft,
+  TransactionLookup,
+  TransactionStatus,
 } from '../../domain/transaction';
 
 export interface SigningKey {
@@ -24,7 +27,9 @@ export interface SimulationSigner {
 export interface ChainRepository<TMessage = unknown> {
   readonly family: ChainFamily;
   deriveAddress(publicKey: Uint8Array, network: Network): string;
+  // True only for the canonical (lowercase) form; use normalizeAddress for user input.
   isValidAddress(address: string, network: Network): boolean;
+  normalizeAddress(address: string, network: Network): string | null;
   getChainId(network: Network): Promise<string>;
   getNativeBalance(address: string, network: Network): Promise<TokenBalance>;
   // Validates untrusted (e.g. deep link) messages and returns typed messages.
@@ -32,6 +37,15 @@ export interface ChainRepository<TMessage = unknown> {
   describeMessages(messages: TMessage[], network: Network): MessageSummary[];
   // Simulates the draft and reports gas usage plus the chain's gas price.
   estimateFee(draft: TransactionDraft<TMessage>, signer: SimulationSigner, network: Network): Promise<FeeEstimate>;
-  signTransaction(draft: TransactionDraft<TMessage>, key: SigningKey, network: Network): Promise<SignedTransaction>;
+  // With `pin`, signs with exactly that sequence and refuses (PREVIOUS_TRANSACTION_PENDING) unless it is the on-chain one.
+  signTransaction(draft: TransactionDraft<TMessage>, key: SigningKey, network: Network, pin?: SignerSequence): Promise<SignedTransaction>;
+  // The hash the node will report for this tx, in the form getTransactionStatus accepts.
+  transactionHash(signed: SignedTransaction): string;
+  // Throws TransactionPendingError (with the tx hash) when the outcome is unknown; other errors are definitive rejections.
   broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult>;
+  getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus>;
+  // Like getTransactionStatus, but throws on any lookup failure instead of reporting `pending`.
+  findTransaction(hash: string, network: Network): Promise<TransactionLookup>;
+  // The account's next sequence on chain; throws on any lookup failure.
+  getAccountSequence(address: string, network: Network): Promise<string>;
 }

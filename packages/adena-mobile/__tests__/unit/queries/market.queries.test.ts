@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { ChartRange } from '../../../src/domain/market';
 import { ChainFamily } from '../../../src/domain/network';
 import { Token, TokenType } from '../../../src/domain/token';
-import { useMarketDataQuery } from '../../../src/queries/market.queries';
+import { useMarketDataQuery, useTokenInfoQuery } from '../../../src/queries/market.queries';
 import { queryKeys } from '../../../src/queries/query-keys';
 import { createWrapper, NETWORK } from '../../helpers/query-wrapper';
 
@@ -67,5 +67,18 @@ describe('useMarketDataQuery', () => {
     expect(result.current.fetchStatus).toBe('idle');
     expect(marketDataService.getMarketData).not.toHaveBeenCalled();
     expect(client.getQueryCache().find({ queryKey: queryKeys.marketData(NETWORK.id, 'none', '1D') })).toBeDefined();
+  });
+});
+
+describe('useTokenInfoQuery', () => {
+  it('loads token info once per token, independent of the chart range', async () => {
+    const info = { tokenId: 'ugnot', stats: {}, links: [] };
+    const marketDataService = { getTokenInfo: jest.fn().mockResolvedValue(info) };
+    const { Wrapper, client } = createWrapper({ marketDataService });
+    const { result } = await renderHook(() => useTokenInfoQuery(TOKEN, NETWORK), { wrapper: Wrapper });
+
+    await waitFor(() => expect(result.current.data).toBe(info));
+    expect(marketDataService.getTokenInfo).toHaveBeenCalledWith(TOKEN, NETWORK);
+    expect(client.getQueryData(queryKeys.tokenInfo(NETWORK.id, 'ugnot'))).toBe(info);
   });
 });

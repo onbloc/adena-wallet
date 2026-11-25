@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Icon } from '../icon';
 import { Text } from '../text';
 import { styles } from './checkbox.styles';
@@ -16,6 +16,7 @@ export interface CheckboxProps {
 }
 
 export const Checkbox = ({ label, value, onChange, disabled = false }: CheckboxProps): ReactElement => {
+  const colors = useThemeColors();
   const filled = value !== 'off';
   const fill = disabled ? colors.action.disabled : colors.action.primary;
 

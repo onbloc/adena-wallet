@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, ViewStyle } from 'react-native';
 
-import { colors, sizes } from '../../../theme';
+import { sizes, useThemeColors } from '../../../theme';
 import { Icon, IconName } from '../icon';
 import { Text } from '../text';
 import { styles } from './chip.styles';
@@ -16,9 +16,10 @@ export interface ChipProps {
 
 // 32px visible surface inside a 44px hit area.
 export const Chip = ({ label, selected = false, disabled = false, trailingIcon, onPress }: ChipProps): ReactElement => {
+  const colors = useThemeColors();
   const textColor = disabled ? colors.text.disabled : selected ? colors.text.inverse : colors.text.primary;
 
-  const stylePressable = ({ pressed }: PressableStateCallbackType): ({ height: 32; borderRadius: 8; paddingHorizontal: 12; flexDirection: 'row'; alignItems: 'center'; gap: 4; alignSelf: 'flex-start' } | { backgroundColor: '#F1F3F4' | '#E6E6E6' | '#121212' })[] => [
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
     styles.base,
     {
       backgroundColor: disabled

@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { TextField } from '../../../../src/components/molecules';
-import { colors } from '../../../../src/theme';
+import { lightColors } from '../../../../src/theme';
 
 describe('TextField', () => {
   it('forwards focus and blur and shows the helper', async () => {
@@ -35,13 +35,13 @@ describe('TextField', () => {
 
   it('prefers the error over the helper', async () => {
     await render(<TextField label='Amount' helper='h' error='Too much' />);
-    expect(screen.getByText('Too much')).toHaveStyle({ color: colors.status.error });
+    expect(screen.getByText('Too much')).toHaveStyle({ color: lightColors.status.error });
     expect(screen.queryByText('h')).toBeNull();
   });
 
   it('is not editable when disabled', async () => {
     await render(<TextField label='Locked' helper='read only' disabled />);
     expect(screen.getByLabelText('Locked').props.editable).toBe(false);
-    expect(screen.getByText('read only')).toHaveStyle({ color: colors.text.disabled });
+    expect(screen.getByText('read only')).toHaveStyle({ color: lightColors.text.disabled });
   });
 });

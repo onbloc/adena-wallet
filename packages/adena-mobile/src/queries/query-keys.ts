@@ -18,10 +18,12 @@ export const queryKeys = {
   nftCollections: (networkId: string, accountId: string) => [...queryKeys.all, 'nft-collections', networkId, accountId] as const,
   nftItems: (networkId: string, accountId: string, collectionId: string) =>
     [...queryKeys.all, 'nft-items', networkId, accountId, collectionId] as const,
-  nftUri: (networkId: string, packagePath: string, nftId: string) => [...queryKeys.all, 'nft-uri', networkId, packagePath, nftId] as const,
+  nftUris: (networkId: string) => [...queryKeys.all, 'nft-uri', networkId] as const,
+  nftUri: (networkId: string, packagePath: string, nftId: string) => [...queryKeys.nftUris(networkId), packagePath, nftId] as const,
   nftMetadata: (networkId: string, packagePath: string, nftId: string) =>
     [...queryKeys.all, 'nft-metadata', networkId, packagePath, nftId] as const,
   marketData: (networkId: string, tokenId: string, range: string) => [...queryKeys.all, 'market', networkId, tokenId, range] as const,
+  tokenInfo: (networkId: string, tokenId: string) => [...queryKeys.all, 'token-info', networkId, tokenId] as const,
   activities: (networkId: string, accountId: string, filterKey: string) =>
     [...queryKeys.all, 'activities', networkId, accountId, filterKey] as const,
 };

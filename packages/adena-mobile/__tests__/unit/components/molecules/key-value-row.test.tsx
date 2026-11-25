@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { KeyValueRow } from '../../../../src/components/molecules';
@@ -14,5 +14,13 @@ describe('KeyValueRow', () => {
 
     await render(<KeyValueRow label='Address' value={value} multiline emphasis />);
     expect(screen.getByText(value)).toHaveStyle({ textAlign: 'left' });
+  });
+
+  it('offers a copy action for truncated values', async () => {
+    const onCopy = jest.fn();
+
+    await render(<KeyValueRow label='Transaction hash' value='A1B2C3...DDEEFF' onCopy={onCopy} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Copy transaction hash' }));
+    expect(onCopy).toHaveBeenCalledTimes(1);
   });
 });

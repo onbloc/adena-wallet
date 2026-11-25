@@ -190,3 +190,79 @@ describe('VaultService', () => {
     expect(await codeOf(() => service.open(TEST_PASSWORD))).toBe('WALLET_NOT_FOUND');
   });
 });
+
+describe('VaultService session key', () => {
+  it('adds a keyring with the key of the last password check, without counting an attempt', async () => {
+    const { service, secureStore } = setup();
+
+    await service.create([HD], TEST_PASSWORD);
+    const content = await service.addKeyringWithSessionKey(PK);
+
+    expect(content.keyrings.map(keyring => keyring.id)).toEqual(['hd', 'pk']);
+    expect(await attempts(secureStore)).toBe(0);
+    expect(await codeOf(() => service.addKeyringWithSessionKey(PK))).toBe('WALLET_ALREADY_EXISTS');
+    service.forgetSessionKey();
+    expect((await service.open(TEST_PASSWORD)).keyrings.map(keyring => keyring.id)).toEqual(['hd', 'pk']);
+  });
+
+  it('needs a key, and refuses one that no longer matches the stored vault', async () => {
+    const { service, cipher, repository } = setup();
+
+    await service.create([HD], TEST_PASSWORD);
+    service.forgetSessionKey();
+    expect(await codeOf(() => service.addKeyringWithSessionKey(PK))).toBe('WALLET_LOCKED');
+
+    await service.open(TEST_PASSWORD);
+    // Another writer re-encrypted the vault under a new salt.
+    const record = (await repository.read())!;
+
+    await repository.write({ ...record, payload: await cipher.encrypt(await cipher.decrypt(record.payload, TEST_PASSWORD), TEST_PASSWORD) });
+    expect(await codeOf(() => service.addKeyringWithSessionKey(PK))).toBe('WALLET_LOCKED');
+  });
+
+  it('leaves the vault untouched when a lock lands while an import derives its seed', async () => {
+    const { service, cipher, repository } = setup();
+    const imported: KeyringRecord = { id: 'hd2', type: KeyringType.HD_WALLET, mnemonic: 'legal winner thank year wave sausage worth useful legal winner thank yellow', createdAt: 3 };
+
+    await service.create([HD], TEST_PASSWORD);
+    const before = await repository.read();
+    const decryptWithKey = cipher.decryptWithKey.bind(cipher);
+
+    // The lock fires right after the vault was read, while the new keyring's seed is still being derived.
+    jest.spyOn(cipher, 'decryptWithKey').mockImplementationOnce((payload, key) => {
+      const plaintext = decryptWithKey(payload, key);
+
+      service.forgetSessionKey();
+      return plaintext;
+    });
+
+    expect(await codeOf(() => service.addKeyringWithSessionKey(imported))).toBe('WALLET_LOCKED');
+    expect(await repository.read()).toEqual(before);
+    expect(service.hasSessionKey()).toBe(false);
+    expect((await service.open(TEST_PASSWORD)).keyrings.map(keyring => keyring.id)).toEqual(['hd']);
+  });
+
+  it('does not keep a key derived by a password write that a lock overtook', async () => {
+    const { service, cipher } = setup();
+    const encryptKeyed = cipher.encryptKeyed.bind(cipher);
+
+    await service.create([HD], TEST_PASSWORD);
+    jest.spyOn(cipher, 'encryptKeyed').mockImplementationOnce((plaintext, password) => {
+      service.forgetSessionKey();
+      return encryptKeyed(plaintext, password);
+    });
+
+    await service.addKeyring(PK, TEST_PASSWORD);
+    expect(service.hasSessionKey()).toBe(false);
+    expect((await service.open(TEST_PASSWORD)).keyrings.map(keyring => keyring.id)).toEqual(['hd', 'pk']);
+  });
+
+  it('is wiped by destroy', async () => {
+    const { service } = setup();
+
+    await service.create([HD], TEST_PASSWORD);
+    expect(service.hasSessionKey()).toBe(true);
+    await service.destroy();
+    expect(service.hasSessionKey()).toBe(false);
+  });
+});

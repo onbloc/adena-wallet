@@ -23,6 +23,8 @@ export interface AssetItemView {
   change?: string;
   trend: Trend;
   loading: boolean;
+  // Quantity is shown; only the USD value cell is a placeholder.
+  valueLoading?: boolean;
 }
 
 export interface NftCardView {

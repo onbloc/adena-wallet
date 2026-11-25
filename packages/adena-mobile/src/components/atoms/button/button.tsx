@@ -1,13 +1,15 @@
 import React, { ReactElement } from 'react';
 import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
-import { colors, sizes } from '../../../theme';
+import { HapticKind } from '../../../domain/haptics';
+import { useHaptics } from '../../../hooks/use-haptics';
+import { sizes, ThemeColors, useThemeColors } from '../../../theme';
 import { Icon, IconName } from '../icon';
 import { Spinner } from '../spinner';
 import { Text } from '../text';
 import { styles } from './button.styles';
 
-export type ButtonTone = 'primary' | 'secondary' | 'tertiary' | 'destructive';
+export type ButtonTone = 'primary' | 'secondary' | 'tertiary' | 'destructive' | 'destructiveOutline' | 'destructiveText';
 export type ButtonSize = 'default' | 'compact';
 
 export interface ButtonProps {
@@ -23,14 +25,18 @@ export interface ButtonProps {
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  // Light tap on press; on by default for the primary and destructive (key) actions.
+  haptic?: boolean;
 }
 
-const TONES: Record<ButtonTone, { background: string; pressed: string; text: string }> = {
+const tones = (colors: ThemeColors): Record<ButtonTone, { background: string; pressed: string; text: string }> => ({
   primary: { background: colors.action.primary, pressed: colors.action.primaryPressed, text: colors.text.inverse },
   secondary: { background: colors.action.secondary, pressed: colors.action.secondaryPressed, text: colors.text.primary },
   tertiary: { background: 'transparent', pressed: colors.action.secondaryPressed, text: colors.text.primary },
   destructive: { background: colors.status.error, pressed: colors.status.error, text: colors.text.inverse },
-};
+  destructiveOutline: { background: 'transparent', pressed: colors.background.pressed, text: colors.status.error },
+  destructiveText: { background: 'transparent', pressed: colors.background.pressed, text: colors.status.error },
+});
 
 export const Button = ({
   label,
@@ -45,19 +51,31 @@ export const Button = ({
   fullWidth = true,
   style,
   testID,
+  haptic = tone === 'primary' || tone === 'destructive',
 }: ButtonProps): ReactElement => {
-  const palette = TONES[tone];
+  const colors = useThemeColors();
+  const palette = tones(colors)[tone];
+  const playHaptic = useHaptics();
   const inactive = disabled && !loading;
   const textColor = inactive ? colors.text.disabled : palette.text;
 
-  const stylePressable = ({ pressed }: PressableStateCallbackType): ({ borderRadius: 999; paddingHorizontal: 24; flexDirection: 'row'; alignItems: 'center'; justifyContent: 'center' } | { alignSelf: 'stretch' } | { alignSelf: 'flex-start' } | { opacity: number } | StyleProp<ViewStyle>)[] => [
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
     styles.base,
     { height: size === 'compact' ? sizes.controlCompact : sizes.control },
-    fullWidth ? styles.fullWidth : styles.hug,
+    fullWidth ? styles.fullWidth : [styles.hug, styles.hugContent],
     { backgroundColor: inactive ? colors.action.disabled : pressed ? palette.pressed : palette.background },
     tone === 'destructive' && pressed && styles.destructivePressed,
+    tone === 'destructiveOutline' && { borderWidth: 1.5, borderColor: inactive ? colors.action.disabled : colors.status.error },
     style,
   ];
+
+  const handlePress = (): void => {
+    if (haptic) {
+      playHaptic(HapticKind.IMPACT);
+    }
+
+    onPress?.();
+  };
 
   return (
     <Pressable
@@ -66,17 +84,17 @@ export const Button = ({
       accessibilityLabel={label}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
-      onPress={onPress}
+      onPress={handlePress}
       style={stylePressable}
     >
       {loading
-        ? <View style={styles.leading}><Spinner tone={tone === 'primary' || tone === 'destructive' ? 'inverse' : 'primary'} /></View>
-        : leadingIcon && <View style={styles.leading}><Icon name={leadingIcon} color={textColor} size={20} /></View>}
+        ? <View style={fullWidth && styles.leading}><Spinner tone={tone === 'primary' || tone === 'destructive' ? 'inverse' : 'primary'} /></View>
+        : leadingIcon && <View style={fullWidth && styles.leading}><Icon name={leadingIcon} color={textColor} size={20} /></View>}
       <Text variant='button' numberOfLines={1} style={{ color: textColor }}>
         {loading ? loadingLabel : label}
       </Text>
       {!loading && trailingIcon && (
-        <View style={styles.trailing}><Icon name={trailingIcon} color={textColor} size={20} /></View>
+        <View style={fullWidth && styles.trailing}><Icon name={trailingIcon} color={textColor} size={20} /></View>
       )}
     </Pressable>
   );

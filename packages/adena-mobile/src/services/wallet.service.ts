@@ -114,7 +114,7 @@ export class WalletService {
       this.assertCurrent(epoch);
       const content = await this.vaultService.create([record], password);
 
-      this.assertCurrent(epoch);
+      this.assertCurrentOrForget(epoch);
       this.accountService.clear();
       this.keyringSession.open(content.keyrings);
       this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
@@ -135,6 +135,7 @@ export class WalletService {
   lock(): void {
     this.createdWith = null;
     this.keyringSession.close();
+    this.vaultService.forgetSessionKey();
   }
 
   // Biometric unlock reads the password from a biometry-bound keychain item.
@@ -143,16 +144,7 @@ export class WalletService {
 
     return this.accountService.runExclusive(async () => {
       this.assertNoPendingReset();
-      const password = await this.biometricRepository.readCredential(prompt);
-
-      if (!password) {
-        // iOS may report an item invalidated by an enrollment change as missing; a cancel rejects instead.
-        if (this.preferenceRepository.get().biometricUnlockEnabled) {
-          throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
-        }
-
-        throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
-      }
+      const password = await this.readEscrowedPassword(prompt);
 
       await this.openSession(await this.vaultService.openWithEscrowedPassword(password), epoch);
     });
@@ -160,15 +152,16 @@ export class WalletService {
 
   // A lock or reset that happened while the vault was being read wins over this unlock.
   private async openSession(content: VaultContent, epoch: number): Promise<void> {
-    this.assertCurrent(epoch);
+    this.assertCurrentOrForget(epoch);
     this.keyringSession.open(content.keyrings);
 
     try {
       await this.restoreMissingAccounts(content.keyrings);
     }
     catch (error) {
-      // A failed unlock must not leave decrypted keyrings in memory behind a locked UI.
+      // A failed unlock must not leave decrypted keyrings or the vault key in memory behind a locked UI.
       this.keyringSession.close();
+      this.vaultService.forgetSessionKey();
       throw error;
     }
   }
@@ -177,6 +170,15 @@ export class WalletService {
     if (this.resetMarker?.isPending()) {
       throw new AppError(AppErrorCode.RESET_INCOMPLETE, 'The last reset did not finish. Reset the wallet again.');
     }
+  }
+
+  // The vault key cached by an unlock that lost to a lock must not outlive it.
+  private assertCurrentOrForget(epoch: number): void {
+    if (this.keyringSession.epoch !== epoch) {
+      this.vaultService.forgetSessionKey();
+    }
+
+    this.assertCurrent(epoch);
   }
 
   private assertCurrent(epoch: number): void {
@@ -225,17 +227,67 @@ export class WalletService {
     this.preferenceRepository.update({ biometricUnlockEnabled: false });
   }
 
+  // The biometric credential (plaintext password) is removed before re-encrypting, so an interruption can
+  // never leave the old password stored; callers re-enable biometrics with the new password afterwards.
+  changePassword(currentPassword: string, nextPassword: string): Promise<void> {
+    return this.runCurrent(() => this.vaultService.changePassword(currentPassword, nextPassword, () => this.biometricRepository.clear()));
+  }
+
   async revealMnemonic(keyringId: string, password: string): Promise<string> {
     await this.vaultService.verifyPassword(password);
     return this.keyringSession.getMnemonic(keyringId);
   }
 
-  addMnemonicKeyring(mnemonic: string, password: string, accountName?: string): Promise<Account> {
-    return this.runCurrent(() => this.addMnemonic(mnemonic, password, accountName));
+  // Releases the biometric-escrowed password for any password-gated action once it opens the vault.
+  // Like biometric unlock it is not a typed guess: not throttled, and success clears earlier failures.
+  async readBiometricPassword(prompt: SecurePrompt): Promise<string> {
+    if (!(await this.isBiometricUnlockEnabled())) {
+      throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
+    }
+
+    const password = await this.readEscrowedPassword(prompt);
+
+    await this.vaultService.openWithEscrowedPassword(password);
+    return password;
   }
 
-  importPrivateKey(privateKeyHex: string, password: string, accountName?: string): Promise<Account> {
-    return this.runCurrent(() => this.addPrivateKey(privateKeyHex, password, accountName));
+  // An invalidated credential turns biometric unlock off, so the prompt is not offered again.
+  private async readEscrowedPassword(prompt: SecurePrompt): Promise<string> {
+    let password: string | null;
+
+    try {
+      password = await this.biometricRepository.readCredential(prompt);
+    }
+    catch (error) {
+      if (isAppError(error, AppErrorCode.BIOMETRICS_INVALIDATED)) {
+        await this.disableBiometricUnlock().catch(() => undefined);
+      }
+
+      throw error;
+    }
+
+    if (password) {
+      return password;
+    }
+
+    // Enabled but missing: iOS reports an invalidated item this way, as does a password change whose
+    // re-enable did not finish. A cancel rejects instead, so it never lands here.
+    if (this.preferenceRepository.get().biometricUnlockEnabled) {
+      await this.disableBiometricUnlock().catch(() => undefined);
+      throw new AppError(AppErrorCode.BIOMETRICS_INVALIDATED, BIOMETRICS_INVALIDATED_MESSAGE);
+    }
+
+    throw new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Biometric unlock is not set up');
+  }
+
+  // Adding a key reveals nothing, so the unlocked session writes the vault with its cached key and
+  // no password is asked. Secret-revealing or destructive actions still take the password.
+  addMnemonicKeyring(mnemonic: string, accountName?: string): Promise<Account> {
+    return this.runCurrent(() => this.addMnemonic(mnemonic, accountName));
+  }
+
+  importPrivateKey(privateKeyHex: string, accountName?: string): Promise<Account> {
+    return this.runCurrent(() => this.addPrivateKey(privateKeyHex, accountName));
   }
 
   // Queued work issued before a lock or reset is dropped before it touches storage.
@@ -249,7 +301,7 @@ export class WalletService {
   }
 
   // Early check for a clear message; the vault re-checks against every stored keyring.
-  private async addMnemonic(mnemonic: string, password: string, accountName?: string): Promise<Account> {
+  private async addMnemonic(mnemonic: string, accountName?: string): Promise<Account> {
     if (!isValidMnemonic(mnemonic)) {
       throw new AppError(AppErrorCode.INVALID_MNEMONIC, 'Invalid recovery phrase');
     }
@@ -268,12 +320,11 @@ export class WalletService {
 
     return this.addKeyring(
       { id: createId(), type: KeyringType.HD_WALLET, mnemonic: normalizeMnemonic(mnemonic), createdAt: Date.now() },
-      password,
       accountName,
     );
   }
 
-  private async addPrivateKey(privateKeyHex: string, password: string, accountName?: string): Promise<Account> {
+  private async addPrivateKey(privateKeyHex: string, accountName?: string): Promise<Account> {
     const normalized = privateKeyHex.trim().replace(/^0x/, '').toLowerCase();
 
     if (!isValidPrivateKeyHex(normalized)) {
@@ -291,7 +342,6 @@ export class WalletService {
 
     return this.addKeyring(
       { id: createId(), type: KeyringType.PRIVATE_KEY, privateKey: normalized, createdAt: Date.now() },
-      password,
       accountName,
     );
   }
@@ -330,8 +380,12 @@ export class WalletService {
     }
   }
 
-  private async addKeyring(record: KeyringRecord, password: string, accountName?: string): Promise<Account> {
-    const content = await this.vaultService.addKeyring(record, password);
+  private async addKeyring(record: KeyringRecord, accountName?: string): Promise<Account> {
+    if (!this.keyringSession.isUnlocked()) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet is locked');
+    }
+
+    const content = await this.vaultService.addKeyringWithSessionKey(record);
 
     this.keyringSession.add(content.keyrings.find(keyring => keyring.id === record.id) ?? record);
     const account = await this.accountService.appendAccount(record.id, record.type, accountName);

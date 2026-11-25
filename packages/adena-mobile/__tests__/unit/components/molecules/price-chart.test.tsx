@@ -13,9 +13,21 @@ jest.mock('react-native-svg', () => {
 const layout = (width: number) => ({ nativeEvent: { layout: { width, height: 200, x: 0, y: 0 } } });
 
 describe('PriceChart', () => {
-  it.each([[[1], false], [[], false], [[1, 2], true]])('shows a skeleton for %p (loading=%p)', async (values, loading) => {
-    await render(<PriceChart values={values} loading={loading} />);
+  it.each([[[]], [[1, 2]]])('shows a skeleton while loading %p', async (values) => {
+    await render(<PriceChart values={values} loading />);
     expect(screen.getByLabelText('Loading')).toBeTruthy();
+  });
+
+  it.each([[[1]], [[]]])('shows the empty label for %p', async (values) => {
+    await render(<PriceChart values={values} emptyLabel='No data' />);
+    expect(screen.getByText('No data')).toBeTruthy();
+    expect(screen.queryByLabelText('Loading')).toBeNull();
+  });
+
+  it('draws three grid lines', async () => {
+    await render(<PriceChart values={[1, 2]} accessibilityLabel='grid' />);
+    await fireEvent(screen.getByLabelText('grid'), 'layout', layout(100));
+    expect(screen.getAllByTestId('line')).toHaveLength(3);
   });
 
   it('draws only after layout and ends with a dot on the latest value', async () => {
@@ -27,9 +39,19 @@ describe('PriceChart', () => {
     expect(screen.getByTestId('circle').props.cx).toBeGreaterThan(0);
   });
 
+  it('dims the line under a spinner while updating', async () => {
+    const { rerender } = await render(<PriceChart values={[1, 2]} updating accessibilityLabel='chart' />);
+
+    expect(screen.getByLabelText('Updating chart')).toBeTruthy();
+    expect(screen.getByLabelText('chart').props.accessibilityState).toEqual({ busy: true });
+    await rerender(<PriceChart values={[1, 2]} accessibilityLabel='chart' />);
+    expect(screen.queryByLabelText('Updating chart')).toBeNull();
+  });
+
   it('handles a flat series without dividing by zero', async () => {
     await render(<PriceChart values={[5, 5, 5]} accessibilityLabel='flat' />);
     await fireEvent(screen.getByLabelText('flat'), 'layout', layout(100));
     expect(screen.getByTestId('path').props.d).not.toContain('NaN');
+    expect(screen.getByTestId('circle').props.cy).toBe(60);
   });
 });

@@ -248,6 +248,16 @@ describe('CosmosChainRepository', () => {
       expect(await Secp256k1.verifySignature(Secp256k1Signature.fromFixedLength(raw.signatures[0]), sha256(signBytes), keyPair.publicKey)).toBe(true);
     });
 
+    it('reports the signer state and signs a pinned sequence only while it is the on-chain one', async () => {
+      const { repository, http } = withChain();
+
+      http.on(urls().account, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', address, account_number: '12', sequence: '4' } });
+      await expect(repository.signTransaction(draftOf([send()]), keyPair, network)).resolves.toMatchObject({ sequence: '4', accountNumber: '12' });
+      await expect(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '4', accountNumber: '12' })).resolves.toMatchObject({ sequence: '4' });
+      await expect(errorOf(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '3', accountNumber: '12' })))
+        .resolves.toMatchObject({ code: 'PREVIOUS_TRANSACTION_PENDING' });
+    });
+
     it('uses 0/0 for unknown accounts and an empty fee for malformed gas fees', async () => {
       const { repository, http } = withChain();
 
@@ -287,7 +297,7 @@ describe('CosmosChainRepository', () => {
         body = init?.body;
         return { tx_response: { txhash: 'ABC', code: 0, raw_log: '', height: '0' } };
       });
-      await expect(repository.broadcastTransaction({ encoded }, network)).resolves.toEqual({ hash: 'ABC', height: '0' });
+      await expect(repository.broadcastTransaction({ encoded }, network)).resolves.toEqual({ hash: 'ABC', height: '0', committed: false });
       expect(body).toEqual({ tx_bytes: encoded, mode: 'BROADCAST_MODE_SYNC' });
     });
 
@@ -295,23 +305,102 @@ describe('CosmosChainRepository', () => {
       const { repository, http } = setup();
 
       http.on(urls().txs, { tx_response: { txhash: '', code: 0, raw_log: '', height: '5' } });
-      await expect(repository.broadcastTransaction({ encoded }, network)).resolves.toEqual({ hash: toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase(), height: '5' });
+      await expect(repository.broadcastTransaction({ encoded }, network)).resolves.toEqual({ hash: toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase(), height: '5', committed: false });
     });
 
-    it('keeps AppErrors and wraps other failures as TRANSACTION_FAILED', async () => {
+    it('rejects definitively on a CheckTx code or a client error', async () => {
       const { repository, http } = setup();
 
-      // HTTP failures are already NETWORK_ERROR AppErrors (as FetchHttpClient raises them) and pass through.
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR', message: `404 ${urls().txs}` });
+      http.on(urls().txs, { tx_response: { txhash: 'X', code: 5, raw_log: 'insufficient funds', height: '0' } });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'Broadcast failed (code 5): insufficient funds' });
+      http.on(urls().txs, () => {
+        throw new HttpStatusError(400, null, 'bad tx');
+      });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR', message: 'bad tx' });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, { ...network, restUrl: undefined }))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+    });
+
+    it('reports an unknown outcome as pending with the computed hash', async () => {
+      const { repository, http } = setup();
+      const hash = toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase();
+      const pending = { code: 'TRANSACTION_PENDING', hash };
+
       http.on(urls().txs, () => {
         throw new Error('socket hang up');
       });
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'socket hang up' });
-      http.on(urls().txs, { tx_response: { txhash: 'X', code: 5, raw_log: 'insufficient funds', height: '0' } });
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'Broadcast failed (code 5): insufficient funds' });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
+      http.on(urls().txs, () => {
+        throw new HttpStatusError(504);
+      });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
       http.on(urls().txs, {});
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ message: 'Broadcast returned no tx_response' });
-      await expect(errorOf(repository.broadcastTransaction({ encoded }, { ...network, restUrl: undefined }))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
+      // Code 19: already in the mempool.
+      http.on(urls().txs, { tx_response: { txhash: 'X', code: 19, raw_log: 'tx already in mempool', height: '0' } });
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject(pending);
+    });
+
+    it('reports the same hash before broadcasting as a pending error carries', async () => {
+      const { repository, http } = setup();
+
+      http.on(urls().txs, () => {
+        throw new Error('socket hang up');
+      });
+
+      expect(repository.transactionHash({ encoded })).toBe(toHex(sha256(new Uint8Array([1, 2, 3]))).toUpperCase());
+      await expect(errorOf(repository.broadcastTransaction({ encoded }, network))).resolves.toMatchObject({ hash: repository.transactionHash({ encoded }) });
+    });
+  });
+
+  describe('getTransactionStatus', () => {
+    it('maps the indexed tx code and treats not found or failures as pending', async () => {
+      const { repository, http } = setup();
+      const url = `${REST}/cosmos/tx/v1beta1/txs/ABC`;
+
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('pending');
+      http.on(url, { tx_response: { code: 0 } });
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('committed');
+      http.on(url, { tx_response: { code: 11 } });
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('failed');
+      http.on(url, () => {
+        throw new HttpStatusError(503);
+      });
+      await expect(repository.getTransactionStatus('ABC', network)).resolves.toBe('pending');
+    });
+  });
+
+  describe('findTransaction', () => {
+    it('reports a 404 as null and throws on any other failure', async () => {
+      const { repository, http } = setup();
+      const url = `${REST}/cosmos/tx/v1beta1/txs/ABC`;
+
+      http.on(url, () => {
+        throw new HttpStatusError(404);
+      });
+      await expect(repository.findTransaction('ABC', network)).resolves.toBeNull();
+      http.on(url, { tx_response: { code: 0 } });
+      await expect(repository.findTransaction('ABC', network)).resolves.toBe('committed');
+      http.on(url, { tx_response: { code: 5 } });
+      await expect(repository.findTransaction('ABC', network)).resolves.toBe('failed');
+      http.on(url, () => {
+        throw new HttpStatusError(503);
+      });
+      await expect(errorOf(repository.findTransaction('ABC', network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+    });
+  });
+
+  describe('getAccountSequence', () => {
+    it('reads the LCD account sequence, 0 for an unknown account, and throws on failures', async () => {
+      const { repository, http } = setup();
+
+      http.on(urls().account, { account: { '@type': '/cosmos.auth.v1beta1.BaseAccount', address, account_number: '12', sequence: '9' } });
+      await expect(repository.getAccountSequence(address, network)).resolves.toBe('9');
+      unknownAccount(http);
+      await expect(repository.getAccountSequence(address, network)).resolves.toBe('0');
+      http.on(urls().account, () => {
+        throw new HttpStatusError(503);
+      });
+      await expect(errorOf(repository.getAccountSequence(address, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
     });
   });
 });

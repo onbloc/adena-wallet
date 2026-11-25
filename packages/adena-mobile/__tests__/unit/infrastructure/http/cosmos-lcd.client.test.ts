@@ -1,5 +1,5 @@
 import { isAppError } from '../../../../src/core/errors';
-import { CosmosLcdClient } from '../../../../src/infrastructure/http/cosmos-lcd.client';
+import { CosmosLcdClient, CosmosTxRejectedError } from '../../../../src/infrastructure/http/cosmos-lcd.client';
 import { HttpRequest, HttpStatusError } from '../../../../src/infrastructure/http/http-client';
 import { FakeHttpClient } from '../../../helpers/fake-http';
 
@@ -205,11 +205,12 @@ describe('CosmosLcdClient', () => {
       expect(request).toEqual({ method: 'POST', body: { tx_bytes: 'AAAA', mode: 'BROADCAST_MODE_SYNC' } });
     });
 
-    it('throws when tx_response is missing', async () => {
+    // The node may still have accepted the tx, so this is not a definitive rejection.
+    it('throws a network error when tx_response is missing', async () => {
       http.on(url, {});
       const error = await capture(client.broadcastSync(REST, 'AAAA'));
 
-      expect(isAppError(error, 'TRANSACTION_FAILED')).toBe(true);
+      expect(isAppError(error, 'NETWORK_ERROR')).toBe(true);
       expect((error as Error).message).toBe('Broadcast returned no tx_response');
     });
 
@@ -219,6 +220,27 @@ describe('CosmosLcdClient', () => {
 
       expect(isAppError(error, 'TRANSACTION_FAILED')).toBe(true);
       expect((error as Error).message).toBe('Broadcast failed (code 13): insufficient fee');
+      expect((error as CosmosTxRejectedError).abciCode).toBe(13);
+    });
+  });
+
+  describe('getTx', () => {
+    const url = `${REST}/cosmos/tx/v1beta1/txs/ABC`;
+
+    it('returns the DeliverTx code, or null while the tx is not indexed', async () => {
+      await expect(client.getTx(REST, 'ABC')).resolves.toBeNull();
+      http.on(url, { tx_response: { code: 0 } });
+      await expect(client.getTx(REST, 'ABC')).resolves.toEqual({ code: 0 });
+      http.on(url, { tx_response: { code: 5 } });
+      await expect(client.getTx(REST, 'ABC')).resolves.toEqual({ code: 5 });
+    });
+
+    it('propagates other failures', async () => {
+      http.on(url, () => {
+        throw new HttpStatusError(500);
+      });
+
+      expect(isAppError(await capture(client.getTx(REST, 'ABC')), 'NETWORK_ERROR')).toBe(true);
     });
   });
 });

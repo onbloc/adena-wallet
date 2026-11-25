@@ -5,7 +5,7 @@ import { StorageAccountRepository } from '../../../src/repositories/account.repo
 import { StorageNftPreferenceRepository } from '../../../src/repositories/nft-preference.repository';
 import { AccountService } from '../../../src/services/account.service';
 import { KeyringSession } from '../../../src/services/keyring-session';
-import { NftService } from '../../../src/services/nft.service';
+import { MAX_CONCURRENT_URI_LOOKUPS, NftService } from '../../../src/services/nft.service';
 import { MemoryKeyValueStore } from '../../../src/storage/memory-key-value-store';
 import { createFakeRegistry, fakeAddress, GNO_NETWORK, makeAccount, networkById } from '../../helpers/service-fakes';
 
@@ -56,7 +56,7 @@ describe('NftService', () => {
     expect(nfts.getTokenUri).toHaveBeenCalledTimes(3);
   });
 
-  it('retries a lookup that found no URI (RPC failures surface as null)', async () => {
+  it('retries a lookup that found no URI', async () => {
     const { service, nfts } = setup();
 
     nfts.getTokenUri.mockResolvedValueOnce(null).mockResolvedValueOnce('https://img/1');
@@ -72,6 +72,48 @@ describe('NftService', () => {
     await expect(service.getTokenUri(GNO_NETWORK, 'pkg', '1')).rejects.toThrow('rpc down');
     await expect(service.getTokenUri(GNO_NETWORK, 'pkg', '1')).resolves.toBeNull();
     expect(nfts.getTokenUri).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps at most six URI lookups in flight and dedupes repeated ids', async () => {
+    const { service, nfts } = setup();
+    const pending: (() => void)[] = [];
+    let inFlight = 0;
+    let peak = 0;
+
+    nfts.getTokenUri.mockImplementation((_pkg: string, id: string) => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      return new Promise<string>(resolve => pending.push(() => {
+        inFlight--;
+        resolve(`https://img/${id}`);
+      }));
+    });
+    const ids = Array.from({ length: 20 }, (_, index) => String(index));
+    const lookups = ids.map(id => service.getTokenUri(GNO_NETWORK, 'pkg', id));
+
+    service.getTokenUri(GNO_NETWORK, 'pkg', '0');
+    await Promise.resolve();
+    expect(nfts.getTokenUri).toHaveBeenCalledTimes(MAX_CONCURRENT_URI_LOOKUPS);
+
+    while (pending.length > 0) {
+      pending.shift()!();
+      await new Promise(resolve => setImmediate(resolve));
+    }
+
+    await expect(Promise.all(lookups)).resolves.toEqual(ids.map(id => `https://img/${id}`));
+    expect(peak).toBe(MAX_CONCURRENT_URI_LOOKUPS);
+    expect(nfts.getTokenUri).toHaveBeenCalledTimes(ids.length);
+  });
+
+  it('frees a lookup slot when a lookup fails', async () => {
+    const { service, nfts } = setup();
+
+    nfts.getTokenUri.mockRejectedValue(new Error('rpc down'));
+    const failures = Array.from({ length: 8 }, (_, index) => service.getTokenUri(GNO_NETWORK, 'pkg', String(index)));
+
+    await Promise.all(failures.map(failure => expect(failure).rejects.toThrow('rpc down')));
+    nfts.getTokenUri.mockResolvedValue('https://img/ok');
+    await expect(service.getTokenUri(GNO_NETWORK, 'pkg', 'ok')).resolves.toBe('https://img/ok');
   });
 
   it('loads metadata through the chain', async () => {

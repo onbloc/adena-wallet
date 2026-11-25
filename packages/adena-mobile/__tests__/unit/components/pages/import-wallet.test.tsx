@@ -3,7 +3,7 @@ import React from 'react';
 
 import { ImportWalletPage, ImportWalletPageProps } from '../../../../src/components/pages';
 import { SecretImportMode } from '../../../../src/domain/account';
-import { renderPage } from './render-page';
+import { renderPage, wrapPage } from './render-page';
 
 const props = (overrides: Partial<ImportWalletPageProps> = {}): ImportWalletPageProps => ({
   mode: SecretImportMode.MNEMONIC,
@@ -34,15 +34,13 @@ describe('ImportWalletPage', () => {
     expect(page.onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('imports a private key with account name and password', async () => {
+  it('imports a private key with an account name', async () => {
     const page = props({
       title: 'Add private key',
       mode: SecretImportMode.PRIVATE_KEY,
       secret: '0xabc',
       accountName: 'Imported',
       onChangeAccountName: jest.fn(),
-      password: 'pw',
-      onChangePassword: jest.fn(),
       error: 'Invalid private key',
       submitLabel: 'Import',
     });
@@ -55,18 +53,29 @@ describe('ImportWalletPage', () => {
 
     await fireEvent.changeText(screen.getByLabelText('Private key'), '0xdef');
     await fireEvent.changeText(screen.getByLabelText('Account name'), 'Renamed');
-    await fireEvent.changeText(screen.getByLabelText('Wallet password'), 'secret');
     await fireEvent.press(screen.getByRole('button', { name: 'Import' }));
 
     expect(page.onChangeSecret).toHaveBeenCalledWith('0xdef');
     expect(page.onChangeAccountName).toHaveBeenCalledWith('Renamed');
-    expect(page.onChangePassword).toHaveBeenCalledWith('secret');
+    expect(page.onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('moves from the secret to the account name, and submits from the last field only when filled', async () => {
+    const page = props({ secret: '', accountName: '', onChangeAccountName: jest.fn() });
+    const { rerender } = await renderPage(<ImportWalletPage {...page} />);
+
+    expect(screen.getByTestId('import-secret').props.returnKeyType).toBe('next');
+    expect(screen.getByTestId('import-account-name').props.returnKeyType).toBe('done');
+    await fireEvent(screen.getByTestId('import-account-name'), 'submitEditing');
+    expect(page.onSubmit).not.toHaveBeenCalled();
+
+    await rerender(wrapPage(<ImportWalletPage {...page} secret='word word' />));
+    await fireEvent(screen.getByTestId('import-account-name'), 'submitEditing');
     expect(page.onSubmit).toHaveBeenCalledTimes(1);
   });
 
   it.each([
     { secret: '   ' },
-    { secret: 'words', password: '', onChangePassword: jest.fn() },
   ])('disables submit when input is incomplete (%#)', async (overrides) => {
     const page = props(overrides);
 

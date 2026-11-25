@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { elevation, makeStyles, radius, spacing } from '../../../theme';
 
-import { colors, elevation, radius, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   scrim: { flex: 1, backgroundColor: colors.overlay.scrim, justifyContent: 'center', padding: spacing.space24 },
   dialog: {
     borderRadius: radius.surface,
@@ -15,4 +13,4 @@ export const styles = StyleSheet.create({
   title: { flex: 1 },
   actions: { flexDirection: 'row', gap: spacing.space8, marginTop: spacing.space8 },
   action: { flex: 1 },
-});
+}));

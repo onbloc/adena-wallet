@@ -89,7 +89,7 @@ describe('AtomOne (cosmos module)', () => {
     expect(signed.encoded).toBe(toBase64(reference.txBytes));
     expect(TxRaw.decode(fromBase64(signed.encoded)).signatures[0]).toHaveLength(64);
 
-    await expect(container.transactionService.broadcast(signed, network)).resolves.toEqual({ hash: 'ABC', height: '0' });
+    await expect(container.transactionService.broadcast(signed, network)).resolves.toEqual({ hash: 'ABC', height: '0', committed: false });
     expect(http.calls).toContain(`${REST}/cosmos/tx/v1beta1/txs`);
   });
 

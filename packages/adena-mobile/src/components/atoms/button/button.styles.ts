@@ -14,5 +14,7 @@ export const styles = StyleSheet.create({
   hug: { alignSelf: 'flex-start' },
   leading: { position: 'absolute', left: spacing.space16 },
   trailing: { position: 'absolute', right: spacing.space16 },
+  // Hugging buttons have no spare width for pinned icons, so they sit beside the label.
+  hugContent: { gap: spacing.space8, paddingHorizontal: spacing.space16 },
   destructivePressed: { opacity: 0.85 },
 });

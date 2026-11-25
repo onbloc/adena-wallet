@@ -11,6 +11,25 @@ export interface CustomNetworkInput {
   baseNetworkId: string;
 }
 
+// localhost, emulator host (10.0.2.2), private IPv4 ranges, `.local` and unqualified LAN names.
+export const isLocalHost = (host: string): boolean => {
+  const name = host.toLowerCase().replace(/^\[|\]$/g, '');
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/.exec(name);
+
+  if (ipv4) {
+    const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+
+    return a === 127 || a === 10 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31);
+  }
+
+  if (name.includes(':')) {
+    // IPv6: loopback, unique-local (fc00::/7) and link-local (fe80::/10).
+    return name === '::1' || /^f[cd][0-9a-f]{0,2}:/.test(name) || /^fe[89ab][0-9a-f]?:/.test(name);
+  }
+
+  return name === 'localhost' || name.endsWith('.local') || !name.includes('.');
+};
+
 export class NetworkService {
   constructor(
     private readonly networkRepository: NetworkRepository,
@@ -55,8 +74,15 @@ export class NetworkService {
     const base = this.getNetwork(input.baseNetworkId);
     const rpcUrl = input.rpcUrl.trim().replace(/\/+$/, '');
 
-    if (!/^https?:\/\//.test(rpcUrl)) {
+    const endpoint = /^(https?):\/\/(\[[^\]]*\]|[^/:?#]+)/i.exec(rpcUrl);
+
+    if (!endpoint) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'URL must start with http:// or https://');
+    }
+
+    // iOS ATS blocks cleartext to public hosts, so http:// is limited to local development endpoints.
+    if (endpoint[1].toLowerCase() === 'http' && !isLocalHost(endpoint[2])) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'Use an https:// URL. http:// is only allowed for localhost or a private network address.');
     }
 
     // Cosmos networks are reached through their LCD REST endpoint.

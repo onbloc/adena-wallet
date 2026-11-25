@@ -1,5 +1,6 @@
 import { fromBase64 } from '@cosmjs/encoding';
 
+import { AppError, AppErrorCode } from '../../../core/errors';
 import { ChainFamily, Network } from '../../../domain/network';
 import { Token, TokenType } from '../../../domain/token';
 import { OnblocApiClient } from '../../../infrastructure/http/onbloc-api.client';
@@ -30,7 +31,19 @@ export class GnoAssetRepository implements AssetRepository<GnoMessage> {
     private readonly api: OnblocApiClient,
   ) {}
 
+  // Rejects when the GRC20 list is unavailable, so callers do not mistake it for delistings.
   async getCuratedTokens(network: Network): Promise<Token[]> {
+    const list = await this.tokenResources.get(network);
+
+    if (!list.complete) {
+      throw new AppError(AppErrorCode.NETWORK_ERROR, 'The token list is unavailable');
+    }
+
+    return list.tokens;
+  }
+
+  // Metadata overlay only: whatever part of the list loaded is good enough.
+  private async curatedOverlay(network: Network): Promise<Token[]> {
     return (await this.tokenResources.get(network)).tokens;
   }
 
@@ -47,12 +60,12 @@ export class GnoAssetRepository implements AssetRepository<GnoMessage> {
 
     const [onChain] = await this.registry.getTokens(network, [tokenId]);
 
-    return onChain ? overlay(onChain, await this.getCuratedTokens(network)) : null;
+    return onChain ? overlay(onChain, await this.curatedOverlay(network)) : null;
   }
 
   async searchRegistry(network: Network, offset: number, limit: number): Promise<RegistryPage> {
     const { keys, total } = await this.registry.listKeys(network, offset, limit);
-    const curated = await this.getCuratedTokens(network);
+    const curated = await this.curatedOverlay(network);
     const tokens = await this.registry.getTokens(network, keys);
 
     return { tokens: tokens.map(token => overlay(token, curated)), total };
@@ -66,7 +79,7 @@ export class GnoAssetRepository implements AssetRepository<GnoMessage> {
 
     const [assets, curated] = await Promise.all([
       this.api.getAccountAssets(network.apiUrl, address),
-      this.getCuratedTokens(network),
+      this.curatedOverlay(network),
     ]);
 
     return assets

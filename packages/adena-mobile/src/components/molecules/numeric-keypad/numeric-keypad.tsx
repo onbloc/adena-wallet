@@ -1,9 +1,11 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
-import { colors } from '../../../theme';
+import { HapticKind } from '../../../domain/haptics';
+import { useHaptics } from '../../../hooks/use-haptics';
+import { useThemeColors } from '../../../theme';
 import { Icon, Text } from '../../atoms';
-import { styles } from './numeric-keypad.styles';
+import { useStyles } from './numeric-keypad.styles';
 
 export type KeypadKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'backspace';
 
@@ -14,33 +16,42 @@ const ROWS: KeypadKey[][] = [
   ['.', '0', 'backspace'],
 ];
 
-export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => void }): ReactElement => (
-  <View style={styles.grid}>
-    {ROWS.map(row => (
-      <View key={row.join('')} style={styles.row}>
-        {row.map((key) => {
-          const handlePress = (): void => onKeyPress(key);
+export const NumericKeypad = ({ onKeyPress }: { onKeyPress: (key: KeypadKey) => void }): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+  const playHaptic = useHaptics();
 
-          const stylePressable = ({ pressed }: PressableStateCallbackType): (false | { flex: number; height: number; alignItems: 'center'; justifyContent: 'center'; borderRadius: 12 } | { backgroundColor: '#F1F3F4' })[] => [styles.key, pressed && styles.pressed];
+  return (
+    <View style={styles.grid}>
+      {ROWS.map(row => (
+        <View key={row.join('')} style={styles.row}>
+          {row.map((key) => {
+            const handlePress = (): void => {
+              playHaptic(HapticKind.IMPACT);
+              onKeyPress(key);
+            };
 
-          return (
-            <Pressable
-              key={key}
-              accessibilityRole='keyboardkey'
-              accessibilityLabel={key === 'backspace' ? 'Delete' : key === '.' ? 'Decimal point' : key}
-              onPress={handlePress}
-              style={stylePressable}
-            >
-              {key === 'backspace'
-                ? <Icon name='backspace' color={colors.icon.primary} />
-                : <Text variant='section' tabular>{key}</Text>}
-            </Pressable>
-          );
-        })}
-      </View>
-    ))}
-  </View>
-);
+            const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [styles.key, pressed && styles.pressed];
+
+            return (
+              <Pressable
+                key={key}
+                accessibilityRole='keyboardkey'
+                accessibilityLabel={key === 'backspace' ? 'Delete' : key === '.' ? 'Decimal point' : key}
+                onPress={handlePress}
+                style={stylePressable}
+              >
+                {key === 'backspace'
+                  ? <Icon name='backspace' color={colors.icon.primary} />
+                  : <Text tabular style={styles.digit}>{key}</Text>}
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
+    </View>
+  );
+};
 
 // Applies a key to an amount string, enforcing one decimal point and a max precision.
 export const applyKeypadKey = (current: string, key: KeypadKey, maxDecimals: number): string => {

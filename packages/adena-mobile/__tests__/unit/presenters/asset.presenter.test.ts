@@ -1,6 +1,6 @@
 import { ChainFamily } from '../../../src/domain/network';
-import { Token, TokenPrice, TokenType } from '../../../src/domain/token';
-import { AssetView, buildAssetViews, sortAssets, toAssetItem, toAssetView } from '../../../src/presenters/asset.presenter';
+import { isUnknownToken, ManagedToken, Token, TokenPrice, TokenSource, TokenType } from '../../../src/domain/token';
+import { AssetView, buildAssetViews, filterPortfolioAssets, sortAssets, toAssetItem, toAssetView } from '../../../src/presenters/asset.presenter';
 import { Trend } from '../../../src/utils/price';
 
 const token = (overrides: Partial<Token> = {}): Token => ({
@@ -28,6 +28,7 @@ describe('toAssetView', () => {
       trend: Trend.POSITIVE,
       usdValue: 5,
       loading: false,
+      valueLoading: false,
     });
   });
 
@@ -61,7 +62,7 @@ describe('toAssetView', () => {
 
 describe('sortAssets', () => {
   const view = (symbol: string, isNative: boolean, usdValue: number | null): AssetView =>
-    ({ token: token({ id: symbol, symbol, isNative }), trend: Trend.NEUTRAL, usdValue, loading: false });
+    ({ token: token({ id: symbol, symbol, isNative }), trend: Trend.NEUTRAL, usdValue, loading: false, valueLoading: false });
 
   it('puts native first, then by value desc, then by symbol', () => {
     const input = [view('B', false, 1), view('A', false, 1), view('C', false, 10), view('Z', false, null), view('N', true, 0)];
@@ -103,6 +104,20 @@ describe('buildAssetViews', () => {
     expect(buildAssetViews([token()], undefined, undefined, false)[0].loading).toBe(false);
   });
 
+  it('loads a token missing from placeholder balances on its own', () => {
+    const views = buildAssetViews([foo, token()], { ugnot: '1000000' }, undefined, true);
+
+    expect(views.map(item => [item.token.id, item.loading])).toEqual([['ugnot', false], ['foo', true]]);
+  });
+
+  it('marks only the value cell as loading while prices are expected', () => {
+    const [pending] = buildAssetViews([token()], { ugnot: '1000000' }, undefined, false, true);
+    const [priced] = buildAssetViews([token()], { ugnot: '1000000' }, { 'ugnot:n1': price(1) }, false, true);
+
+    expect(pending).toMatchObject({ loading: false, valueLoading: true, quantityLabel: '1 GNOT' });
+    expect(priced.valueLoading).toBe(false);
+  });
+
   it('returns nothing for no tokens', () => {
     expect(buildAssetViews([], {}, {}, false)).toEqual([]);
   });
@@ -123,6 +138,55 @@ describe('toAssetItem', () => {
       change: '+1.00%',
       trend: Trend.POSITIVE,
       loading: false,
+      valueLoading: false,
     });
+  });
+});
+
+describe('filterPortfolioAssets', () => {
+  const managed = (id: string, source: TokenSource, extra: Partial<ManagedToken> = {}): ManagedToken => ({
+    ...token({ id, symbol: id.toUpperCase(), type: TokenType.GRC20, isNative: false }),
+    visible: true,
+    source,
+    ...extra,
+  });
+  const native = { ...token(), visible: true, source: TokenSource.DEFAULT };
+  const listedSmall = managed('listed-small', TokenSource.DISCOVERED, { listed: true });
+  const listedBig = managed('listed-big', TokenSource.DISCOVERED, { listed: true });
+  const unpriced = managed('unpriced', TokenSource.DISCOVERED, { listed: true });
+  const unknown = managed('unknown', TokenSource.DISCOVERED);
+  const customSmall = managed('custom-small', TokenSource.CUSTOM);
+  const tokens = [native, listedSmall, listedBig, unpriced, unknown, customSmall];
+  const views: AssetView[] = [
+    toAssetView(native, '1', price(0.1), false),
+    toAssetView(listedSmall, '1000000', price(0.5), false),
+    toAssetView(listedBig, '1000000', price(2), false),
+    toAssetView(unpriced, '1000000', undefined, false),
+    toAssetView(unknown, '1000000', price(5), false),
+    toAssetView(customSmall, '1', price(0.1), false),
+  ];
+  const ids = (list: AssetView[]): string[] => list.map(view => view.token.id);
+
+  it('treats only discovered tokens outside the curated resources as unknown', () => {
+    expect(tokens.filter(isUnknownToken).map(item => item.id)).toEqual(['unknown']);
+  });
+
+  it('keeps everything with both filters off', () => {
+    expect(ids(filterPortfolioAssets(views, tokens, { hideSmallBalances: false, hideUnknownTokens: false }))).toEqual(ids(views));
+  });
+
+  it('hides priced balances under 1 USD but never the native coin, user-added or unpriced tokens', () => {
+    expect(ids(filterPortfolioAssets(views, tokens, { hideSmallBalances: true, hideUnknownTokens: false })))
+      .toEqual(['ugnot', 'listed-big', 'unpriced', 'unknown', 'custom-small']);
+  });
+
+  it('hides unknown tokens regardless of value', () => {
+    expect(ids(filterPortfolioAssets(views, tokens, { hideSmallBalances: false, hideUnknownTokens: true })))
+      .toEqual(['ugnot', 'listed-small', 'listed-big', 'unpriced', 'custom-small']);
+  });
+
+  it('applies both filters together', () => {
+    expect(ids(filterPortfolioAssets(views, tokens, { hideSmallBalances: true, hideUnknownTokens: true })))
+      .toEqual(['ugnot', 'listed-big', 'unpriced', 'custom-small']);
   });
 });

@@ -1,0 +1,4 @@
+<resources>
+    <!-- Matches the JS theme canvas so no white/gray frame shows before React renders. -->
+    <color name="window_background">#FFFFFF</color>
+</resources>

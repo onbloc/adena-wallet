@@ -44,6 +44,15 @@ describe('ReviewSheet', () => {
     expect(screen.queryByText('Transaction failed', hidden)).toBeNull();
   });
 
+  it('renders the totals below the fee', async () => {
+    await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <ReviewSheet {...props()} totals={<Text>Total 1.1 GNOT</Text>} />
+      </SafeAreaProvider>,
+    );
+    expect(screen.getByText('Total 1.1 GNOT', hidden)).toBeTruthy();
+  });
+
   it('shows the error and blocks confirm when the fee is too low', async () => {
     const base = props();
     const sheet = props({ error: 'Out of gas', fee: { ...base.fee, tooLow: true } });
@@ -57,6 +66,7 @@ describe('ReviewSheet', () => {
   it('shows the broadcasting state and is not dismissible', async () => {
     await renderSheet(props({ confirming: true }));
     expect(screen.getByText('Broadcasting…', hidden)).toBeTruthy();
-    expect(screen.getAllByLabelText('Close', hidden)).toHaveLength(1);
+    // No close button; the native sheet blocks swipe, scrim and back while broadcasting.
+    expect(screen.queryByLabelText('Close', hidden)).toBeNull();
   });
 });

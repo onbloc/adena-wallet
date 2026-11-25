@@ -1,12 +1,10 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
-import { colors, radius, sizes, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   row: {
     minHeight: sizes.assetRow,
     borderRadius: radius.input,
-    paddingHorizontal: spacing.space16,
+    paddingHorizontal: spacing.space12,
     paddingVertical: spacing.space8,
     flexDirection: 'row',
     alignItems: 'center',
@@ -14,4 +12,4 @@ export const styles = StyleSheet.create({
   },
   idle: { backgroundColor: colors.background.subtle },
   texts: { flex: 1, gap: 2 },
-});
+}));

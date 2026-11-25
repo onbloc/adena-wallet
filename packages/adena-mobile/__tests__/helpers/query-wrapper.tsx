@@ -6,6 +6,9 @@ import { AppContainer } from '../../src/di/container';
 import { ContainerProvider } from '../../src/di/container-provider';
 import { Account } from '../../src/domain/account';
 import { ChainFamily, Network } from '../../src/domain/network';
+import { StoragePreferenceRepository } from '../../src/repositories/preference.repository';
+import { PreferenceService } from '../../src/services/preference.service';
+import { MemoryKeyValueStore } from '../../src/storage/memory-key-value-store';
 
 export const NETWORK: Network = {
   id: 'gno-test',
@@ -24,12 +27,19 @@ export const NETWORK: Network = {
 
 export const ACCOUNT: Account = { id: 'acc-1', keyringId: 'k', keyringType: KeyringType.HD_WALLET, name: 'A', hdIndex: 0, publicKey: 'pk', createdAt: 0 };
 
+// Infinite gcTime: a mutation's default 5 min gc timer would keep Jest from exiting.
 export const createTestQueryClient = (): QueryClient =>
-  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } } });
 
-// Wraps hooks with a fresh query client and a partial fake container.
+// Wraps hooks with a fresh query client and a partial fake container; photos and haptics default to none,
+// preferences to an in-memory store.
 export const createWrapper = (services: Partial<Record<keyof AppContainer, unknown>>, client = createTestQueryClient()) => {
-  const container = services as unknown as AppContainer;
+  const container = {
+    accountPhotoService: { get: () => undefined },
+    hapticsService: { play: () => undefined },
+    preferenceService: new PreferenceService(new StoragePreferenceRepository(new MemoryKeyValueStore())),
+    ...services,
+  } as unknown as AppContainer;
   const Wrapper = ({ children }: PropsWithChildren): ReactElement => (
     <QueryClientProvider client={client}>
       <ContainerProvider container={container}>{children}</ContainerProvider>

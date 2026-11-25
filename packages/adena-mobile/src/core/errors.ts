@@ -25,10 +25,15 @@ export const AppErrorCode = {
   CRYPTO_UNAVAILABLE: 'CRYPTO_UNAVAILABLE',
   MIGRATION_FAILED: 'MIGRATION_FAILED',
   TRANSACTION_FAILED: 'TRANSACTION_FAILED',
+  TRANSACTION_PENDING: 'TRANSACTION_PENDING',
+  PREVIOUS_TRANSACTION_PENDING: 'PREVIOUS_TRANSACTION_PENDING',
 } as const;
 
 export const BIOMETRICS_INVALIDATED_MESSAGE
-  = 'Biometrics changed on this device. Unlock with your password and turn biometric unlock on again.';
+  = 'Biometrics changed on this device. Unlock with your password and turn biometric unlock on again in Settings.';
+
+// A replacement send found the pinned sequence no longer current on chain.
+export const PINNED_SEQUENCE_MISMATCH_MESSAGE = 'The previous transaction changed state. Reopen this screen to check it again.';
 
 export type AppErrorCode = (typeof AppErrorCode)[keyof typeof AppErrorCode];
 
@@ -48,3 +53,10 @@ export class AppError extends Error {
 
 export const isAppError = (error: unknown, code?: AppErrorCode): error is AppError =>
   error instanceof AppError && (code === undefined || error.code === code);
+
+// The broadcast outcome is unknown (timeout, network error): the tx may still commit, so it must not be re-sent blindly.
+export class TransactionPendingError extends AppError {
+  constructor(readonly hash: string, message = 'The transaction was sent but not confirmed yet', options?: { cause?: unknown }) {
+    super(AppErrorCode.TRANSACTION_PENDING, message, options);
+  }
+}

@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { elevation, makeStyles, radius, spacing } from '../../../theme';
 
-import { colors, elevation, radius, spacing } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -17,4 +15,4 @@ export const styles = StyleSheet.create({
     ...elevation.overlay,
   },
   message: { flex: 1 },
-});
+}));

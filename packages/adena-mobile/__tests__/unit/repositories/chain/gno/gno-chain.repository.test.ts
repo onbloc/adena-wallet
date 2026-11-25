@@ -1,7 +1,7 @@
 import { Secp256k1, Secp256k1Signature, sha256 } from '@cosmjs/crypto';
-import { fromBase64, toBase64 } from '@cosmjs/encoding';
+import { fromBase64, toBase64, toHex } from '@cosmjs/encoding';
 import { Any } from '@gnolang/gno-js-client';
-import { PubKeySecp256k1, Tx } from '@gnolang/tm2-js-client';
+import { InsufficientFeeError, PubKeySecp256k1, Tx } from '@gnolang/tm2-js-client';
 
 import { AppError } from '../../../../../src/core/errors';
 import { deriveKeyPair, KeyPair } from '../../../../../src/crypto/key-pair';
@@ -11,7 +11,7 @@ import { DEFAULT_GNO_FEE_POLICY, GnoChainRepository } from '../../../../../src/r
 import { GnoMessage } from '../../../../../src/repositories/chain/gno/gno-messages';
 import { feeSizeHeadroomBytes } from '../../../../../src/repositories/chain/gno/gno-tx-encoder';
 import { BUILT_IN_NETWORKS } from '../../../../../src/resources';
-import { createFakeGnoProvider } from '../../../../helpers/fake-gno-provider';
+import { createFakeGnoProvider, txNotFoundError } from '../../../../helpers/fake-gno-provider';
 import { TEST_MNEMONIC } from '../../../../helpers/test-container';
 
 const network = { ...BUILT_IN_NETWORKS[0], chainId: 'test-chain' };
@@ -363,6 +363,19 @@ describe('GnoChainRepository', () => {
       expect(await Secp256k1.verifySignature(signature, sha256(signBytes), keyPair.publicKey)).toBe(true);
     });
 
+    it('reports the signer state, and signs a pinned sequence only while it is the on-chain one', async () => {
+      const { repository, state } = setup();
+
+      await expect(repository.signTransaction(draftOf([send()]), keyPair, network)).resolves.toMatchObject({ sequence: '3', accountNumber: '7' });
+      await expect(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '3', accountNumber: '7' })).resolves.toMatchObject({ sequence: '3' });
+
+      state.sequence = '4';
+      await expect(errorOf(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '3', accountNumber: '7' })))
+        .resolves.toMatchObject({ code: 'PREVIOUS_TRANSACTION_PENDING' });
+      await expect(errorOf(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '4', accountNumber: '8' })))
+        .resolves.toMatchObject({ code: 'PREVIOUS_TRANSACTION_PENDING' });
+    });
+
     it('refuses to sign for a different chain', async () => {
       const { repository } = setup({ chainId: 'other-chain' });
 
@@ -388,7 +401,7 @@ describe('GnoChainRepository', () => {
     it('broadcasts in commit mode and returns hash, height and data', async () => {
       const { repository, state, mutable } = setup();
 
-      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'HASH', height: '42', data: undefined });
+      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'HASH', height: '42', data: undefined, committed: true });
       expect(state.broadcasts).toEqual(['AAAA']);
 
       let endpoint: unknown;
@@ -398,21 +411,107 @@ describe('GnoChainRepository', () => {
         return { hash: 'H2', height: '9', deliver_tx: { ResponseBase: { Data: 'ZGF0YQ==' } } };
       };
 
-      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'H2', height: '9', data: 'ZGF0YQ==' });
+      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'H2', height: '9', data: 'ZGF0YQ==', committed: true });
       expect(endpoint).toBe('broadcast_tx_commit');
     });
 
-    it('wraps broadcast failures as TRANSACTION_FAILED', async () => {
+    it('wraps node verdicts (TM2Error) as TRANSACTION_FAILED', async () => {
       const { repository, mutable } = setup();
 
       mutable.sendTransaction = async () => {
-        throw new Error('insufficient fee');
+        throw new InsufficientFeeError('fee too low');
       };
 
       await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_FAILED', message: 'insufficient fee' });
-      mutable.sendTransaction = () => Promise.reject(undefined);
-      await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ message: 'Broadcast failed' });
       await expect(errorOf(new GnoChainRepository(failingFactory).broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+    });
+
+    // e.g. broadcast_tx_commit timing out while the tx still commits.
+    it('reports transport failures as pending with the tx hash', async () => {
+      const { repository, mutable } = setup();
+      const hash = toHex(sha256(fromBase64('AAAA'))).toUpperCase();
+
+      mutable.sendTransaction = async () => {
+        throw new Error('timed out waiting for tx to be included in a block');
+      };
+
+      await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_PENDING', hash });
+      mutable.sendTransaction = () => Promise.reject(undefined);
+      await expect(errorOf(repository.broadcastTransaction({ encoded: 'AAAA' }, network))).resolves.toMatchObject({ code: 'TRANSACTION_PENDING', hash });
+    });
+
+    it('reports the same hash before broadcasting as a pending error carries', async () => {
+      const { repository, mutable } = setup();
+      const signed = await repository.signTransaction(draftOf([send()]), keyPair, network);
+
+      mutable.sendTransaction = async () => {
+        throw new Error('timed out');
+      };
+
+      const error = await errorOf(repository.broadcastTransaction(signed, network));
+
+      expect(repository.transactionHash(signed)).toMatch(/^[0-9A-F]{64}$/);
+      expect(error).toMatchObject({ code: 'TRANSACTION_PENDING', hash: repository.transactionHash(signed) });
+    });
+  });
+
+  describe('getTransactionStatus', () => {
+    it('reads the committed result and treats lookup failures as pending', async () => {
+      const { repository, mutable } = setup();
+      let asked: unknown;
+
+      mutable.getTransaction = async (hash: never) => {
+        asked = hash;
+        return { tx_result: { ResponseBase: { Error: null } } };
+      };
+
+      await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('committed');
+      expect(asked).toBe('ABCD');
+      mutable.getTransaction = async () => ({ tx_result: { ResponseBase: { Error: { '@type': '/std.OutOfGasError' } } } });
+      await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('failed');
+      mutable.getTransaction = async () => {
+        throw new Error('tx not found');
+      };
+
+      await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('pending');
+      await expect(new GnoChainRepository(failingFactory).getTransactionStatus('ABCD', network)).resolves.toBe('pending');
+    });
+  });
+
+  describe('findTransaction', () => {
+    it('reports a hash the node does not know as null and throws on any other failure', async () => {
+      const { repository, state, mutable } = setup();
+
+      state.transactions.ABCD = 'committed';
+      await expect(repository.findTransaction('ABCD', network)).resolves.toBe('committed');
+      state.transactions.ABCD = 'failed';
+      await expect(repository.findTransaction('ABCD', network)).resolves.toBe('failed');
+      await expect(repository.findTransaction('EEEE', network)).resolves.toBeNull();
+
+      mutable.getTransaction = async () => {
+        throw new Error('socket hang up');
+      };
+
+      await expect(errorOf(repository.findTransaction('ABCD', network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(errorOf(new GnoChainRepository(failingFactory).findTransaction('ABCD', network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      expect(txNotFoundError('X').message).toContain('Could not find tx result for hash');
+    });
+  });
+
+  describe('getAccountSequence', () => {
+    it('reads the on-chain sequence and throws when it cannot', async () => {
+      const { repository, state, mutable } = setup();
+
+      state.sequence = '12';
+      await expect(repository.getAccountSequence(caller, network)).resolves.toBe('12');
+
+      mutable.getAccount = async () => ({ BaseAccount: { sequence: 'x' } });
+      await expect(errorOf(repository.getAccountSequence(caller, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      mutable.getAccount = async () => {
+        throw new Error('timeout');
+      };
+
+      await expect(errorOf(repository.getAccountSequence(caller, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
     });
   });
 });

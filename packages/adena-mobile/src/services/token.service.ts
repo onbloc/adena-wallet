@@ -22,7 +22,7 @@ export class TokenService {
     const assets = this.chainRegistry.assets(network);
     const address = this.accountService.getAddress(account, network);
     const [curated, discovered] = await Promise.all([
-      assets.getCuratedTokens(network).catch(() => [] as Token[]),
+      assets.getCuratedTokens(network).catch(() => null),
       assets.discoverHeldTokens(address, network).catch(() => [] as Token[]),
     ]);
     // Read after the network calls so visibility or custom-token changes made meanwhile are kept.
@@ -32,7 +32,7 @@ export class TokenService {
 
     // Network coins (GNOT; ATONE + PHOTON) are always listed first and cannot be hidden.
     getDefaultTokensFor(network).forEach((token) => {
-      byId.set(token.id, toManaged({ ...token, ...curated.find(item => item.id === token.id) }, 'default'));
+      byId.set(token.id, toManaged({ ...token, ...curated?.find(item => item.id === token.id) }, 'default'));
     });
     stored.filter(token => !token.isNative).forEach(token => byId.set(token.id, token));
     discovered.forEach((token) => {
@@ -42,9 +42,20 @@ export class TokenService {
     });
     // Refresh metadata from the latest resources without touching user choices.
     const merged = [...byId.values()].map((token) => {
+      // Without the curated list, keep the last known metadata and listing.
+      if (!curated) {
+        return token;
+      }
+
       const fresh = curated.find(item => item.id === token.id);
 
-      return fresh ? { ...token, ...fresh, visible: token.isNative || token.visible, source: token.source } : token;
+      if (fresh) {
+        return { ...token, ...fresh, visible: token.isNative || token.visible, source: token.source, listed: true };
+      }
+
+      const { listed: _listed, ...rest } = token;
+
+      return rest;
     });
 
     // A refresh that outlived the account (removal, reset) must not write its list back.
@@ -53,6 +64,14 @@ export class TokenService {
     }
 
     return merged;
+  }
+
+  // Network coins plus the last saved list, without any network call (e.g. for local search).
+  getCachedTokenList(account: Account, network: Network): ManagedToken[] {
+    const coins = getDefaultTokensFor(network).map(token => toManaged(token, TokenSource.DEFAULT));
+    const stored = (this.tokenListRepository.get(account.id, network.id) ?? []).filter(token => !coins.some(coin => coin.id === token.id));
+
+    return [...coins, ...stored];
   }
 
   getStoredToken(account: Account, network: Network, tokenId: string): ManagedToken | undefined {
@@ -81,7 +100,8 @@ export class TokenService {
 
     const list = this.tokenListRepository.get(account.id, network.id) ?? [];
     const existing = list.find(item => item.id === token.id);
-    const managed = toManaged(token, existing?.source ?? TokenSource.CUSTOM);
+    // An explicit add makes a discovered token the user's own, so the unknown-token filter no longer hides it.
+    const managed = toManaged(token, existing?.source === TokenSource.DEFAULT ? TokenSource.DEFAULT : TokenSource.CUSTOM);
 
     this.tokenListRepository.save(account.id, network.id, [...list.filter(item => item.id !== token.id), managed]);
     return managed;

@@ -7,9 +7,11 @@ export const styles = StyleSheet.create({
     height: sizes.topBar,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.space8,
+    paddingHorizontal: sizes.screenInset,
     gap: spacing.space4,
   },
   title: { flexShrink: 1, paddingHorizontal: spacing.space8 },
-  trailing: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.space8, paddingRight: spacing.space4 },
+  // Without a leading control the title aligns with the content edge.
+  titleFlush: { paddingLeft: 0 },
+  trailing: { marginLeft: 'auto', flexDirection: 'row', alignItems: 'center', gap: spacing.space8 },
 });

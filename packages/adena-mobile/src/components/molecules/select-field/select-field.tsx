@@ -1,9 +1,9 @@
 import React, { ReactElement } from 'react';
-import { Pressable, PressableStateCallbackType, View } from 'react-native';
+import { Pressable, PressableStateCallbackType, StyleProp, View, ViewStyle } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, Text } from '../../atoms';
-import { styles } from './select-field.styles';
+import { useStyles } from './select-field.styles';
 
 export interface SelectFieldProps {
   label: string;
@@ -14,7 +14,10 @@ export interface SelectFieldProps {
 }
 
 export const SelectField = ({ label, value, placeholder, onPress, disabled = false }: SelectFieldProps): ReactElement => {
-  const stylePressable = ({ pressed }: PressableStateCallbackType): (false | { minHeight: 52; borderRadius: 12; paddingHorizontal: 12; flexDirection: 'row'; alignItems: 'center'; backgroundColor: '#FFFFFF' } | { backgroundColor: '#E6E6E6'; borderColor: '#E6E6E6' } | { borderColor: '#858585' | '#121212'; borderWidth: number })[] => [
+  const styles = useStyles();
+  const colors = useThemeColors();
+
+  const stylePressable = ({ pressed }: PressableStateCallbackType): StyleProp<ViewStyle> => [
     styles.field,
     { borderColor: pressed ? colors.border.focus : colors.border.input, borderWidth: pressed ? 1.5 : 1 },
     disabled && styles.disabled,

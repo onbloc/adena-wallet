@@ -9,7 +9,7 @@ import { FakeHttpClient } from '../../helpers/fake-http';
 
 const SERVICE_KEYS: (keyof Services)[] = [
   'walletService', 'accountService', 'networkService', 'balanceService', 'tokenService', 'priceService',
-  'marketDataService', 'nftService', 'activityService', 'addressBookService', 'exploreService', 'appResetService',
+  'marketDataService', 'nftService', 'activityService', 'addressBookService', 'exploreService', 'onrampService', 'appResetService',
   'transactionService', 'preferenceService', 'migrationService',
 ];
 
@@ -41,7 +41,7 @@ describe('createContainer', () => {
     const gno = createFakeGnoProvider();
     const http = new FakeHttpClient();
     const priceRepository = { isSupported: jest.fn(() => true), getPrices: jest.fn(async () => []) };
-    const marketDataRepository = { getMarketData: jest.fn(async () => ({}) as never) };
+    const marketDataRepository = { isSupported: jest.fn(() => true), getMarketData: jest.fn(async () => ({}) as never), getTokenInfo: jest.fn(async () => ({}) as never) };
     const container = createContainer({
       ...baseInfra(),
       http,
@@ -55,6 +55,14 @@ describe('createContainer', () => {
     expect(hasModule(container, ChainFamily.GNO)).toBe(true);
     expect(container.priceService).toBeDefined();
     expect(container.marketDataService).toBeDefined();
+  });
+
+  it('passes an injected onramp config to the onramp service', () => {
+    const provider = { id: 'p', name: 'P', paymentMethods: [], urlTemplate: 'https://p.example/?a={asset}', assets: { 'gno-test:ugnot': 'GNOT' } };
+    const container = createContainer({ ...baseInfra(), onrampConfig: { providers: [provider] } });
+
+    expect(container.onrampService.getProviders({ id: 'gno-test' } as Network, 'ugnot')).toEqual([provider]);
+    expect(createContainer(baseInfra()).onrampService.getProviders({ id: 'gnoland-1' } as Network, 'ugnot')).toEqual([]);
   });
 
   it('prefers every service override', () => {

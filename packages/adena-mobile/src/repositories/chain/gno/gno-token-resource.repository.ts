@@ -28,6 +28,8 @@ export interface CuratedTokenList {
   tokens: Token[];
   // Transfer routes keyed by registry key.
   routes: Record<string, Record<string, Grc20RouteFunc>>;
+  // False when the GRC20 list could not be fetched; such a list must not be read as delistings.
+  complete: boolean;
 }
 
 const CACHE_TTL_MS = 10 * 60 * 1000;
@@ -67,8 +69,14 @@ export class GnoTokenResourceRepository {
     }
 
     const value = this.load(network);
+    const evict = (): void => {
+      if (this.cache.get(network.id)?.value === value) {
+        this.cache.delete(network.id);
+      }
+    };
 
-    value.catch(() => this.cache.delete(network.id));
+    // An incomplete list is served once but not cached, so the next call retries.
+    value.then(list => !list.complete && evict(), evict);
     this.cache.set(network.id, { at: Date.now(), value });
     return value;
   }
@@ -81,7 +89,7 @@ export class GnoTokenResourceRepository {
     const native = getNativeTokenFor(network);
     const [nativeItems, grc20Items] = await Promise.all([
       this.http.request<(TokenResourceItem & { denom: string })[]>(`${this.baseUrl}/gno-native/${network.id}.json`).catch(() => []),
-      this.http.request<Grc20ResourceItem[]>(`${this.baseUrl}/grc20/${network.id}.json`).catch(() => []),
+      this.http.request<Grc20ResourceItem[]>(`${this.baseUrl}/grc20/${network.id}.json`).catch(() => null),
     ]);
 
     const nativeOverlay = nativeItems.find(item => item.denom === native.denom);
@@ -93,7 +101,7 @@ export class GnoTokenResourceRepository {
     }];
     const routes: CuratedTokenList['routes'] = {};
 
-    for (const item of grc20Items) {
+    for (const item of grc20Items ?? []) {
       const id = toRegistryKey(item.pkg_path, item.symbol);
 
       if (!parseRegistryKey(id) || !Number.isInteger(item.decimals)) {
@@ -121,6 +129,6 @@ export class GnoTokenResourceRepository {
       }
     }
 
-    return { tokens, routes };
+    return { tokens, routes, complete: grc20Items !== null };
   }
 }

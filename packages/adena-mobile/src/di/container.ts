@@ -1,34 +1,43 @@
 import { FEATURES } from '../config/features';
+import { GnoswapApiClient } from '../infrastructure/http/gnoswap-api.client';
 import { FetchHttpClient, HttpClient } from '../infrastructure/http/http-client';
 import { OnblocApiClient } from '../infrastructure/http/onbloc-api.client';
 import { StorageAccountRepository } from '../repositories/account.repository';
+import { StorageAccountPhotoRepository } from '../repositories/account-photo.repository';
 import { StorageAddressBookRepository } from '../repositories/address-book.repository';
 import { SecureBiometricCredentialRepository } from '../repositories/biometric-credential.repository';
 import { ChainModule, ChainRegistry } from '../repositories/chain/chain-registry';
 import { createCosmosModule } from '../repositories/chain/cosmos/cosmos-module';
 import { createGnoModule } from '../repositories/chain/gno/gno-module';
 import { createCachedGnoProviderFactory } from '../repositories/chain/gno/gno-provider';
-import { MarketDataRepository, MockMarketDataRepository } from '../repositories/market-data.repository';
+import { StorageConnectedAppRepository } from '../repositories/connected-app.repository';
+import { DexMarketDataRepository, MarketDataRepository } from '../repositories/market-data.repository';
 import { StorageNetworkRepository } from '../repositories/network.repository';
 import { StorageNftPreferenceRepository } from '../repositories/nft-preference.repository';
 import { SecurePasswordAttemptRepository } from '../repositories/password-attempt.repository';
+import { PendingBroadcastRepository, StoragePendingBroadcastRepository } from '../repositories/pending-broadcast.repository';
 import { StoragePreferenceRepository } from '../repositories/preference.repository';
 import { ApiPriceRepository, PriceRepository } from '../repositories/price.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
+import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
 import { SecureStore } from '../security/secure-store';
 import { ScryptXChaChaVaultCipher, VaultCipher } from '../security/vault-cipher';
 import { AccountService } from '../services/account.service';
+import { AccountPhotoService } from '../services/account-photo.service';
 import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
 import { BalanceService } from '../services/balance.service';
+import { ConnectedAppService } from '../services/connected-app.service';
 import { ExploreService } from '../services/explore.service';
+import { HapticEngine, HapticsService, NOOP_HAPTIC_ENGINE } from '../services/haptics.service';
 import { KeyringSession } from '../services/keyring-session';
 import { MarketDataService } from '../services/market-data.service';
 import { MigrationService } from '../services/migration.service';
 import { NetworkService } from '../services/network.service';
 import { NftService } from '../services/nft.service';
+import { OnrampService } from '../services/onramp.service';
 import { PasswordAttemptLimiter } from '../services/password-attempt-limiter';
 import { PreferenceService } from '../services/preference.service';
 import { PriceService } from '../services/price.service';
@@ -51,11 +60,19 @@ export interface Infrastructure {
   marketDataRepository?: MarketDataRepository;
   // Wall clock, injectable for tests.
   now?: () => number;
+  // Bundled onramp providers unless a test passes its own.
+  onrampConfig?: OnrampConfig;
+  // Silent unless the native container passes the device engine.
+  hapticEngine?: HapticEngine;
+  // Picks new accounts' avatar colors; injectable for deterministic tests.
+  random?: () => number;
 }
 
 export interface Services {
   walletService: WalletService;
   accountService: AccountService;
+  accountPhotoService: AccountPhotoService;
+  hapticsService: HapticsService;
   networkService: NetworkService;
   balanceService: BalanceService;
   tokenService: TokenService;
@@ -65,13 +82,19 @@ export interface Services {
   activityService: ActivityService;
   addressBookService: AddressBookService;
   exploreService: ExploreService;
+  onrampService: OnrampService;
   appResetService: AppResetService;
   transactionService: TransactionService;
+  connectedAppService: ConnectedAppService;
   preferenceService: PreferenceService;
   migrationService: MigrationService;
 }
 
-export type AppContainer = Services & { keyringSession: KeyringSession; chainRegistry: ChainRegistry };
+export type AppContainer = Services & {
+  keyringSession: KeyringSession;
+  chainRegistry: ChainRegistry;
+  pendingBroadcastRepository: PendingBroadcastRepository;
+};
 
 export const createContainer = (infra: Infrastructure, overrides: Partial<Services> = {}): AppContainer => {
   const { secureStore, keyValueStore } = infra;
@@ -88,17 +111,21 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const biometricRepository = new SecureBiometricCredentialRepository(secureStore);
   const accountRepository = new StorageAccountRepository(keyValueStore);
   const networkRepository = new StorageNetworkRepository(keyValueStore);
+  const connectedAppRepository = new StorageConnectedAppRepository(keyValueStore);
   const preferenceRepository = new StoragePreferenceRepository(keyValueStore);
   const tokenListRepository = new StorageTokenListRepository(keyValueStore);
+  const pendingBroadcastRepository = new StoragePendingBroadcastRepository(keyValueStore);
 
   const keyringSession = new KeyringSession();
   const attemptLimiter = new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore), infra.now);
   const vaultService = new VaultService(vaultRepository, infra.vaultCipher ?? new ScryptXChaChaVaultCipher(), attemptLimiter);
-  const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry);
+  const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry, infra.random);
+  const accountPhotoService = overrides.accountPhotoService ?? new AccountPhotoService(new StorageAccountPhotoRepository(keyValueStore));
   const networkService = overrides.networkService ?? new NetworkService(networkRepository, chainRegistry);
   const balanceService = overrides.balanceService ?? new BalanceService(chainRegistry, accountService);
   const transactionService = overrides.transactionService
-    ?? new TransactionService(chainRegistry, accountService, keyringSession);
+    ?? new TransactionService(chainRegistry, accountService, keyringSession, pendingBroadcastRepository);
+  const connectedAppService = overrides.connectedAppService ?? new ConnectedAppService(connectedAppRepository);
   const priceService = overrides.priceService ?? new PriceService(priceRepository);
   const tokenService = overrides.tokenService ?? new TokenService(chainRegistry, accountService, tokenListRepository);
   const nftService = overrides.nftService
@@ -109,22 +136,27 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   return {
     keyringSession,
     chainRegistry,
+    pendingBroadcastRepository,
     accountService,
+    accountPhotoService,
+    hapticsService: overrides.hapticsService ?? new HapticsService(preferenceRepository, infra.hapticEngine ?? NOOP_HAPTIC_ENGINE),
     networkService,
     balanceService,
     transactionService,
+    connectedAppService,
     tokenService,
     priceService,
     marketDataService: overrides.marketDataService
-      ?? new MarketDataService(infra.marketDataRepository ?? new MockMarketDataRepository(), priceService),
+      ?? new MarketDataService(infra.marketDataRepository ?? new DexMarketDataRepository(new GnoswapApiClient(http), DEX_API_CONFIG, infra.now)),
     nftService,
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
     exploreService: overrides.exploreService ?? new ExploreService(),
+    onrampService: overrides.onrampService ?? new OnrampService(infra.onrampConfig ?? ONRAMP_CONFIG),
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService: overrides.walletService
-      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService], biometricRepository, preferenceRepository, resetMarker),
+      ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker),
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
   };

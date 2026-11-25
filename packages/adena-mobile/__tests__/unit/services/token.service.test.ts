@@ -29,6 +29,18 @@ describe('TokenService', () => {
   const address = fakeAddress(fromBase64(account.publicKey), GNO_NETWORK);
   const gnot = getDefaultTokensFor(GNO_NETWORK)[0];
 
+  describe('getCachedTokenList', () => {
+    it('lists the network coins and the saved tokens without network calls', () => {
+      const { service, repository, assets } = setup();
+
+      repository.save(account.id, GNO_NETWORK.id, [managed({ ...gnot, isNative: true, visible: true }), managed({ id: 'foo' })]);
+
+      expect(service.getCachedTokenList(account, GNO_NETWORK).map(token => token.id)).toEqual([gnot.id, 'foo']);
+      expect(service.getCachedTokenList(account, COSMOS_NETWORK).map(token => token.symbol)).toEqual(['ATONE', 'PHOTON']);
+      expect(assets.getCuratedTokens).not.toHaveBeenCalled();
+    });
+  });
+
   describe('getTokenList', () => {
     it('does not write back the list of an account removed during the refresh', async () => {
       const { service, repository, assets, accounts } = setup();
@@ -63,15 +75,39 @@ describe('TokenService', () => {
       expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')?.visible).toBe(false);
     });
 
+    it('keeps the listing and metadata of saved tokens when the curated list is unavailable', async () => {
+      const { service, repository, assets } = setup();
+      const foo = managed({ id: 'foo', name: 'Foo', imageUrl: 'https://foo.svg', source: TokenSource.DISCOVERED, listed: true });
+
+      repository.save(account.id, GNO_NETWORK.id, [foo]);
+      assets.getCuratedTokens.mockRejectedValue(new Error('The token list is unavailable'));
+
+      const listed = (await service.getTokenList(account, GNO_NETWORK)).find(token => token.id === 'foo');
+
+      expect(listed).toMatchObject({ listed: true, name: 'Foo', imageUrl: 'https://foo.svg' });
+      expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')?.listed).toBe(true);
+    });
+
     it('always lists the network coins first, enriched by curated metadata', async () => {
       const { service, repository, assets } = setup();
 
       assets.getCuratedTokens.mockResolvedValue([{ ...gnot, description: 'Native coin' }]);
       const list = await service.getTokenList(account, GNO_NETWORK);
 
-      expect(list).toEqual([{ ...gnot, description: 'Native coin', visible: true, source: 'default' }]);
+      expect(list).toEqual([{ ...gnot, description: 'Native coin', visible: true, source: 'default', listed: true }]);
       expect(repository.get(account.id, GNO_NETWORK.id)).toEqual(list);
       expect(assets.discoverHeldTokens).toHaveBeenCalledWith(address, GNO_NETWORK);
+    });
+
+    it('marks tokens found in the curated resources as listed and clears a stale flag', async () => {
+      const { service, repository, assets } = setup();
+
+      repository.save(account.id, GNO_NETWORK.id, [managed({ id: 'dropped', source: 'discovered', listed: true })]);
+      assets.getCuratedTokens.mockResolvedValue([makeToken({ id: 'curated' })]);
+      assets.discoverHeldTokens.mockResolvedValue([makeToken({ id: 'curated' }), makeToken({ id: 'spam' })]);
+      const list = await service.getTokenList(account, GNO_NETWORK);
+
+      expect(Object.fromEntries(list.map(token => [token.id, token.listed]))).toEqual({ ugnot: undefined, dropped: undefined, curated: true, spam: undefined });
     });
 
     it('lists both coins on AtomOne', async () => {
@@ -168,13 +204,31 @@ describe('TokenService', () => {
       expect(repository.get(account.id, GNO_NETWORK.id)).toHaveLength(1);
     });
 
-    it('re-adding keeps the original source, shows it again and does not duplicate', async () => {
+    it('re-adding a default token keeps its source, shows it again and does not duplicate', async () => {
       const { service, repository, assets } = setup();
 
-      repository.save(account.id, GNO_NETWORK.id, [managed({ id: 'foo', visible: false, source: 'discovered' })]);
+      repository.save(account.id, GNO_NETWORK.id, [managed({ id: 'foo', visible: false, source: 'default' })]);
       assets.findToken.mockResolvedValue(makeToken({ id: 'foo' }));
-      expect(await service.addCustomToken(account, GNO_NETWORK, 'foo')).toMatchObject({ source: 'discovered', visible: true });
+      expect(await service.addCustomToken(account, GNO_NETWORK, 'foo')).toMatchObject({ source: 'default', visible: true });
       expect(repository.get(account.id, GNO_NETWORK.id)).toHaveLength(1);
+    });
+
+    it('promotes an already discovered, unlisted token to custom and keeps it through a refresh', async () => {
+      const { service, repository, assets } = setup();
+      const foo = makeToken({ id: 'foo' });
+
+      assets.discoverHeldTokens.mockResolvedValue([foo]);
+      await service.getTokenList(account, GNO_NETWORK);
+      expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')).toMatchObject({ source: 'discovered' });
+
+      assets.findToken.mockResolvedValue(foo);
+      expect(await service.addCustomToken(account, GNO_NETWORK, 'foo')).toMatchObject({ source: 'custom', visible: true });
+
+      const refreshed = (await service.getTokenList(account, GNO_NETWORK)).filter(token => token.id === 'foo');
+
+      expect(refreshed).toHaveLength(1);
+      expect(refreshed[0]).toMatchObject({ source: 'custom', visible: true });
+      expect(refreshed[0].listed).toBeUndefined();
     });
 
     it('rejects ids missing from the registry', async () => {

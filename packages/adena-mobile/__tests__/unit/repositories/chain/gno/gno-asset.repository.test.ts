@@ -263,7 +263,7 @@ describe('GnoAssetRepository', () => {
       const odd = { ...fooToken, id: 'weird', pkgPath: undefined };
 
       http.on(`${BASE}/grc20/${network.id}.json`, []);
-      jest.spyOn(GnoTokenResourceRepository.prototype, 'get').mockResolvedValueOnce({ tokens: [], routes: { weird: { transfer: { name: 'Transfer', args: ['$to'] } } } });
+      jest.spyOn(GnoTokenResourceRepository.prototype, 'get').mockResolvedValueOnce({ tokens: [], complete: true, routes: { weird: { transfer: { name: 'Transfer', args: ['$to'] } } } });
       await expect(repository.buildTransferMessages({ ...params, token: odd })).resolves.toMatchObject([{ type: '/vm.m_call', value: { pkg_path: '' } }]);
     });
   });

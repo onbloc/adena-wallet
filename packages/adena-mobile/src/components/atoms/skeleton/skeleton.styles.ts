@@ -1,7 +1,5 @@
-import { StyleSheet } from 'react-native';
+import { makeStyles } from '../../../theme';
 
-import { colors } from '../../../theme';
-
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   base: { backgroundColor: colors.background.pressed },
-});
+}));

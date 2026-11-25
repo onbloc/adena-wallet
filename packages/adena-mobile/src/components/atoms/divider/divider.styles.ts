@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
-import { colors } from '../../../theme';
+import { makeStyles } from '../../../theme';
 
-export const styles = StyleSheet.create({
+export const useStyles = makeStyles(colors => ({
   line: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border.subtle, alignSelf: 'stretch' },
-});
+}));

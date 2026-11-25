@@ -1,18 +1,23 @@
-import React, { ReactElement, useState } from 'react';
-import { TextInput, TextInputProps, View } from 'react-native';
+import React, { ReactElement, Ref, useState } from 'react';
+import { TextInput, TextInputInstance, TextInputProps, View } from 'react-native';
 
-import { colors } from '../../../theme';
+import { useAppTheme } from '../../../hooks/use-app-theme';
+import { useThemeColors } from '../../../theme';
 import { Icon, IconButton } from '../../atoms';
-import { styles } from './search-field.styles';
+import { useStyles } from './search-field.styles';
 
 export interface SearchFieldProps extends Omit<TextInputProps, 'style' | 'value' | 'onChangeText' | 'editable'> {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
   disabled?: boolean;
+  ref?: Ref<TextInputInstance>;
 }
 
-export const SearchField = ({ value, onChangeText, placeholder, disabled = false, ...rest }: SearchFieldProps): ReactElement => {
+export const SearchField = ({ value, onChangeText, placeholder, disabled = false, ref, ...rest }: SearchFieldProps): ReactElement => {
+  const styles = useStyles();
+  const colors = useThemeColors();
+  const { scheme } = useAppTheme();
   const [focused, setFocused] = useState(false);
   const muted = disabled ? colors.text.disabled : colors.icon.primary;
 
@@ -26,13 +31,17 @@ export const SearchField = ({ value, onChangeText, placeholder, disabled = false
     <View style={[styles.field, focused && styles.focused]}>
       <Icon name='search' size={20} color={muted} />
       <TextInput
+        returnKeyType='search'
+        submitBehavior='blurAndSubmit'
         {...rest}
+        ref={ref}
         value={value}
         onChangeText={onChangeText}
         editable={!disabled}
         placeholder={placeholder}
         accessibilityLabel={placeholder}
         placeholderTextColor={colors.text.secondary}
+        keyboardAppearance={scheme}
         selectionColor={colors.text.primary}
         autoCapitalize='none'
         autoCorrect={false}

@@ -10,15 +10,32 @@ export interface NftCardProps {
   subtitle?: string;
   imageUri?: string | null;
   imageLoading?: boolean;
+  imageRetryKey?: string | number;
+  // Dense grids lead with a small subtitle label above an emphasized title.
+  compact?: boolean;
   onPress?: () => void;
 }
 
-export const NftCard = ({ title, subtitle, imageUri, imageLoading, onPress }: NftCardProps): ReactElement => (
-  <Pressable accessibilityRole='button' accessibilityLabel={title} onPress={onPress} style={styles.card}>
-    <NftImage uri={imageUri} loading={imageLoading} />
-    <View style={styles.texts}>
-      <Text variant='row' numberOfLines={1}>{title}</Text>
-      {subtitle && <Text variant='meta' color='secondary' numberOfLines={1}>{subtitle}</Text>}
-    </View>
+export const NftCard = ({ title, subtitle, imageUri, imageLoading, imageRetryKey, compact = false, onPress }: NftCardProps): ReactElement => (
+  <Pressable
+    accessibilityRole='button'
+    accessibilityLabel={compact && subtitle ? `${subtitle} ${title}` : title}
+    onPress={onPress}
+    style={styles.card}
+  >
+    <NftImage uri={imageUri} loading={imageLoading} retryKey={imageRetryKey} />
+    {compact
+      ? (
+          <View style={styles.texts}>
+            {subtitle && <Text variant='meta' numberOfLines={1}>{subtitle}</Text>}
+            <Text variant='row' numberOfLines={1}>{title}</Text>
+          </View>
+        )
+      : (
+          <View style={styles.texts}>
+            <Text variant='row' numberOfLines={1}>{title}</Text>
+            {subtitle && <Text variant='meta' color='secondary' numberOfLines={1}>{subtitle}</Text>}
+          </View>
+        )}
   </Pressable>
 );

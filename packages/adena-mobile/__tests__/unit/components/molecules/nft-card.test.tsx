@@ -19,6 +19,12 @@ describe('NftCard', () => {
     expect(screen.getByText('Punks')).toBeTruthy();
   });
 
+  it('leads with the subtitle in the compact layout', async () => {
+    await render(<NftCard compact title='#1' subtitle='Punk' />);
+    expect(screen.getByRole('button', { name: 'Punk #1' })).toBeTruthy();
+    expect(screen.getByText('Punk')).toBeTruthy();
+  });
+
   it('shows a loading image without subtitle', async () => {
     await render(<NftCard title='Loading' imageLoading />);
     expect(screen.getAllByLabelText('Loading').length).toBeGreaterThan(0);

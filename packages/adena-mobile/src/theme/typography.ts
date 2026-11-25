@@ -10,6 +10,7 @@ export const fontFamily = {
 
 export type TypographyRole
   = | 'display'
+    | 'largeTitle'
     | 'title'
     | 'section'
     | 'row'
@@ -20,6 +21,7 @@ export type TypographyRole
 
 export const typography: Record<TypographyRole, TextStyle> = {
   display: { fontFamily: fontFamily.bold, fontSize: 40, lineHeight: 44, letterSpacing: -0.8 },
+  largeTitle: { fontFamily: fontFamily.bold, fontSize: 34, lineHeight: 40, letterSpacing: -0.4 },
   title: { fontFamily: fontFamily.semiBold, fontSize: 26, lineHeight: 34 },
   section: { fontFamily: fontFamily.semiBold, fontSize: 18, lineHeight: 24 },
   row: { fontFamily: fontFamily.semiBold, fontSize: 16, lineHeight: 22 },

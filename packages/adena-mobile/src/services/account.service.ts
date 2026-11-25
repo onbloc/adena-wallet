@@ -2,7 +2,7 @@ import { fromBase64, toBase64 } from '@cosmjs/encoding';
 
 import { AppError, AppErrorCode } from '../core/errors';
 import { KeyringType } from '../crypto/keyring';
-import { Account } from '../domain/account';
+import { Account, ACCOUNT_NAME_MAX_LENGTH, AvatarColor, isAvatarColor, pickAvatarColor } from '../domain/account';
 import { Network } from '../domain/network';
 import { AccountRepository } from '../repositories/account.repository';
 import { ChainRegistry } from '../repositories/chain/chain-registry';
@@ -24,6 +24,7 @@ export class AccountService {
     private readonly accountRepository: AccountRepository,
     private readonly keyringSession: KeyringSession,
     private readonly chainRegistry: ChainRegistry,
+    private readonly random: () => number = Math.random,
   ) {}
 
   getAccounts(): Account[] {
@@ -72,7 +73,9 @@ export class AccountService {
   }
 
   // createAccount for callers already inside runExclusive (queuing again would deadlock).
-  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
+  // A given (e.g. backed-up) avatarColor is kept; otherwise the wallet's first account uses the
+  // default color and later ones get a random preset.
+  async appendAccount(keyringId: string, keyringType: KeyringType, name?: string, avatarColor?: AvatarColor): Promise<Account> {
     const epoch = this.keyringSession.epoch;
     const keyringAccounts = this.getAccounts().filter(account => account.keyringId === keyringId);
 
@@ -103,6 +106,7 @@ export class AccountService {
       hdIndex,
       publicKey,
       createdAt: Date.now(),
+      ...this.resolveAvatarColor(accounts, avatarColor),
     };
 
     this.accountRepository.saveAccounts([...accounts, account]);
@@ -114,18 +118,43 @@ export class AccountService {
     return account;
   }
 
+  private resolveAvatarColor(existing: Account[], avatarColor?: AvatarColor): Pick<Account, 'avatarColor'> {
+    if (isAvatarColor(avatarColor)) {
+      return { avatarColor };
+    }
+
+    return existing.length === 0 ? {} : { avatarColor: pickAvatarColor(this.random) };
+  }
+
   isDuplicatePublicKey(publicKey: string): boolean {
     return this.getAccounts().some(account => account.publicKey === publicKey);
   }
 
   renameAccount(accountId: string, name: string): Account {
-    const trimmed = name.trim();
+    return this.updateProfile(accountId, { name });
+  }
+
+  // Local profile edits; the avatar color is kept when not given.
+  updateProfile(accountId: string, profile: { name: string; avatarColor?: AvatarColor }): Account {
+    const trimmed = profile.name.trim();
 
     if (!trimmed) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'Account name is required');
     }
 
-    const accounts = this.getAccounts().map(account => (account.id === accountId ? { ...account, name: trimmed } : account));
+    // An unchanged legacy name stays valid so its color can still be edited.
+    if (trimmed.length > ACCOUNT_NAME_MAX_LENGTH && trimmed !== this.getAccount(accountId).name) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, `Enter a name up to ${ACCOUNT_NAME_MAX_LENGTH} characters`);
+    }
+
+    if (profile.avatarColor !== undefined && !isAvatarColor(profile.avatarColor)) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'Unknown avatar color');
+    }
+
+    this.getAccount(accountId);
+    const accounts = this.getAccounts().map(account => (account.id === accountId
+      ? { ...account, name: trimmed, ...(profile.avatarColor !== undefined && { avatarColor: profile.avatarColor }) }
+      : account));
 
     this.accountRepository.saveAccounts(accounts);
     return this.getAccount(accountId);

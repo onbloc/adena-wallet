@@ -47,6 +47,8 @@ export const FeeSelector = ({ options, selected, onSelect, customAdjustment, onC
           value={customAdjustment}
           onChangeText={onChangeCustomAdjustment}
           keyboardType='decimal-pad'
+          returnKeyType='done'
+          submitBehavior='blurAndSubmit'
           helper='Applied to the simulated gas usage, e.g. 1.5'
         />
       )}

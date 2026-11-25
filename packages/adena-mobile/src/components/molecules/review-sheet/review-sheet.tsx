@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, ReactElement } from 'react';
+import React, { PropsWithChildren, ReactElement, ReactNode } from 'react';
 
 import { Button } from '../../atoms';
 import { BottomSheet } from '../bottom-sheet';
@@ -11,6 +11,8 @@ export interface ReviewSheetProps {
   title: string;
   rows: { label: string; value: string; multiline?: boolean; emphasis?: boolean }[];
   fee: FeeSelectorProps;
+  // Rendered below the fee, e.g. the total including it.
+  totals?: ReactNode;
   error?: string;
   confirmLabel: string;
   confirming: boolean;
@@ -19,11 +21,12 @@ export interface ReviewSheetProps {
 }
 
 // Transaction review shared by token and NFT transfers: summary slot, details, fee tier, confirm.
-export const ReviewSheet = ({ visible, title, rows, fee, error, confirmLabel, confirming, onConfirm, onClose, children }: PropsWithChildren<ReviewSheetProps>): ReactElement => (
+export const ReviewSheet = ({ visible, title, rows, fee, totals, error, confirmLabel, confirming, onConfirm, onClose, children }: PropsWithChildren<ReviewSheetProps>): ReactElement => (
   <BottomSheet visible={visible} title={title} onClose={onClose} dismissible={!confirming}>
     {children}
     {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} emphasis={row.emphasis} />)}
     <FeeSelector {...fee} />
+    {totals}
     {error && <InlineAlert tone='error' title='Transaction failed' description={error} />}
     <Button label={confirmLabel} loadingLabel='Broadcasting…' loading={confirming} disabled={fee.tooLow} onPress={onConfirm} testID='review-confirm' />
   </BottomSheet>

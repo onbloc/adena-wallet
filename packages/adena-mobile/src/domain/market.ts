@@ -28,17 +28,23 @@ export interface MarketLink {
   url: string;
 }
 
+// Price history for one chart range; empty `chart` when the network has no market data source.
 export interface TokenMarketData {
   tokenId: string;
   networkId: string;
   range: ChartRange;
-  priceUsd: number;
-  // Percent change over `range`.
-  changePercent: number;
+  // Latest close in the range.
+  priceUsd?: number;
+  // Percent change from the range open to the latest close.
+  changePercent?: number;
   chart: PricePoint[];
-  stats: MarketStats;
+}
+
+// Range-independent token facts for the About, Stats and Links sections.
+export interface TokenMarketInfo {
+  tokenId: string;
+  networkId: string;
   about?: string;
+  stats: MarketStats;
   links: MarketLink[];
-  // True while the data comes from the mock repository instead of a market data source.
-  isSample: boolean;
 }

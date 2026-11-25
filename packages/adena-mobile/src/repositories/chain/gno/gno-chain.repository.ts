@@ -1,8 +1,8 @@
 import { ripemd160, Secp256k1, sha256 } from '@cosmjs/crypto';
-import { fromBase64, toBase64, toBech32 } from '@cosmjs/encoding';
-import { KeySigner, TransactionEndpoint, Tx } from '@gnolang/tm2-js-client';
+import { fromBase64, toBase64, toBech32, toHex } from '@cosmjs/encoding';
+import { KeySigner, TM2Error, TransactionEndpoint, Tx } from '@gnolang/tm2-js-client';
 
-import { AppError, AppErrorCode } from '../../../core/errors';
+import { AppError, AppErrorCode, PINNED_SEQUENCE_MISMATCH_MESSAGE, TransactionPendingError } from '../../../core/errors';
 import { TokenBalance } from '../../../domain/account';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
@@ -10,10 +10,13 @@ import {
   BroadcastResult,
   MessageSummary,
   SignedTransaction,
+  SignerSequence,
   TransactionDraft,
   TransactionFee,
+  TransactionLookup,
+  TransactionStatus,
 } from '../../../domain/transaction';
-import { isValidAddress } from '../../../utils/address';
+import { isValidAddress, normalizeAddress } from '../../../utils/address';
 import { formatTokenAmount, parseCoin } from '../../../utils/amount';
 import { BigNumber } from '../../../utils/big-number';
 import { ChainRepository, SigningKey, SimulationSigner } from '../chain-repository';
@@ -67,6 +70,11 @@ const decodeAbciData = (data: string | null): string => {
 const toNetworkError = (error: unknown): AppError =>
   error instanceof AppError ? error : new AppError(AppErrorCode.NETWORK_ERROR, (error as Error)?.message, { cause: error });
 
+// tm2 NoTxResultForHashError, relayed by the RPC client inside the JSON-RPC error text.
+const isTxNotFound = (error: unknown): boolean => /could not find tx result for hash/i.test((error as Error)?.message ?? '');
+
+const UINT = /^\d+$/;
+
 export class GnoChainRepository implements ChainRepository<GnoMessage> {
   readonly family = ChainFamily.GNO;
 
@@ -85,6 +93,10 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
 
   isValidAddress(address: string, network: Network): boolean {
     return isValidAddress(address, network.addressPrefix);
+  }
+
+  normalizeAddress(address: string, network: Network): string | null {
+    return normalizeAddress(address, network.addressPrefix);
   }
 
   async getChainId(network: Network): Promise<string> {
@@ -201,7 +213,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
 
     try {
       const tx = signed && signer.withKey
-        ? await signer.withKey(key => this.signGnoTx(provider, { ...draft, fee: probeFee }, key, network))
+        ? await signer.withKey(async key => (await this.signGnoTx(provider, { ...draft, fee: probeFee }, key, network)).tx)
         : buildSimulationGnoTx(draft.messages, probeFee, draft.memo, signer.publicKey);
       const simulation = await simulateGnoTx(provider, tx, denom);
       // The final fee can encode longer than the probe fee, and tx bytes are charged as gas.
@@ -236,17 +248,28 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
   }
 
   // Signs with draft.chainId; Wallet.signTransaction would re-read the chain id from the RPC.
-  private async signGnoTx(provider: GnoProvider, draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network): Promise<Tx> {
+  private async signGnoTx(
+    provider: GnoProvider,
+    draft: TransactionDraft<GnoMessage>,
+    key: SigningKey,
+    network: Network,
+    pin?: SignerSequence,
+  ): Promise<{ tx: Tx; accountNumber: string; sequence: string }> {
     const publicKey = Secp256k1.compressPubkey((await Secp256k1.makeKeypair(key.privateKey)).pubkey);
     const signer = new KeySigner(key.privateKey, publicKey, network.addressPrefix);
-    const account = await provider.getAccount(await signer.getAddress());
-    const tx = buildUnsignedGnoTx(draft.messages, draft.fee, draft.memo);
-    const signBytes = buildGnoSignBytes(tx, draft.chainId, account.BaseAccount.account_number, account.BaseAccount.sequence);
+    const { account_number: accountNumber, sequence } = (await provider.getAccount(await signer.getAddress())).BaseAccount;
 
-    return { ...tx, signatures: [buildGnoTxSignature(publicKey, await signer.signData(signBytes))] };
+    if (pin && (pin.sequence !== sequence || (pin.accountNumber !== undefined && pin.accountNumber !== accountNumber))) {
+      throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PINNED_SEQUENCE_MISMATCH_MESSAGE);
+    }
+
+    const tx = buildUnsignedGnoTx(draft.messages, draft.fee, draft.memo);
+    const signBytes = buildGnoSignBytes(tx, draft.chainId, accountNumber, sequence);
+
+    return { tx: { ...tx, signatures: [buildGnoTxSignature(publicKey, await signer.signData(signBytes))] }, accountNumber, sequence };
   }
 
-  async signTransaction(draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network): Promise<SignedTransaction> {
+  async signTransaction(draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network, pin?: SignerSequence): Promise<SignedTransaction> {
     const provider = await this.provider(network).catch((error) => {
       throw toNetworkError(error);
     });
@@ -257,13 +280,17 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     }
 
     try {
-      const signed = await this.signGnoTx(provider, draft, key, network);
+      const { tx, accountNumber, sequence } = await this.signGnoTx(provider, draft, key, network, pin);
 
-      return { encoded: toBase64(Tx.encode(signed).finish()) };
+      return { encoded: toBase64(Tx.encode(tx).finish()), accountNumber, sequence };
     }
     catch (error) {
       throw toNetworkError(error);
     }
+  }
+
+  transactionHash(signed: SignedTransaction): string {
+    return gnoTxHash(signed);
   }
 
   async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
@@ -274,10 +301,53 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     try {
       const result = await provider.sendTransaction(signed.encoded, TransactionEndpoint.BROADCAST_TX_COMMIT);
 
-      return { hash: result.hash, height: result.height, data: result.deliver_tx.ResponseBase.Data ?? undefined };
+      return { hash: result.hash, height: result.height, data: result.deliver_tx.ResponseBase.Data ?? undefined, committed: true };
     }
     catch (error) {
-      throw new AppError(AppErrorCode.TRANSACTION_FAILED, (error as Error)?.message ?? 'Broadcast failed', { cause: error });
+      // A TM2Error is the node's CheckTx/DeliverTx verdict; anything else (timeout, transport) leaves the outcome unknown.
+      if (error instanceof TM2Error) {
+        throw new AppError(AppErrorCode.TRANSACTION_FAILED, error.message || 'Broadcast failed', { cause: error });
+      }
+
+      throw new TransactionPendingError(gnoTxHash(signed), undefined, { cause: error });
+    }
+  }
+
+  getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
+    // Not indexed yet, or the node is unreachable.
+    return this.findTransaction(hash, network).then(found => found ?? 'pending', () => 'pending');
+  }
+
+  async findTransaction(hash: string, network: Network): Promise<TransactionLookup> {
+    try {
+      const result = await (await this.provider(network)).getTransaction(hash);
+
+      return result.tx_result.ResponseBase.Error ? 'failed' : 'committed';
+    }
+    catch (error) {
+      if (isTxNotFound(error)) {
+        return null;
+      }
+
+      throw toNetworkError(error);
+    }
+  }
+
+  async getAccountSequence(address: string, network: Network): Promise<string> {
+    try {
+      const sequence = (await (await this.provider(network)).getAccount(address)).BaseAccount.sequence;
+
+      if (!UINT.test(String(sequence))) {
+        throw new AppError(AppErrorCode.NETWORK_ERROR, 'Unexpected account sequence');
+      }
+
+      return String(sequence);
+    }
+    catch (error) {
+      throw toNetworkError(error);
     }
   }
 }
+
+// tm2 tx hash: sha256 of the encoded tx, hex like the RPC reports it.
+export const gnoTxHash = (signed: SignedTransaction): string => toHex(sha256(fromBase64(signed.encoded))).toUpperCase();

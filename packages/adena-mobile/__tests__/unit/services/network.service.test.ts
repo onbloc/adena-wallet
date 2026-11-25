@@ -113,6 +113,23 @@ describe('NetworkService', () => {
       expect(modules.gno.chain.getChainId).not.toHaveBeenCalled();
     });
 
+    it.each(['http://node.example.com', 'http://8.8.8.8:26657', 'http://172.32.0.1', 'HTTP://rpc.gno.land', 'http://[2001:db8::1]:26657'])('rejects public cleartext URL %p', async (rpcUrl) => {
+      const { service, modules } = setup();
+      const error = await catchError(() => service.addCustomNetwork({ networkName: 'x', rpcUrl, baseNetworkId: 'gnoland-1' }));
+
+      expect(error).toMatchObject({ code: 'INVALID_REQUEST', message: expect.stringMatching(/^Use an https:\/\/ URL/) });
+      expect(modules.gno.chain.getChainId).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      'http://localhost:26657', 'http://127.0.0.1:26657', 'http://10.0.2.2:26657', 'http://192.168.1.20:26657',
+      'http://172.16.0.5', 'http://gnodev.local:26657', 'http://devbox:26657', 'http://[::1]:26657',
+    ])('allows local cleartext URL %p for development', async (rpcUrl) => {
+      const { service } = setup();
+
+      await expect(service.addCustomNetwork({ networkName: 'x', rpcUrl, baseNetworkId: 'gnoland-1' })).resolves.toMatchObject({ rpcUrl });
+    });
+
     it('rejects an unknown base network', async () => {
       expect(await codeOf(() => setup().service.addCustomNetwork({ networkName: 'x', rpcUrl: 'https://n', baseNetworkId: 'nope' }))).toBe('INVALID_REQUEST');
     });

@@ -1,5 +1,5 @@
 import { ChainFamily, Network } from '../../../src/domain/network';
-import { accountExplorerUrl, tokenExplorerUrl, transactionExplorerUrl } from '../../../src/utils/explorer';
+import { accountExplorerUrl, explorerName, tokenExplorerUrl, transactionExplorerUrl } from '../../../src/utils/explorer';
 
 const token = { id: 'ugnot', symbol: 'GNOT', denom: 'ugnot', decimals: 6 };
 
@@ -52,5 +52,14 @@ describe('tokenExplorerUrl', () => {
   it('only links gno tokens', () => {
     expect(tokenExplorerUrl(network({ apiUrl: 'https://api' }), 'gno.land/r/foo')).toBe('https://gnoscan.io/tokens/gno.land/r/foo?chainId=test%2013');
     expect(tokenExplorerUrl(network({ family: ChainFamily.COSMOS, linkUrl: 'https://x' }), 'uatone')).toBeNull();
+  });
+});
+
+describe('explorerName', () => {
+  it('names Gnoscan for Gno and the configured explorer for Cosmos networks', () => {
+    expect(explorerName(network())).toBe('Gnoscan');
+    expect(explorerName(network({ family: ChainFamily.COSMOS, linkUrl: 'https://www.mintscan.io/atomone' }))).toBe('Mintscan');
+    expect(explorerName(network({ family: ChainFamily.COSMOS, linkUrl: 'https://explorer.example' }))).toBe('explorer');
+    expect(explorerName(network({ family: ChainFamily.COSMOS, linkUrl: 'https://mintscan.io.evil.example' }))).toBe('explorer');
   });
 });
