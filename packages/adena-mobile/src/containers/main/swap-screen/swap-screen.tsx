@@ -148,7 +148,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const [deadlineText, setDeadlineText] = useState('');
   // replacesPending: reviewed while a previous unconfirmed tx could be replaced; sent pinned to its sequence.
   const [prepared, setPrepared] = useState<(PreparedSwap & { replacesPending?: boolean }) | null>(null);
-  // Native max per input/output/balance; an edit bumps the epoch so a late estimate is dropped.
+  // Estimated native max per pair, balance and draft settings; an edit bumps the epoch so a late estimate is dropped.
   const [maxCache, setMaxCache] = useState<{ key: string; result: SwapMaxResult } | null>(null);
   const [maxPercent, setMaxPercent] = useState<SwapPercent | null>(null);
   const [maxError, setMaxError] = useState<string>();
@@ -322,7 +322,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     setMaxApproximate(false);
   };
 
-  const maxKey = input ? `${network.id}|${account?.id ?? ''}|${input.id}|${output?.id ?? ''}|${inputBalance ?? ''}` : '';
+  const maxKey = input ? `${network.id}|${account?.id ?? ''}|${input.id}|${output?.id ?? ''}|${inputBalance ?? ''}|${settings.slippage}|${settings.deadlineMinutes}` : '';
 
   const handleKeyPress = (key: KeypadKey): void => {
     if (!exactToken) {
@@ -393,7 +393,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
           return;
         }
 
-        setMaxCache({ key, result });
+        // An approximate fallback is not kept, so the next Max tap estimates again.
+        setMaxCache(result.approximate ? null : { key, result });
         apply(result);
       })
       .catch((failure: unknown) => {

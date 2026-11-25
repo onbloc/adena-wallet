@@ -707,6 +707,46 @@ describe('SwapScreen pending settlement', () => {
   }, 15_000);
 });
 
+describe('SwapScreen Max estimate', () => {
+  beforeEach(resetStores);
+
+  afterEach(() => act(() => new Promise<void>((done) => {
+    setTimeout(done, 0);
+  })));
+
+  const estimate = { gasUsed: '1000000', gasPrice: '0.001', denom: 'ugnot', policy: GNO_FEE_POLICY, storageDeposit: '2500000' };
+
+  it('estimates again on Max after an approximate result once estimation recovers', async () => {
+    const { env } = await setup();
+    const estimateFee = jest.spyOn(env.container.transactionService, 'estimateFee').mockRejectedValueOnce(new Error('timeout'));
+
+    await pickGns();
+    await press('Max');
+    expect(await screen.findByText('99', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.getByText(/The amount is approximate\./)).toBeTruthy();
+
+    estimateFee.mockResolvedValue(estimate);
+    await press('Max');
+    expect(await screen.findByText('97.49868', undefined, LOOKUP)).toBeTruthy();
+    expect(screen.queryByText(/The amount is approximate\./)).toBeNull();
+    expect(estimateFee).toHaveBeenCalledTimes(2);
+  });
+
+  it('estimates again when the swap settings that build the draft change', async () => {
+    const { env } = await setup();
+    const estimateFee = jest.spyOn(env.container.transactionService, 'estimateFee').mockResolvedValue(estimate);
+
+    await pickGns();
+    await press('Max');
+    expect(await screen.findByText('97.49868', undefined, LOOKUP)).toBeTruthy();
+    expect(estimateFee).toHaveBeenCalledTimes(1);
+
+    await act(async () => env.container.preferenceService.update({ swapSlippage: 1 }));
+    await press('Max');
+    await waitFor(() => expect(estimateFee).toHaveBeenCalledTimes(2), LOOKUP);
+  });
+});
+
 describe('swap screen helpers', () => {
   const token = (id: string, symbol: string, volume?: number): SwapToken => ({ id, symbol, name: symbol, swapPath: id, volume24hUsd: volume } as SwapToken);
 
