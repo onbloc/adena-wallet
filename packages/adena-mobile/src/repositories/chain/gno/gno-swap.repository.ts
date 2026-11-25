@@ -83,20 +83,19 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
     };
   }
 
-  // Every page up to the bound; ends at an empty page, or one that only repeats pools (an API ignoring `page`).
+  // Every page up to the bound. Only an empty page ends the list: a page that repeats known pools says nothing
+  // about later pages, so the search goes on, and reaching the bound leaves it incomplete (a failed quote, not no route).
   private async listPools(apiUrl: string, feeTiers: number[]): Promise<{ pools: SwapPool[]; complete: boolean }> {
     const pools = new Map<string, SwapPool>();
 
     for (let page = 1; page <= MAX_POOL_PAGES; page += 1) {
       const raw = await this.api.getPools(apiUrl, page, POOL_PAGE_SIZE);
-      const parsed = parsePools(raw, feeTiers);
-      const fresh = parsed.filter(pool => !pools.has(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`));
 
-      if ((raw as unknown[]).length === 0 || (parsed.length > 0 && fresh.length === 0)) {
+      if ((raw as unknown[]).length === 0) {
         return { pools: [...pools.values()], complete: true };
       }
 
-      fresh.forEach(pool => pools.set(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`, pool));
+      parsePools(raw, feeTiers).forEach(pool => pools.set(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`, pool));
     }
 
     return { pools: [...pools.values()], complete: false };

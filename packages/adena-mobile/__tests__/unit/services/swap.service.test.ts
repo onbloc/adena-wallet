@@ -110,6 +110,19 @@ describe('SwapService', () => {
     await expectCode(bounded.service.getQuote({ network: bounded.network, input: bounded.gnot, output: bounded.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
   });
 
+  it('keeps searching past a page that only repeats known pools', async () => {
+    const [direct, ...others] = poolsDev.data.filter(pool => [pool.tokenA.path, pool.tokenB.path].sort().join() === [WUGNOT, GNS].sort().join());
+    const unrelated = poolsDev.data.filter(pool => !others.includes(pool) && pool !== direct);
+    const repeated = await setup({ route: routeDevNone, poolPages: [unrelated, unrelated, [direct]] });
+
+    expect((await repeated.service.getQuote({ network: repeated.network, input: repeated.gnot, output: repeated.gns, exactType: 'EXACT_IN', amount: '1000000' })).routes[0].hops).toHaveLength(1);
+
+    // An API that ignores `page` repeats the same pools up to the bound: a partial search, so Retry, not no liquidity.
+    const ignoring = await setup({ route: routeDevNone, poolPages: Array.from({ length: MAX_POOL_PAGES }, () => unrelated) });
+
+    await expectCode(ignoring.service.getQuote({ network: ignoring.network, input: ignoring.gnot, output: ignoring.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+  });
+
   it('reports no route for an empty answer, failing dry runs or a partial fill', async () => {
     const empty = await setup({ route: { estimatedRoutes: [] }, pools: [] });
 
