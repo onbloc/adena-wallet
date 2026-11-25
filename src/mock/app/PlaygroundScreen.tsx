@@ -33,7 +33,7 @@ import {
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
-import type { Balances } from '../wallet/tokens';
+import { TOKEN_SYMBOLS, type Balances } from '../wallet/tokens';
 import {
   ARGUMENT_SCENARIOS,
   ENGLISH_SCENARIOS,
@@ -280,7 +280,7 @@ export default function PlaygroundScreen() {
         );
       };
       const agent = onblocWallet
-        ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction, session: history })
+        ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction, session: history, tokenSymbols: TOKEN_SYMBOLS })
         : new AIAgent({ llm, harness, session: history });
       return session.run(agent, settings, {
         account: useTools ? onbloc?.account : undefined, signal, allowTransactionPreparation: !!onblocWallet,

@@ -5,7 +5,7 @@ import { AIAgent, type PreparedTransaction, type WalletSdk } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, type OnblocMcpConfig } from '../../harness/mcp';
 import { GenerateEventType, type LLM } from '../../llm/core';
-import { ACCOUNT, FAKE_ENDPOINT, fakeReads } from './fixture';
+import { ACCOUNT, FAKE_ENDPOINT, TOKEN_SYMBOLS, fakeReads } from './fixture';
 import { TimingLLM, type Stage } from './timing';
 
 export type ScenarioRun = {
@@ -87,6 +87,7 @@ export function createScenarioRunner({
       }),
       wallet: createWallet(onbloc),
       onTransaction: (transaction) => { prepared.push(transaction); },
+      tokenSymbols: TOKEN_SYMBOLS,
     });
     return { agent, prepared };
   }

@@ -10,6 +10,9 @@ export const GNS_PATH = 'gno.land/r/gnoswap/gns';
 /** Never contacted: the fake MCP answers in process. */
 export const FAKE_ENDPOINT = 'https://example.test/mcp';
 
+/** The tokens the scenarios' wallet can transfer: GNOT, and GNS held as a GRC20 token. */
+export const TOKEN_SYMBOLS = ['GNOT', 'GNS'] as const;
+
 // The account holds 10 GNOT and 250 GNS, both with six decimals.
 const GNOT_UNITS = '10000000';
 const GNS = { address: ACCOUNT, tokenId: GNS_PATH, packagePath: GNS_PATH, symbol: 'GNS', amount: '250000000', decimals: 6 };
@@ -23,9 +26,9 @@ const GNS_INFO = { tokenKey: GNS_PATH, symbol: 'GNS', name: 'GnoSwap', decimals:
 /** A fresh in-process Onbloc MCP with the account's fixed balances, history, NFTs and the GNS token. */
 export const fakeReads = () =>
   fakeOnblocMcp([
-    { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: GNOT_UNITS } },
-    { name: 'get_token_balances', output: { address: ACCOUNT, items: [GNS] } },
-    { name: 'list_account_transactions', output: { address: ACCOUNT, items: TRANSACTIONS } },
-    { name: 'get_nfts_balance', output: { address: ACCOUNT, items: NFTS } },
-    { name: 'get_token_info', output: GNS_INFO },
+    { name: 'get_native_balance', description: "Get the account's native GNOT balance.", output: { address: ACCOUNT, denom: 'ugnot', balance: GNOT_UNITS } },
+    { name: 'get_token_balances', description: "List the account's GRC20 token balances.", output: { address: ACCOUNT, items: [GNS] } },
+    { name: 'list_account_transactions', description: "List the account's recent transactions.", output: { address: ACCOUNT, items: TRANSACTIONS } },
+    { name: 'get_nfts_balance', description: 'List the NFTs the account owns.', output: { address: ACCOUNT, items: NFTS } },
+    { name: 'get_token_info', description: 'Get public information about a GRC20 token: its name, symbol and decimals.', output: GNS_INFO },
   ]);

@@ -24,7 +24,7 @@ import { describeTransaction } from '../app/describeTransaction';
 import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../app/onblocSettings';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk } from '../wallet/mockWalletSdk';
-import type { Balances } from '../wallet/tokens';
+import { TOKEN_SYMBOLS, type Balances } from '../wallet/tokens';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
 import { boundedNumber, parseChatArgs } from './lib/cli';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from './lib/server';
@@ -164,7 +164,7 @@ async function main() {
       budget: { ...DEFAULT_BUDGET, maxTokens: 2 * llm.contextTokens, timeoutMs: 5 * 60_000 },
     });
     const agent = sdk
-      ? new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction })
+      ? new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction, tokenSymbols: TOKEN_SYMBOLS })
       : new AIAgent({ llm, harness });
     return { agent, sdk };
   };

@@ -7,7 +7,7 @@ import { describeToolRecord } from './toolRecord';
 import { buildWalletPrompt } from './prompts';
 import { realmEvidence } from './realmEvidence';
 import type { RealmEvidence } from './realmEvidence';
-import { classifyRequest, proposePreparation, selectLookupTools, type LookupToolSelection, type PreparationProposal, type RequestIntent } from './requestIntent';
+import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, type LookupToolSelection, type PreparationProposal, type RequestIntent } from './requestIntent';
 import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { fromBaseUnits } from './wallet/amount';
 import { createWalletTools } from './wallet/tools';
@@ -36,6 +36,8 @@ export type AIAgentOptions = {
   session?: ChatSession;
   chainId?: string;
   balanceAdapter?: BalanceAdapter;
+  /** The token symbols the wallet can prepare, so a misspelled symbol (`got`) is read back as the right one. */
+  tokenSymbols?: readonly string[];
 } & (
   | { wallet?: undefined; onTransaction?: undefined }
   | { wallet: WalletSdk; onTransaction: TransactionHandler }
@@ -77,11 +79,12 @@ export class AIAgent {
   private readonly onTransaction?: TransactionHandler;
   private readonly chainId: string;
   private readonly balanceAdapter: BalanceAdapter;
+  private readonly tokenSymbols: readonly string[];
   private active?: AbortController;
   private revision = 0;
   private runs = 0;
 
-  constructor({ llm, harness, wallet, onTransaction, session, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter }: AIAgentOptions) {
+  constructor({ llm, harness, wallet, onTransaction, session, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter, tokenSymbols = [] }: AIAgentOptions) {
     this.llm = llm;
     this.harness = harness;
     this.wallet = wallet;
@@ -89,6 +92,7 @@ export class AIAgent {
     this.session = session ?? createChatSession();
     this.chainId = chainId;
     this.balanceAdapter = balanceAdapter;
+    this.tokenSymbols = tokenSymbols;
   }
 
   get turns() {
@@ -231,7 +235,7 @@ export class AIAgent {
         yield this.done(options.signal);
         return;
       }
-      const planned = await proposePreparation(this.llm, settings.messages, options);
+      const planned = await proposePreparation(this.llm, settings.messages, { ...options, tokenSymbols: this.tokenSymbols });
       const completion = { ...this.done(options.signal), metrics: planned.metrics, warnings: planned.warnings };
       if (planned.aborted || options.signal.aborted) { yield { ...completion, aborted: true }; return; }
       const proposal = planned.proposal;
@@ -241,7 +245,14 @@ export class AIAgent {
         return;
       }
       const action = proposal.operation;
+      // Only now is the address book read; the model never sees it.
       const contacts = (await this.wallet.getContacts?.()) ?? [];
+      const whom = askWhichRecipient(settings.messages, contacts);
+      if (whom !== undefined) {
+        yield { type: 'text', delta: whom };
+        yield { ...completion, messages: [{ role: 'assistant', content: whom }] };
+        return;
+      }
       const all = createWalletTools({ sdk: this.wallet, account, contacts, onTransaction: this.onTransaction });
       if (!Object.hasOwn(all, action)) {
         yield { type: 'text', delta: `The wallet does not support ${action}. No transaction was prepared.` };
@@ -346,11 +357,18 @@ export class AIAgent {
           return requiredReads.every(name => completed.has(name));
         },
       });
-      for await (const event of this.llm.generate({ ...settings, tools: undefined, outputSchema: undefined,
-        system: [settings.system ?? this.prompt(), `Obtain fresh results from every required read: ${requiredReads.join(', ')}. Unrelated reads do not complete this task.`].join('\n\n'),
-      }, { ...options, loop })) {
-        if (event.type === 'done') record(event);
-        else if (event.type !== 'text') yield event;
+      try {
+        for await (const event of this.llm.generate({ ...settings, tools: undefined, outputSchema: undefined,
+          system: [settings.system ?? this.prompt(), `Obtain fresh results from every required read: ${requiredReads.join(', ')}. Unrelated reads do not complete this task.`].join('\n\n'),
+        }, { ...options, loop })) {
+          if (event.type === 'done') record(event);
+          else if (event.type !== 'text') yield event;
+        }
+      } catch (error) {
+        // A model that does not make the call it was told to make leaves the lookup incomplete;
+        // the guard reports that. Any other failure still fails the run.
+        if (options.signal.aborted || !(error instanceof Error) || error.name !== 'AI_ToolChoiceViolationError') throw error;
+        warnings.push(`The required lookup did not run: ${error.message}`);
       }
     }
     if (intent.explanation && !done.aborted && !options.signal.aborted) {

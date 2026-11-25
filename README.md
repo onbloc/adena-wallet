@@ -375,6 +375,24 @@ turn; the time of every turn is counted. Where a request has no single right ans
 two recipients, the base unit) the expectation is a policy choice: the model must ask, or the
 scenario says what it must prepare.
 
+**Asked, never guessed.** After the model parses a transfer or an approval, code checks it against
+the user's own words, and a doubt becomes a question instead of a transaction:
+
+- the **amount** must be digits the user wrote (`1.5`, `1,000`, `3` next to Korean text) or a share
+  of the balance; `one and a half` or a number the model made up is asked for, and `ugnot` is not
+  converted to GNOT;
+- the **token** must be a symbol the user wrote. A misspelling that is one edit from exactly one
+  symbol the wallet knows (`got`, `gsn`) is read back as it (pass them as `tokenSymbols` to
+  `AIAgent`); a symbol the wallet does not know, or one equally near two known ones, is asked
+  about with the known ones listed;
+- more than one **token** (`1 GNOT and 2 GNS`) or more than one **recipient** (a contact and an
+  address, two contacts) in the latest message is asked about, so one of them is not silently dropped.
+  The address book is read only after parsing for this check; the model never sees it;
+- an address followed by a particle (`g1...가`) is handed to the wallet as typed.
+
+A read that cannot be matched to a tool the model chose (`AI_ToolChoiceViolationError`) no longer
+fails the run: the answer says the lookup could not be verified.
+
 Balance routing now comes from the validated classification, not a whitelist of question
 spellings. Multi-turn scenarios query all assets, discuss terminology, and ask for GNOT again.
 They check fresh native balance results and absence of unintended preparation, not answer

@@ -1,7 +1,7 @@
 import type { ModelMessage } from 'ai';
 
 import type { GenerateEvent, GenerateSettings, LLM, LLMGenerateOptions, Metrics } from '../../llm/core';
-import { classifyRequest, proposePreparation, selectLookupTools, type PreparationProposal, type RequestIntent } from '../requestIntent';
+import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, type PreparationProposal, type RequestIntent } from '../requestIntent';
 import { intentReplyText } from '../testing/intentReply';
 
 const metrics: Metrics = { totalMs: 25, ttftMs: 5, outputTokens: 12 };
@@ -489,14 +489,134 @@ describe('preparation argument proposals', () => {
   ];
 
   it.each(proposals)('returns validated data without changing or resolving arguments: %j', async proposal => {
+    // The user wrote the amount and the token, so the proposal stands.
+    const amount = proposal.operation !== 'clarification' && proposal.amount.kind === 'exact' ? proposal.amount.value : '';
+    const symbol = proposal.operation !== 'clarification' && proposal.asset.kind === 'symbol' ? proposal.asset.value : '';
+    const written: ModelMessage[] = [{ role: 'user', content: `Do this with ${amount} ${symbol}` }];
     const { llm, calls } = scriptedLlm(classificationEvents(JSON.stringify(proposal), {
       warnings: ['provider warning'],
     }));
-    const result = await proposePreparation(llm, request, options);
+    const result = await proposePreparation(llm, written, options);
     expect(result).toEqual({ aborted: false, proposal, metrics, warnings: ['provider warning'] });
     expect(calls).toHaveLength(1);
   });
 
+  it.each([
+    ['an address followed by a Korean particle', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6가', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'],
+    ['an address followed by a longer particle', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6한테', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'],
+    ['a Korean contact name', '철수', '철수'],
+    ['a Latin contact name', 'carol', 'carol'],
+    ['an address followed by ASCII, which the wallet must see', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6x!', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6x!'],
+    ['text before an address', '주소g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6', '주소g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'],
+  ])('hands the wallet the address as typed: %s', async (_label, recipient, expected) => {
+    const { llm } = scriptedLlm(classificationEvents(JSON.stringify({ ...exact, recipient })));
+    await expect(proposePreparation(llm, request, options)).resolves.toMatchObject({ proposal: { recipient: expected } });
+  });
+
+  describe('an exact amount the user never wrote', () => {
+    const send = (value: string): string => JSON.stringify({ ...exact, amount: { kind: 'exact', value } });
+    const say = (...texts: string[]): ModelMessage[] => texts.map(content => ({ role: 'user', content }));
+    const asks = { proposal: { operation: 'clarification', question: expect.stringContaining('amount') } };
+
+    it.each([
+      ['no number at all', say('Send GNOT to carol'), '1'],
+      ['a different number', say('Send 5 GNOT to carol'), '1'],
+      ['the number only inside an address', say('Send GNOT to g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'), '1'],
+      ['the amount in words', say('Send one and a half GNOT to carol'), '1.5'],
+    ])('is turned into a question: %s', async (_label, messages, value) => {
+      const { llm } = scriptedLlm(classificationEvents(send(value)));
+      await expect(proposePreparation(llm, messages, options)).resolves.toMatchObject(asks);
+    });
+
+    it.each([
+      ['the same digits', say('Send 5 GNOT to carol'), '5'],
+      ['a decimal', say('Send 1.5 GNOT to carol'), '1.5'],
+      ['a decimal with a trailing zero', say('Send 1.50 GNOT to carol'), '1.5'],
+      ['a thousands separator', say('Send 1,000 GNOT to carol'), '1000'],
+      ['digits next to Korean', say('carol에게 3 GNOT 보내줘'), '3'],
+      ['an amount written earlier in the conversation', say('Send 1 GNOT to carol', 'do it again'), '1'],
+    ])('stands when the user wrote it: %s', async (_label, messages, value) => {
+      const { llm } = scriptedLlm(classificationEvents(send(value)));
+      await expect(proposePreparation(llm, messages, options)).resolves.toMatchObject({ proposal: { amount: { kind: 'exact', value } } });
+    });
+
+    it('is never asked about a share of the balance, which has no digits to find', async () => {
+      const fraction = JSON.stringify({ ...exact, amount: { kind: 'fraction', numerator: '1', denominator: '2' } });
+      const { llm } = scriptedLlm(classificationEvents(fraction));
+      await expect(proposePreparation(llm, say('Send half of my GNOT to carol'), options)).resolves.toMatchObject({ proposal: { amount: { kind: 'fraction' } } });
+    });
+  });
+
+  describe('a token the user never wrote, or misspelled', () => {
+    const known = { ...options, tokenSymbols: ['GNOT', 'GNS'] };
+    const sendToken = (asset: object): string => JSON.stringify({ ...exact, amount: { kind: 'exact', value: '1' }, asset });
+    const symbol = (value: string) => ({ kind: 'symbol', value });
+    const say = (...texts: string[]): ModelMessage[] => texts.map(content => ({ role: 'user', content }));
+
+    it('asks which token when the user named none, whatever the model filled in', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('Send 1 to carol'), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: expect.stringContaining('token') },
+      });
+    });
+
+    it.each([
+      ['got', 'GNOT'],
+      ['gnott', 'GNOT'],
+      ['gsn', 'GNS'],
+      ['GSN', 'GNS'],
+      ['gnot', 'gnot'],
+    ])('reads the misspelling %s back as the known symbol %s', async (typed, expected) => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol(typed))));
+      await expect(proposePreparation(llm, say(`Send 1 ${typed} to carol`), known)).resolves.toMatchObject({
+        proposal: { asset: { kind: 'symbol', value: expected } },
+      });
+    });
+
+    it('asks about a symbol the wallet does not know, and names the ones it does', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('foo'))));
+      await expect(proposePreparation(llm, say('Send 1 foo to carol'), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: 'I do not know the token foo. Which one: GNOT or GNS?' },
+      });
+    });
+
+    it('asks instead of choosing between two known symbols that are equally near', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('gnx'))));
+      const twoNear = { ...options, tokenSymbols: ['GNS', 'GNT'] };
+      await expect(proposePreparation(llm, say('Send 1 gnx to carol'), twoNear)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: 'I do not know the token gnx. Which one: GNS or GNT?' },
+      });
+    });
+
+    it('has nothing to check a symbol against when the host named no tokens', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('foo'))));
+      await expect(proposePreparation(llm, say('Send 1 foo to carol'), options)).resolves.toMatchObject({ proposal: { asset: { value: 'foo' } } });
+    });
+
+    it('asks which one when the request names two tokens, not carrying out one of them', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('Send 1 GNOT and 2 GNS to carol'), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: 'Which token: GNOT or GNS?' },
+      });
+    });
+
+    it('counts a token once however it is written, and reads only the latest message for it', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('How much GNS do I have?', 'Send 1 gnot, I mean GNOT, to carol'), known)).resolves.toMatchObject({
+        proposal: { asset: { value: 'GNOT' } },
+      });
+    });
+
+    it('finds a token written earlier in the conversation', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('Send 1 GNOT to carol', 'do it again'), known)).resolves.toMatchObject({ proposal: { asset: { value: 'GNOT' } } });
+    });
+
+    it('does not ask about an asset given by its id', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken({ kind: 'id', value: 'gno.land/r/demo/token' })));
+      await expect(proposePreparation(llm, say('Send 1 to carol'), known)).resolves.toMatchObject({ proposal: { asset: { kind: 'id' } } });
+    });
+  });
 
   it.each([
     '', 'not JSON', 'null', '[]', '{}',
@@ -699,5 +819,34 @@ describe('preparation argument proposals', () => {
     const { llm, calls } = scriptedLlm([], () => { throw new Error('Provider unavailable'); });
     await expect(proposePreparation(llm, request, options)).rejects.toThrow('Provider unavailable');
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('askWhichRecipient', () => {
+  const say = (...texts: string[]): ModelMessage[] => texts.map(content => ({ role: 'user', content }));
+  const carol = { alias: 'carol', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s' };
+  const other = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
+
+  it('asks which person when the message names a contact and another address', () => {
+    expect(askWhichRecipient(say(`Send 1 GNOT to carol and to ${other}`), [carol])).toBe(`Who should receive it: carol or ${other}?`);
+  });
+
+  it('asks which person when it names two contacts, in any script around the names', () => {
+    const dave = { alias: 'dave', address: 'g1davedavedavedavedavedavedavedavedave00' };
+    expect(askWhichRecipient(say('carol이랑 Dave에게 1 GNOT 보내줘'), [carol, dave])).toBe('Who should receive it: carol or dave?');
+  });
+
+  it('does not ask when a contact is named along with that contact\'s own address', () => {
+    expect(askWhichRecipient(say(`Send 1 GNOT to carol (${carol.address})`), [carol])).toBeUndefined();
+  });
+
+  it('does not ask for one person, or for none, or when the name is only part of a word', () => {
+    expect(askWhichRecipient(say('Send 1 GNOT to carol'), [carol])).toBeUndefined();
+    expect(askWhichRecipient(say('Send 1 GNOT.'), [carol])).toBeUndefined();
+    expect(askWhichRecipient(say('Send 1 GNOT to carolina'), [carol])).toBeUndefined();
+  });
+
+  it('reads only the latest message: a person named earlier is not a second recipient', () => {
+    expect(askWhichRecipient(say(`Send 1 GNOT to ${other}`, 'now to carol'), [carol])).toBeUndefined();
   });
 });

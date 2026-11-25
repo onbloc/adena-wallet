@@ -119,7 +119,8 @@ describe('integrated request execution', () => {
     const { agent, mcp } = setup([call('get_native_balance'), answer('All history returned.')], {
       intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
     });
-    await expect(collect(agent.run({ prompt: 'Recent transactions.' }, { account: ACCOUNT }))).rejects.toThrow();
+    const events = await collect(agent.run({ prompt: 'Recent transactions.' }, { account: ACCOUNT }));
+    expect(textOf(events)).toContain('could not be verified');
     expect(mcp.calls).toEqual([]);
     expect(agent.turns).toEqual([]);
   });
@@ -231,6 +232,16 @@ describe('integrated request execution', () => {
     expect(textOf(events)).not.toContain('Unsigned transaction prepared');
     expect(fetcher).not.toHaveBeenCalled();
     expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it('asks which of two named people to pay instead of preparing for one of them', async () => {
+    const { agent, prepared, wallet, fetcher } = setup([proposal({ ...transferProposal, recipient: FRIEND.alias })], { intent: prepare });
+    wallet.getContacts = async () => [FRIEND];
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to carol and to ${RECIPIENT}.` }, permission));
+    expect(textOf(events)).toBe(`Who should receive it: carol or ${RECIPIENT}?`);
+    expect(prepared).toEqual([]);
+    expect(wallet.calls).toEqual([]);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(agent.turns[0]).toEqual({ prompt: `Send 1 GNOT to carol and to ${RECIPIENT}.`, answer: textOf(events) });
   });
   it('retains planner clarification and resolves a follow-up without replaying preparation authority', async () => {
     const question = 'Who should receive 1 GNOT?';
