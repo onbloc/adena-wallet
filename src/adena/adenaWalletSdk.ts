@@ -18,7 +18,7 @@ import {
   type TransferSummary,
   type WalletSdk,
 } from '../agent';
-import { GNO_MAINNET_CHAIN, gnoPublicAddress } from '../harness/mcp';
+import { GNO_MAINNET_CHAIN, isValidGnoAddress } from '../harness/mcp';
 import { NATIVE_DENOM, type TokenResolver } from './tokens';
 
 /** The Adena SDK transaction a prepared transaction carries in `tx`: what `signTransaction` takes. */
@@ -119,7 +119,7 @@ export class AdenaWalletSdk implements WalletSdk {
 
   #address(address: string, message: string): string {
     const normalized = lowerCase(address);
-    if (!gnoPublicAddress.safeParse(normalized).success) {
+    if (!isValidGnoAddress(normalized)) {
       throw new WalletError(WalletErrorCode.InvalidAddress, message);
     }
     return normalized;
