@@ -3,6 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react-
 import { percentOfBalance, searchSwapTokens, sortSwapTokens, SwapScreen } from '../../../../src/containers/main/swap-screen';
 import { GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { SwapToken } from '../../../../src/domain/swap';
+import { PENDING_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { SwapMaxResult } from '../../../../src/services/swap.service';
 import { GnoswapFakeOptions, GNS, installGnoswapFakes } from '../../../helpers/gnoswap-fakes';
 import { renderScreen, resetStores, setupWallet, toastMessage } from '../../../helpers/render-screen';
@@ -253,6 +254,26 @@ describe('SwapScreen', () => {
     await fireEvent.press(screen.getByTestId('review-confirm'));
     await waitFor(() => expect(toastMessage()).toBe('Swap confirmed'), LOOKUP);
     expect(env.gno.state.broadcasts).toHaveLength(1);
+  });
+
+  it('stores a swap with an unknown outcome for its account and network, so it stays blocked after a restart', async () => {
+    const { env, account, network } = await setup();
+    const provider = await env.gno.factory();
+
+    // A transport failure leaves the outcome unknown; the hash is never indexed in this fake.
+    provider.sendTransaction = async () => {
+      throw new Error('socket hang up');
+    };
+
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+
+    await waitFor(() => expect(env.container.pendingBroadcastRepository.list(account.id, network.chainId)).toHaveLength(1), LOOKUP);
+    expect(await screen.findByText(PENDING_NOTICE, undefined, LOOKUP)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Review swap' })).toBeNull();
   });
 
   it('edits slippage and deadline in second-level views and persists them on Save', async () => {

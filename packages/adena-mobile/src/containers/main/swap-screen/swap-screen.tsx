@@ -213,7 +213,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     setExactSide('sell');
   }, [playHaptic, queryClient, showToast]);
 
-  const pendingBroadcast = usePendingBroadcast(handleCommitted);
+  const pendingBroadcast = usePendingBroadcast(account ?? null, network, handleCommitted);
 
   // Edits detach the in-flight estimate through reset(), like the send flow.
   const prepare = useMutation({
@@ -411,13 +411,13 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
       return;
     }
 
-    const sentNetwork = prepared.network;
+    const { account: sender, network: sentNetwork } = prepared;
 
     sendingRef.current = true;
     submit.mutateAsync()
       .catch((error) => {
         // Unknown outcome: close the review so the same swap cannot be confirmed again.
-        if (pendingBroadcast.track(error, sentNetwork)) {
+        if (pendingBroadcast.track(error, sender, sentNetwork)) {
           submit.reset();
           setPrepared(null);
         }
