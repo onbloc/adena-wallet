@@ -82,6 +82,7 @@ export class AdenaWalletSdk implements WalletSdk {
         to,
         amount: fromBaseUnits(units, token.decimals),
         token: token.symbol,
+        ...(token.packagePath === undefined ? {} : { packagePath: token.packagePath }),
       },
       tx: TransactionBuilder.create().messages(message).build(),
     };
@@ -112,6 +113,7 @@ export class AdenaWalletSdk implements WalletSdk {
         spender,
         amount: fromBaseUnits(units, token.decimals),
         token: token.symbol,
+        packagePath: token.packagePath,
       },
       tx: TransactionBuilder.create().messages(message).build(),
     };

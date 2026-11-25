@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 import { createOnblocReader, type OnblocMcpConfig } from '../../harness/mcp';
-import { fromBaseUnits, normalizeDecimal } from '../../agent';
+import { fromBaseUnits, normalizeDecimal, WalletError, WalletErrorCode } from '../../agent';
 import { MockWalletSdk } from './mockWalletSdk';
+import type { MockHolding } from './fixture';
 import { TokenSymbol, type Balances } from './tokens';
 
 // The mock wallet holds the account's real api-v3 balances as a read-only snapshot: it
@@ -17,10 +18,11 @@ const tokensSchema = z.object({ items: z.array(z.unknown()).nullable() });
 // What the Onbloc reader wraps around a tool's structured output.
 const resultSchema = z.object({ untrustedData: z.unknown() });
 const tokenSchema = z.object({
-  packagePath: z.string(),
+  packagePath: z.string().min(1),
   amount: units,
   decimals: z.number().int().min(0).max(36),
 });
+const holdingSchema = tokenSchema.extend({ symbol: z.string().trim().min(1) });
 
 function decimalString(amount: string, decimals: number): string {
   const value = fromBaseUnits(BigInt(amount), decimals);
@@ -46,13 +48,31 @@ export function balancesFromOnbloc(native: unknown, tokens: unknown): Balances {
   };
 }
 
+/** Retains token identities and precision for the wallet, independently of its legacy display. */
+export function holdingsFromOnbloc(tokens: unknown): MockHolding[] {
+  const result = tokensSchema.safeParse(tokens);
+  if (!result.success) throw new Error('Unexpected Onbloc balance response.');
+  return (result.data.items ?? []).flatMap((item) => {
+    const parsed = holdingSchema.safeParse(item);
+    if (!parsed.success) {
+      if (item && typeof item === 'object' && ('symbol' in item || ('packagePath' in item && typeof item.packagePath === 'string'))) {
+        throw new WalletError(WalletErrorCode.WalletFailed, 'Invalid token holdings snapshot');
+      }
+      return [];
+    }
+    const { packagePath, symbol, amount, decimals } = parsed.data;
+    return [{ packagePath, symbol, amount: decimalString(amount, decimals), decimals }];
+  });
+}
+
 export type OnblocAccountConfig = OnblocMcpConfig & Readonly<{ account: string }>;
 
-/** Reads the account's GNOT and GNS balances through the Onbloc MCP. */
-export async function fetchOnblocBalances(
+/** Reads one owner-scoped snapshot through the Onbloc MCP. */
+async function fetchOnblocSnapshot(
   { account, ...config }: OnblocAccountConfig,
-  signal?: AbortSignal
-): Promise<Balances> {
+  signal?: AbortSignal,
+  includeHoldings = true
+): Promise<{ balances: Balances; holdings: MockHolding[] }> {
   // The reader closes its MCP client when this signal aborts.
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -70,11 +90,16 @@ export async function fetchOnblocBalances(
       return resultSchema.parse(decision.value).untrustedData;
     };
     const [native, tokens] = await Promise.all([read('get_native_balance'), read('get_token_balances')]);
-    return balancesFromOnbloc(native, tokens);
+    return { balances: balancesFromOnbloc(native, tokens), holdings: includeHoldings ? holdingsFromOnbloc(tokens) : [] };
   } finally {
     signal?.removeEventListener('abort', abort);
     controller.abort();
   }
+}
+
+/** Reads the account's GNOT and GNS balances through the Onbloc MCP. */
+export async function fetchOnblocBalances(config: OnblocAccountConfig, signal?: AbortSignal): Promise<Balances> {
+  return (await fetchOnblocSnapshot(config, signal, false)).balances;
 }
 
 /** A mock wallet that owns `account`, funded with its current Onbloc balances. */
@@ -85,8 +110,8 @@ export async function createOnblocMockWallet({
   onbloc: OnblocAccountConfig;
   signal?: AbortSignal;
 }): Promise<MockWalletSdk> {
-  const balances = await fetchOnblocBalances(onbloc, signal);
+  const { balances, holdings } = await fetchOnblocSnapshot(onbloc, signal);
   return new MockWalletSdk({
-    accounts: [{ name: 'My address', address: onbloc.account, balances }],
+    accounts: [{ name: 'My address', address: onbloc.account, balances, holdings }],
   });
 }

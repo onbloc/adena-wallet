@@ -240,3 +240,27 @@ describe('inspect', () => {
     expect(sdk.inspect()).toEqual(expected);
   });
 });
+
+describe('owner-scoped holdings snapshots', () => {
+  it('resolves each owner independently and retains each token precision', async () => {
+    const a = 'gno.land/r/a/token';
+    const b = 'gno.land/r/b/token';
+    const sdk = new MockWalletSdk({
+      accounts: [
+        { ...acc1, holdings: [{ symbol: 'COIN', packagePath: a, amount: '2', decimals: 0 }] },
+        { name: 'second', address: other, balances: { GNOT: '0', GNS: '0' },
+          holdings: [{ symbol: 'COIN', packagePath: b, amount: '1.25', decimals: 2 }] },
+      ],
+    });
+    const params = { from: acc1.address, to, token: 'COIN', amount: '2' };
+    expect((await sdk.transfer(params)).summary).toMatchObject({ token: 'COIN', packagePath: a, amount: '2' });
+    expect((await sdk.transfer({ ...params, from: other, amount: '1.25' })).summary)
+      .toMatchObject({ token: 'COIN', packagePath: b, amount: '1.25' });
+    await expect(sdk.transfer({ ...params, from: other, token: a }))
+      .rejects.toMatchObject({ code: WalletErrorCode.UnknownToken });
+    await expect(sdk.transfer({ ...params, amount: '1.1' }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InvalidAmount });
+    await expect(sdk.transfer({ ...params, from: other, amount: '1.26' }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InsufficientBalance });
+  });
+});

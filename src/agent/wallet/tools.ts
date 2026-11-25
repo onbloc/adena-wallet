@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ToolName, WalletStatus } from './constants';
+import { ToolName, WalletErrorCode, WalletStatus } from './constants';
 import { WalletError, type Contact, type PreparedTransaction, type TransactionHandler, type WalletSdk } from './port';
 import type { WalletTool } from '../../harness/core';
 
@@ -16,6 +16,8 @@ export type WalletToolsContext = {
   contacts: readonly Contact[];
   /** The current user request, not model-generated content or conversation history. */
   userText: string;
+  /** Recipient retained from a validated, scoped clarification. */
+  authorizedRecipient?: string;
   /** Gets every transaction a tool prepares; the app signs it. The model never sees it. */
   onTransaction: TransactionHandler;
 };
@@ -30,7 +32,11 @@ async function refusalsAsResults(run: () => Promise<ToolResult | undefined>): Pr
     return await run();
   } catch (error) {
     if (!(error instanceof WalletError)) throw error;
-    return { status: WalletStatus.Error, code: error.code, message: error.message };
+    const ids = error.candidateIds;
+    const validIds = error.code === 'ambiguous_token' && Array.isArray(ids) && ids.length >= 2 && ids.length <= 20 &&
+      ids.every(id => typeof id === 'string' && id.length <= 256 && id.includes('/') && /^[\p{L}\p{N}._:/-]+$/u.test(id)) &&
+      new Set(ids).size === ids.length;
+    return { status: WalletStatus.Error, code: error.code, message: error.message, ...(validIds ? { candidateIds: [...ids] } : {}) };
   }
 }
 
@@ -58,10 +64,19 @@ function walletTool<Schema extends z.ZodType>({ name, effect, description, schem
   };
 }
 
-/** A contact's name (any case) becomes its address; anything else is left for the SDK to check. */
+/** Resolve known aliases; leave g1-prefixed addresses to the wallet for validation. */
 const resolveContact = (contacts: readonly Contact[], recipient: string) =>
-  contacts.find((contact) => contact.alias.toLowerCase() === recipient.trim().toLowerCase())?.address ??
+  contacts.find((contact) => contact.alias.trim().toLowerCase() === recipient.trim().toLowerCase())?.address ??
   recipient;
+
+function resolveTarget(contacts: readonly Contact[], target: string): string {
+  const resolved = resolveContact(contacts, target);
+  if (resolved === target && !target.trim().toLowerCase().startsWith('g1') &&
+    !contacts.some(contact => contact.alias.trim().toLowerCase() === target.trim().toLowerCase())) {
+    throw new WalletError(WalletErrorCode.InvalidAddress, `No contact matches "${target.trim()}". Which saved contact or g1 address should receive this request?`);
+  }
+  return resolved;
+}
 
 function mentions(text: string, value: string): boolean {
   const needle = value.trim().toLowerCase();
@@ -73,7 +88,10 @@ function mentions(text: string, value: string): boolean {
     const before = index === 0 ? '' : String.fromCodePoint(text.codePointAt(previousIndex)!);
     const afterIndex = index + needle.length;
     const after = afterIndex === text.length ? '' : String.fromCodePoint(text.codePointAt(afterIndex)!);
-    if (!word.test(before) && !word.test(after)) return true;
+    // Korean particles can directly follow a Latin contact name, but never split an address or
+    // allow a name embedded in another Latin/digit identifier.
+    const koreanSuffix = /^[a-z]+$/i.test(needle) && /^\p{Script=Hangul}$/u.test(after);
+    if (!word.test(before) && (!word.test(after) || koreanSuffix)) return true;
   }
   return false;
 }
@@ -84,7 +102,7 @@ function mentions(text: string, value: string): boolean {
  * sources for the same fact. `approve` and `get_approvals` are offered only if the wallet
  * implements them.
  */
-export function createWalletTools({ sdk, account, contacts, userText, onTransaction }: WalletToolsContext): Record<string, WalletTool> {
+export function createWalletTools({ sdk, account, contacts, userText, authorizedRecipient, onTransaction }: WalletToolsContext): Record<string, WalletTool> {
   const approve = sdk.approve?.bind(sdk);
   const getAllowances = sdk.getAllowances?.bind(sdk);
   const text = userText.toLowerCase();
@@ -93,6 +111,7 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
     const resolved = resolveContact(contacts, target).trim().toLowerCase();
     const named = contacts.filter(contact => contact.alias.trim().toLowerCase() === alias);
     if (named.some(contact => contact.address.trim().toLowerCase() !== resolved)) return false;
+    if (authorizedRecipient !== undefined && resolved === authorizedRecipient.trim().toLowerCase()) return true;
     if (mentions(text, target) || mentions(text, resolved)) return true;
     return contacts.some(contact => contact.address.trim().toLowerCase() === resolved &&
       contacts.every(other => other.alias.trim().toLowerCase() !== contact.alias.trim().toLowerCase() ||
@@ -134,7 +153,7 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
       run: async ({ to, amount, token }, signal, cancelled) => {
         const prepared = await handoff(() => sdk.transfer({
           from: account,
-          to: resolveContact(contacts, to),
+          to: resolveTarget(contacts, to),
           amount,
           token,
         }), signal, cancelled);
@@ -146,6 +165,7 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
           to: summary.to,
           amount: summary.amount,
           token: summary.token,
+          ...(summary.packagePath === undefined ? {} : { packagePath: summary.packagePath }),
           message: PREPARED_MESSAGE,
         };
       },
@@ -165,7 +185,7 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
         run: async ({ spender, amount, token }, signal, cancelled) => {
           const prepared = await handoff(() => approve({
             from: account,
-            spender: resolveContact(contacts, spender),
+            spender: resolveTarget(contacts, spender),
             amount,
             token,
           }), signal, cancelled);
@@ -177,6 +197,7 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
             spender: summary.spender,
             amount: summary.amount,
             token: summary.token,
+            ...(summary.packagePath === undefined ? {} : { packagePath: summary.packagePath }),
             message: PREPARED_MESSAGE,
           };
         },

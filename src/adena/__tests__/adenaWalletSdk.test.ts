@@ -2,7 +2,8 @@ import { decodeTransactionMessage } from '@adena-wallet/sdk';
 
 import { TransactionType, WalletErrorCode } from '../../agent';
 import { AdenaWalletSdk, type AdenaTransaction } from '../adenaWalletSdk';
-import { isNativeSymbol, nativeToken, pickToken, type TokenResolver } from '../tokens';
+import { createOnblocTokenResolver, isNativeSymbol, nativeToken, pickToken, type TokenResolver } from '../tokens';
+import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 
 const sender = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 const other = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
@@ -27,6 +28,41 @@ const send = (amount: string, token = 'GNOT') => ({ from: sender, to: other, amo
 /** The first message of the transaction, decoded from its protobuf form. */
 const firstMessage = (tx: unknown) =>
   decodeTransactionMessage((tx as AdenaTransaction).messages[0]);
+
+describe.each([false, true])('same-symbol tokens (reverse=%s)', (reverse) => {
+  const a = { ...gns, amount: '12500000' };
+  const b = { ...gns, packagePath: 'gno.land/r/other/gns', amount: '300000000', decimals: 8 };
+  const items = reverse ? [b, a] : [a, b];
+  const sdk = new AdenaWalletSdk({
+    tokens: createOnblocTokenResolver({
+      endpoint: 'https://example.test/mcp',
+      fetcher: fakeOnblocMcp([{ name: 'get_token_balances', output: { address: sender, items } }]).fetcher,
+    }),
+  });
+
+  it('rejects ambiguous transfer and approval requests', async () => {
+    await expect(sdk.transfer(send('1', 'GNS'))).rejects.toMatchObject({ code: WalletErrorCode.AmbiguousToken });
+    await expect(sdk.approve({ from: sender, spender, token: 'GNS', amount: '1' })).rejects.toMatchObject({
+      code: WalletErrorCode.AmbiguousToken,
+    });
+  });
+
+  it('builds an unsigned transfer and approval for the explicitly selected path', async () => {
+    const transfer = await sdk.transfer(send('1.25', b.packagePath));
+    const approval = await sdk.approve({ from: sender, spender, token: b.packagePath, amount: '1.25' });
+    for (const [prepared, func, destination] of [
+      [transfer, 'Transfer', other], [approval, 'Approve', spender],
+    ] as const) {
+      expect(prepared.summary.packagePath).toBe(b.packagePath);
+      expect((prepared.tx as AdenaTransaction).signatures).toEqual([]);
+      expect(firstMessage(prepared.tx)).toMatchObject({
+        type: '/vm.m_call',
+        value: { caller: sender, pkg_path: b.packagePath, func, args: [destination, '125000000'] },
+      });
+    }
+    await expect(sdk.transfer(send('4', b.packagePath))).rejects.toMatchObject({ code: WalletErrorCode.InsufficientBalance });
+  });
+});
 
 describe('transfer', () => {
   it('builds an unsigned bank send for GNOT and summarizes it', async () => {
@@ -54,7 +90,7 @@ describe('transfer', () => {
 
     const { summary, tx } = await sdk.transfer(send('0.063607', 'gns'));
 
-    expect(summary).toMatchObject({ token: 'GNS', amount: '0.063607' });
+    expect(summary).toMatchObject({ token: 'GNS', amount: '0.063607', packagePath: gns.packagePath });
     expect(firstMessage(tx)).toMatchObject({
       type: '/vm.m_call',
       value: { caller: sender, pkg_path: gns.packagePath, func: 'Transfer', args: [other, '63607'], send: '' },
@@ -137,6 +173,7 @@ describe('approve', () => {
       spender,
       amount: '10',
       token: 'GNS',
+      packagePath: gns.packagePath,
     });
     expect(firstMessage(tx)).toMatchObject({
       type: '/vm.m_call',

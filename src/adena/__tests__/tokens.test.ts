@@ -67,6 +67,41 @@ describe('createOnblocTokenResolver', () => {
     expect(token).toEqual({ symbol: 'GNS', decimals: 6, packagePath: gns.packagePath, balance: 63607n });
     expect(calls).toEqual([{ name: 'get_token_balances', arguments: { address: owner } }]);
   });
+  it.each([false, true])('resolves duplicate symbols by exact path regardless of order (%s)', async (reverse) => {
+    const twin = { ...gns, packagePath: 'gno.land/r/other/gns', amount: '300000000', decimals: 8 };
+    const items = reverse ? [twin, gns] : [gns, twin];
+    const { fetcher } = server({ address: owner, items });
+    const resolve = createOnblocTokenResolver({ endpoint, fetcher });
+    await expect(resolve('GNS', owner)).rejects.toMatchObject({
+      code: WalletErrorCode.AmbiguousToken,
+      candidateIds: items.map(item => item.packagePath),
+      message: expect.stringContaining(gns.packagePath),
+    });
+    await expect(resolve('GNS', owner)).rejects.toMatchObject({ message: expect.stringContaining(twin.packagePath) });
+    await expect(resolve(twin.packagePath, owner)).resolves.toEqual({
+      symbol: 'GNS', decimals: 8, packagePath: twin.packagePath, balance: 300000000n,
+    });
+  });
+
+  it.each([
+    { address: 'other', items: [gns] },
+    { address: owner, items: [{ ...gns, address: 'other' }] },
+    { address: owner, items: [gns, { ...gns, packagePath: 'gno.land/r/other/gns', amount: 'bad' }] },
+  ])('fails closed for untrustworthy holdings: %j', async (output) => {
+    const { fetcher } = server(output);
+    await expect(createOnblocTokenResolver({ endpoint, fetcher })('GNS', owner)).rejects.toMatchObject({
+      code: WalletErrorCode.WalletFailed,
+    });
+  });
+
+  it('rejects a native balance belonging to another account', async () => {
+    const { fetcher } = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { address: 'other', denom: 'ugnot', balance: '100' } },
+    ]);
+    await expect(createOnblocTokenResolver({ endpoint, fetcher })('GNOT', owner)).rejects.toMatchObject({
+      code: WalletErrorCode.WalletFailed,
+    });
+  });
 
   it('reads the native balance for GNOT instead of a GRC20 lookalike', async () => {
     const { fetcher, calls } = fakeOnblocMcp([

@@ -35,9 +35,11 @@ const holdingSchema = z.object({
   symbol: z.string().min(1),
   decimals: z.number().int().min(0).max(36),
   amount: units,
+  address: z.string().optional(),
 });
-const nativeSchema = z.object({ denom: z.literal(NATIVE_DENOM), balance: units });
-const tokensSchema = z.object({ items: z.array(z.unknown()).nullable() });
+const identitySchema = z.object({ address: z.string() });
+const nativeSchema = identitySchema.extend({ denom: z.literal(NATIVE_DENOM), balance: units });
+const tokensSchema = identitySchema.extend({ items: z.array(holdingSchema).nullable() });
 // What the Onbloc reader wraps around a tool's structured output.
 const resultSchema = z.object({ untrustedData: z.unknown() });
 
@@ -61,10 +63,11 @@ export function pickToken(query: string, holdings: readonly unknown[]): Resolved
     throw new WalletError(WalletErrorCode.UnknownToken, `The wallet holds no token ${wanted}`);
   }
   if (matches.length > 1) {
-    const paths = matches.map((token) => token.packagePath).join(', ');
+    const paths = matches.map((token) => token.packagePath);
     throw new WalletError(
       WalletErrorCode.AmbiguousToken,
-      `Several tokens are called ${wanted}: ${paths}. Ask the user which one, then use its package path.`
+      `Several tokens are called ${wanted}: ${paths.join(', ')}. Ask the user which one, then use its package path.`,
+      paths
     );
   }
   const { symbol, decimals, packagePath, amount } = matches[0];
@@ -94,8 +97,17 @@ export function createOnblocTokenResolver(config: OnblocMcpConfig): TokenResolve
         throw new Error(`${toolName} failed (${decision.kind === 'denied' ? decision.code : decision.kind})`);
       }
       const { untrustedData } = resultSchema.parse(decision.value);
-      if (native) return nativeToken(BigInt(nativeSchema.parse(untrustedData).balance));
-      return pickToken(query, tokensSchema.parse(untrustedData).items ?? []);
+      if (native) {
+        const result = nativeSchema.parse(untrustedData);
+        if (result.address !== owner) throw new Error('Native balance belongs to another account');
+        return nativeToken(BigInt(result.balance));
+      }
+      const result = tokensSchema.parse(untrustedData);
+      const items = result.items ?? [];
+      if (result.address !== owner || items.some((item) =>
+        item.address !== undefined && item.address !== owner
+      )) throw new Error('Token holdings have inconsistent identity');
+      return pickToken(query, items);
     } catch (error) {
       if (error instanceof WalletError || signal?.aborted) throw error;
       throw new WalletError(

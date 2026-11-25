@@ -6,7 +6,7 @@ import {
   normalizeAddress,
 } from './address';
 import { FIXTURE, type MockAccount } from './fixture';
-import { TOKEN_DECIMALS, TOKEN_SYMBOLS, type Balances, type TokenSymbol } from './tokens';
+import { TOKEN_DECIMALS, TOKEN_SYMBOLS, TokenSymbol, type Balances } from './tokens';
 import {
   TransactionType,
   WalletError,
@@ -39,14 +39,18 @@ export type MockWalletSdkOptions = {
  */
 export class MockWalletSdk implements WalletSdk {
   readonly #balances = new Map<string, Map<TokenSymbol, bigint>>();
+  readonly #displayBalances = new Map<string, Balances>();
+  readonly #holdings = new Map<string, readonly { symbol: string; packagePath: string; decimals: number; units: bigint }[]>();
+  readonly #fixtureOwners = new Set<string>();
   readonly #contacts: readonly Contact[];
 
   constructor({ accounts = FIXTURE.accounts, contacts = FIXTURE.contacts }: MockWalletSdkOptions = {}) {
     if (accounts.length === 0) throw new Error('MockWalletSdk needs an account');
     this.#contacts = contacts;
     for (const account of accounts) {
+      const address = normalizeAddress(account.address);
       this.#balances.set(
-        account.address,
+        address,
         new Map(
           TOKEN_SYMBOLS.map((token) => [
             token,
@@ -54,6 +58,23 @@ export class MockWalletSdk implements WalletSdk {
           ])
         )
       );
+      if (account.holdings) {
+        this.#displayBalances.set(address, { ...account.balances });
+        const paths = new Set<string>();
+        this.#holdings.set(address, account.holdings.map((holding) => {
+          if (!Number.isInteger(holding.decimals) || holding.decimals < 0 || holding.decimals > 36) {
+            throw new WalletError(WalletErrorCode.WalletFailed, 'Invalid token holdings snapshot');
+          }
+          const units = toBaseUnits(holding.amount, holding.decimals);
+          if (!holding.symbol.trim() || !holding.packagePath || paths.has(holding.packagePath) || units === null || units < 0n) {
+            throw new WalletError(WalletErrorCode.WalletFailed, 'Invalid token holdings snapshot');
+          }
+          paths.add(holding.packagePath);
+          return { ...holding, units };
+        }));
+      } else {
+        this.#fixtureOwners.add(address);
+      }
     }
   }
 
@@ -72,12 +93,34 @@ export class MockWalletSdk implements WalletSdk {
     return token;
   }
 
-  #positiveUnits(amount: string, token: TokenSymbol): bigint {
-    const units = toBaseUnits(amount, TOKEN_DECIMALS[token]);
+  #positiveUnits(amount: string, decimals: number): bigint {
+    const units = toBaseUnits(amount, decimals);
     if (units === null || units <= 0n) {
       throw new WalletError(WalletErrorCode.InvalidAmount, 'Amount must be a positive decimal');
     }
     return units;
+  }
+
+  #resolve(address: string, input: string): { symbol: string; decimals: number; units: bigint; packagePath?: string } {
+    const value = input.trim();
+    if (this.#fixtureOwners.has(address) || this.#holdings.size === 0) {
+      const symbol = this.#token(value);
+      return { symbol, decimals: TOKEN_DECIMALS[symbol], units: this.#units(address, symbol) };
+    }
+    const holdings = this.#holdings.get(address) ?? [];
+    const exact = holdings.find((holding) => holding.packagePath === value);
+    if (exact) return exact;
+    const matches = holdings.filter((holding) => holding.symbol.toLowerCase() === value.toLowerCase());
+    if (value.toLowerCase() === TokenSymbol.Gnot.toLowerCase()) {
+      matches.push({ symbol: TokenSymbol.Gnot, packagePath: '', decimals: TOKEN_DECIMALS.GNOT, units: this.#units(address, TokenSymbol.Gnot) });
+    }
+    if (matches.length > 1) {
+      const ids = matches.map((holding) => holding.packagePath).filter(Boolean);
+      throw new WalletError(WalletErrorCode.AmbiguousToken, `Ambiguous token ${value}: ${ids.join(', ')}`, ids);
+    }
+    const match = matches[0];
+    if (!match) throw new WalletError(WalletErrorCode.UnknownToken, `Unknown token ${input}`);
+    return { ...match, packagePath: match.packagePath || undefined };
   }
 
   /**
@@ -96,6 +139,8 @@ export class MockWalletSdk implements WalletSdk {
   }
 
   #balancesOf(address: string): Balances {
+    const snapshot = this.#displayBalances.get(address);
+    if (snapshot) return { ...snapshot };
     const entries = TOKEN_SYMBOLS.map((token) => [
       token,
       fromBaseUnits(this.#units(address, token), TOKEN_DECIMALS[token]),
@@ -108,12 +153,11 @@ export class MockWalletSdk implements WalletSdk {
   }
 
   async transfer(params: TransferParams): Promise<PreparedTransaction<TransferSummary>> {
-    const token = this.#token(params.token);
     const from = this.#assertAddress(params.from, 'Sender is not a valid g1... address');
     const to = this.#assertAddress(params.to, 'Recipient is not a valid g1... address');
-    const decimals = TOKEN_DECIMALS[token];
-    const units = this.#positiveUnits(params.amount, token);
-    const available = this.#units(from, token);
+    const asset = this.#resolve(from, params.token);
+    const { symbol: token, decimals, units: available } = asset;
+    const units = this.#positiveUnits(params.amount, decimals);
     if (units > available) {
       throw new WalletError(
         WalletErrorCode.InsufficientBalance,
@@ -127,23 +171,26 @@ export class MockWalletSdk implements WalletSdk {
       to,
       amount: fromBaseUnits(units, decimals),
       token,
+      ...(asset.packagePath ? { packagePath: asset.packagePath } : {}),
     };
     return { summary, tx: { ...summary } };
   }
 
   /** Like ERC-20, an allowance may exceed the balance. */
   async approve(params: AllowanceParams): Promise<PreparedTransaction<AllowanceSummary>> {
-    const token = this.#token(params.token);
     const from = this.#assertAddress(params.from, 'Owner is not a valid g1... address');
     const spender = this.#assertAddress(params.spender, 'Spender is not a valid g1... address');
-    const units = this.#positiveUnits(params.amount, token);
+    const asset = this.#resolve(from, params.token);
+    const { symbol: token, decimals } = asset;
+    const units = this.#positiveUnits(params.amount, decimals);
     const summary: AllowanceSummary = {
       type: TransactionType.Allowance,
       chainId: MOCK_CHAIN_ID,
       from,
       spender,
-      amount: fromBaseUnits(units, TOKEN_DECIMALS[token]),
+      amount: fromBaseUnits(units, decimals),
       token,
+      ...(asset.packagePath ? { packagePath: asset.packagePath } : {}),
     };
     return { summary, tx: { ...summary } };
   }
