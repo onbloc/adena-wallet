@@ -482,15 +482,19 @@ export class AIAgent {
       const query = other?.query;
       const selection = query ? await selectLookupTools(this.llm, query, catalog, { signal: run.signal, contextTokens: options.contextTokens }) : undefined;
       if (selection?.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: selection?.warnings ?? [] }; return; }
-      const requiredReads = selection && !selection.aborted ? selection.toolNames : [];
-      const evidence = realmEvidence(this.userText(settings), run);
-      const definition = requiredReads.length === 1 ? catalog.find(tool => tool.name === requiredReads[0]) : undefined;
+      const evidence = realmEvidence(this.userText(settings), run, query);
+      const realmPath = query && catalog.some(tool => tool.name === 'get_realm_info') ? evidence.requestedPath() : undefined;
+      const requiredReads = realmPath
+        ? ['get_realm_info', ...(selection?.toolNames ?? []).filter(name => name !== 'get_realm_info' && name !== 'get_realm_source')]
+        : selection && !selection.aborted ? selection.toolNames : [];
+      const definition = !realmPath && requiredReads.length === 1 ? catalog.find(tool => tool.name === requiredReads[0]) : undefined;
       const schema = definition && 'jsonSchema' in definition ? definition.jsonSchema : undefined;
       const directRead = schema?.type === 'object' && schema.additionalProperties === false
         && Object.keys(schema.properties ?? {}).length === 0 && !(schema.required?.length)
         && Object.keys(schema).every(key => ['type', 'properties', 'required', 'additionalProperties', 'title', 'description', '$schema'].includes(key))
         ? definition?.name : undefined;
-      const remaining = this.lookupEvents(intent, settings, options, run, directRead ? [] : requiredReads, hidden, evidence, selection);
+      const remainingReads = requiredReads.filter(name => name !== directRead && !(realmPath && name === 'get_realm_info'));
+      const remaining = this.lookupEvents(intent, settings, options, run, remainingReads, hidden, evidence, selection, realmPath || undefined);
       const failed = { ...this.done(options.signal), metrics: selection?.metrics ?? this.done(options.signal).metrics, warnings: selection?.warnings ?? [] };
       const events = (async function* (): AsyncGenerator<GenerateEvent> {
         let rejectedCall = false;
@@ -520,7 +524,7 @@ export class AIAgent {
 
   private async *lookupEvents(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions,
     run: HarnessRun, requiredReads: readonly string[], hidden: ReadonlySet<string>, evidence: RealmEvidence,
-    selection: LookupToolSelection | undefined): AsyncGenerator<GenerateEvent> {
+    selection: LookupToolSelection | undefined, realmPath?: string): AsyncGenerator<GenerateEvent> {
     let done = this.done(run.signal);
     let outputTokens = selection?.metrics.outputTokens ?? (selection ? undefined : 0);
     const warnings = [...(selection?.warnings ?? [])];
@@ -544,6 +548,15 @@ export class AIAgent {
           options.onBalanceReferent?.(request.request.asset);
         }
       }
+    }
+    if (realmPath && run.canStartStep()) {
+      const name = 'get_realm_info';
+      const input = { path: realmPath };
+      const id = `${run.operationId}:realm-index`;
+      yield { type: 'tool-call', id, name, input, invalid: false };
+      const output = await run.dispatch({ name, input });
+      evidence.observe(name, input, output);
+      yield { type: 'tool-result', id, name, output };
     }
     if (requiredReads.length && run.canStartStep()) {
       const completed = new Set<string>();

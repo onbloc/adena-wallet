@@ -624,7 +624,57 @@ describe('indexed source evidence', () => {
     expect(textOf(events)).toContain('return amount');
     expect(textOf(events)).toContain('return 0');
     expect(mcp.calls.map(call => call.name)).toEqual(['get_realm_info', 'get_realm_source']);
-    expect(model.doGenerateCalls).toHaveLength(4);
+    expect(model.doGenerateCalls).toHaveLength(3);
+  });
+  it.each([
+    `${path} realm에서 Deposit 함수가 어떤 파일에 정의되어 있고 무슨 일을 하는지 알려줘.`,
+    `Which file implements Deposit in ${path}, and what does it return?`,
+  ])('uses the discovered index when tool selection is empty: %s', async prompt => {
+    const { agent, mcp } = setup([], { withWallet: false, intent, selection: [], tools: [info,
+      { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: `package vault\n// Deposit adds funds.\n${signature} { return amount }` } },
+    ] });
+    const events = await collect(agent.run({ prompt }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([
+      { name: 'get_realm_info', arguments: { path } },
+      { name: 'get_realm_source', arguments: { path, filename: 'vault.gno' } },
+    ]);
+    expect(textOf(events)).toContain('return amount');
+    expect(doneOf(events)?.verifiedAnswer).toBe(true);
+  });
+  it('uses the indexed file for another realm and a lowercase function', async () => {
+    const otherPath = 'gno.land/r/example/registry';
+    const otherSignature = 'func resolve(key string) string';
+    const { agent, mcp } = setup([], { withWallet: false, selection: [], intent: {
+      kind: 'lookup', requests: [{ target: 'other', query: `Show the implementation of resolve in ${otherPath}.` }],
+    }, tools: [
+      { name: 'get_realm_info', output: { path: otherPath, sourceFiles: ['entries.gno'], functions: [
+        { name: 'resolve', signature: otherSignature, filename: 'entries.gno', line: 2 },
+      ] } },
+      { name: 'get_realm_source', output: { path: otherPath, filename: 'entries.gno', content: `package registry\n${otherSignature} { return key }` } },
+    ] });
+    const events = await collect(agent.run({ prompt: `Show the implementation of resolve in ${otherPath}.` }, { account: ACCOUNT }));
+    expect(mcp.calls.map(call => call.arguments)).toEqual([{ path: otherPath }, { path: otherPath, filename: 'entries.gno' }]);
+    expect(textOf(events)).toContain('return key');
+  });
+  it('does not choose a realm when multiple explicit paths are supplied', async () => {
+    const { agent, mcp } = setup([], { withWallet: false, selection: [], intent, tools: [info] });
+    await collect(agent.run({ prompt: `Compare the Deposit function in ${path} and gno.land/r/example/other.` }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([]);
+  });
+  it('retains a separately selected read in a mixed realm lookup', async () => {
+    const { agent, mcp } = setup([call('get_transaction', { txHash: 'tx-123' })], {
+      withWallet: false, selection: ['get_realm_info', 'get_transaction'],
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: `Show the Deposit implementation in ${path} and transaction tx-123.` }] },
+      tools: [info,
+        { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: `package vault\n// Deposit adds funds.\n${signature} { return amount }` } },
+        { name: 'get_transaction', output: { hash: 'tx-123', status: 'success' } },
+      ],
+    });
+    const events = await collect(agent.run({ prompt: `Show the Deposit implementation in ${path} and transaction tx-123.` }, { account: ACCOUNT }));
+    expect(mcp.calls.map(call => call.name)).toEqual(['get_realm_info', 'get_realm_source', 'get_transaction']);
+    expect(textOf(events)).toContain('return amount');
+    expect(textOf(events)).toContain('tx-123');
+    expect(doneOf(events)?.verifiedAnswer).toBe(true);
   });
   it.each([
     ['wrong realm', { path: 'gno.land/r/other', filename: 'vault.gno', content: signature + ' {}' }],
