@@ -300,6 +300,15 @@ describe('DappService', () => {
       expect(readResponse(service.fail(request, 'weird')).error).toEqual({ code: 'UNEXPECTED_ERROR', message: 'The request could not be completed' });
     });
 
+    it('keeps the code and hash of an unknown broadcast outcome', async () => {
+      const { service } = await setup();
+      const request = service.parseRequestUrl(buildDappRequestUrl(payload()));
+
+      expect(readResponse(service.fail(request, new TransactionPendingError('HASH')))).toMatchObject({
+        status: 'failure', error: { code: 'TRANSACTION_PENDING' }, data: { hash: 'HASH' },
+      });
+    });
+
     it('answers crashes generically', async () => {
       const { service } = await setup();
       const request = service.parseRequestUrl(buildDappRequestUrl(payload()));

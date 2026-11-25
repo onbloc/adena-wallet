@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { DappMessageView } from '../components/pages';
 import { toErrorMessage } from '../core/error-message';
+import { AppErrorCode, isAppError } from '../core/errors';
 import { useContainer } from '../di/container-provider';
 import { DappMethod, DappRequest } from '../domain/dapp';
 import { queryKeys } from '../queries/query-keys';
@@ -48,7 +49,7 @@ export interface DappRequestFlow {
   approving: boolean;
   approve: () => Promise<string>;
   resetApproval: () => void;
-  // Callback URL answering the dApp with a rejection (or the resolution error).
+  // Callback URL answering the dApp with a rejection, or with the resolution/approval error.
   rejectionUrl: () => string | null;
 }
 
@@ -83,6 +84,21 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
   // A finished (approved, rejected or unmounted) request drops its draft.
   useEffect(() => (): void => queryClient.removeQueries({ queryKey: JSON.parse(preparedKeyHash), exact: true }), [preparedKeyHash, queryClient]);
 
+  // The last error from the wallet's own approval step (after authorization); the dApp hears it instead of a rejection.
+  const [attempt, setAttempt] = useState<{ key: string; error: unknown } | null>(null);
+  const attemptError = attempt && attempt.key === digest ? attempt.error : undefined;
+  const attempted = async (run: () => Promise<string> | string): Promise<string> => {
+    try {
+      return await run();
+    }
+    catch (error) {
+      setAttempt({ key: digest, error });
+      throw error;
+    }
+  };
+  // Approving again would only answer DUPLICATE_REQUEST and hide the pending hash.
+  const approvalLocked = isAppError(attemptError, AppErrorCode.TRANSACTION_PENDING) || isAppError(attemptError, AppErrorCode.DUPLICATE_REQUEST);
+
   const prepared = useQuery({
     queryKey: preparedKey,
     queryFn: () => {
@@ -115,7 +131,7 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
       };
 
       if (request.method === DappMethod.CONNECT) {
-        return authorized(() => dappService.approveConnect(request, context));
+        return authorized(() => attempted(() => dappService.approveConnect(request, context)));
       }
 
       const draft = prepared.data?.draft;
@@ -124,7 +140,7 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
         throw new Error('Transaction is not ready');
       }
 
-      return authorized(() => dappService.approveTransaction(request, context, draft));
+      return authorized(() => attempted(() => dappService.approveTransaction(request, context, draft)));
     },
   });
 
@@ -163,18 +179,22 @@ export const useDappRequestFlow = (request: DappRequest | null, options: DappReq
     error: resolveError
       ?? (prepared.error ? toErrorMessage(prepared.error) : undefined)
       ?? (approve.error ? toErrorMessage(approve.error) : undefined),
-    canApprove: Boolean(context) && !needsSwitch && (!isTransaction || Boolean(prepared.data)) && !codeReviewPending && !approve.isPending,
+    canApprove: Boolean(context) && !needsSwitch && (!isTransaction || Boolean(prepared.data)) && !codeReviewPending && !approve.isPending && !approvalLocked,
     approving: approve.isPending,
     approve: (): Promise<string> => approve.mutateAsync(),
     resetApproval: (): void => approve.reset(),
-    // Callback URL answering the dApp with a rejection (or the resolution error).
+    // Callback URL answering the dApp with a rejection, or with the resolution/approval error.
     rejectionUrl: (): string | null => {
       if (!request) {
         return null;
       }
 
-      // The original error keeps its code (e.g. NOT_CONNECTED) in the dApp response.
-      return resolveError ? dappService.fail(request, resolveCause ?? new Error(resolveError)) : dappService.reject(request);
+      // The original error keeps its code (e.g. NOT_CONNECTED, TRANSACTION_PENDING) in the dApp response.
+      if (resolveError) {
+        return dappService.fail(request, resolveCause ?? new Error(resolveError));
+      }
+
+      return attemptError !== undefined ? dappService.fail(request, attemptError) : dappService.reject(request);
     },
   };
 };

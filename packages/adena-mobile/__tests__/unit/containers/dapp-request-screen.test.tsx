@@ -4,6 +4,7 @@ import { Linking } from 'react-native';
 
 import { DappRequestPage, DappRequestPageProps } from '../../../src/components/pages';
 import { DappRequestScreen } from '../../../src/containers/main/dapp-request-screen';
+import { TransactionPendingError } from '../../../src/core/errors';
 import { decodeBase64Url } from '../../../src/deeplink/base64url';
 import { buildDappRequestUrl, DappRequestPayload, parseDappRequestUrl } from '../../../src/deeplink/dapp-protocol';
 import { DappRequest } from '../../../src/domain/dapp';
@@ -180,6 +181,23 @@ describe('DappRequestScreen', () => {
     expect(openURL).not.toHaveBeenCalled();
     expect(navigation.goBack).not.toHaveBeenCalled();
     expect(useDappRequestStore.getState()).toMatchObject({ inFlight: false, active: expect.anything() });
+  });
+
+  it('answers an unknown broadcast outcome with its code and hash, not a rejection', async () => {
+    const { env, address } = await setupWallet();
+
+    connect(env);
+    jest.spyOn(env.container.transactionService, 'signAndBroadcast').mockRejectedValue(new TransactionPendingError('PENDINGHASH'));
+    activate(callRequest(address));
+    await renderScreen(DappRequestScreen, { env, client: client() });
+
+    await screen.findByText('Network fee', {}, { timeout: 10_000 });
+    await fireEvent.press(screen.getByRole('button', { name: 'Approve' }));
+    await waitFor(() => expect(pageProps().canApprove).toBe(false));
+    await act(async () => pageProps().onReject());
+
+    await waitFor(() => expect(openURL).toHaveBeenCalledTimes(1));
+    expect(readResponse(openURL.mock.calls[0][0])).toMatchObject({ status: 'failure', error: { code: 'TRANSACTION_PENDING' }, data: { hash: 'PENDINGHASH' } });
   });
 
   it('asks to switch networks and switches on confirm', async () => {

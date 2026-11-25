@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import React, { PropsWithChildren } from 'react';
 
-import { AppError, AppErrorCode } from '../../../src/core/errors';
+import { AppError, AppErrorCode, TransactionPendingError } from '../../../src/core/errors';
 import { AppContainer } from '../../../src/di/container';
 import { ContainerProvider } from '../../../src/di/container-provider';
 import { DappMethod, DappRequest } from '../../../src/domain/dapp';
@@ -256,5 +256,27 @@ describe('useDappRequestFlow', () => {
       await b.result.current.approve();
     });
     expect(dapp.approveTransaction).toHaveBeenLastCalledWith(fromB, context, second.draft);
+  });
+
+  it('answers a failed approval with its error and a skipped one with a rejection', async () => {
+    const dapp = createDapp();
+    const pending = new TransactionPendingError('HASH');
+    const authorize = jest.fn().mockRejectedValueOnce(new AppError(AppErrorCode.INVALID_PASSWORD, 'Wrong password')).mockResolvedValue(undefined);
+
+    dapp.approveTransaction.mockRejectedValue(pending);
+    const { result } = await setup(dapp, request(DappMethod.SIGN_AND_BROADCAST), { allowCrossNetwork: false, authorize });
+
+    await waitFor(() => expect(result.current.canApprove).toBe(true));
+    await act(async () => {
+      await expect(result.current.approve()).rejects.toThrow('Wrong password');
+    });
+    expect(result.current.rejectionUrl()).toBe('cb://reject');
+    await act(async () => {
+      await expect(result.current.approve()).rejects.toBe(pending);
+    });
+    // The outcome is unknown, so approving again is not offered.
+    expect(result.current.canApprove).toBe(false);
+    expect(result.current.rejectionUrl()).toBe('cb://fail');
+    expect(dapp.fail).toHaveBeenLastCalledWith(expect.anything(), pending);
   });
 });

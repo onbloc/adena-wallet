@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppError, AppErrorCode } from '../src/core/errors';
+import { decodeBase64Url } from '../src/deeplink/base64url';
 import { buildDappRequestUrl } from '../src/deeplink/dapp-protocol';
 import { ContainerProvider } from '../src/di/container-provider';
 import { createSheetSession, InjectSheetScreen } from '../src/inject-sheet/inject-sheet-screen';
@@ -70,6 +72,32 @@ describe('Android overlay inject sheet', () => {
     expect(native.complete.mock.calls[0][1]).toMatch(/^exampleapp:\/\/adena\?response=/);
     expect(env.gno.state.broadcasts).toHaveLength(1);
     expect(env.container.keyringSession.isUnlocked()).toBe(false);
+  });
+
+  it('answers a failed approval with its error instead of a rejection', async () => {
+    const env = createTestContainer();
+    const account = await env.container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    const network = env.container.networkService.getCurrentNetwork();
+
+    env.container.walletService.lock();
+    env.container.connectedAppService.touch('exampleapp:', { name: 'Example' }, account.id, network.id);
+    jest.spyOn(env.container.transactionService, 'signAndBroadcast')
+      .mockRejectedValue(new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, 'A previous transaction is not confirmed yet.'));
+    await renderSheet(env.container, request({
+      method: 'sign-and-broadcast',
+      chainId: 'gnoland-1',
+      params: { messages: [{ type: '/vm.m_call', value: { caller: env.container.accountService.getAddress(account, network), pkg_path: 'gno.land/r/demo/counter', func: 'Increment' } }] },
+    }));
+
+    await waitFor(() => expect(screen.getByText('Network fee')).toBeTruthy());
+    await fireEvent.changeText(screen.getByPlaceholderText('Password'), TEST_PASSWORD);
+    await fireEvent.press(screen.getByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('A previous transaction is not confirmed yet.')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Reject' }));
+
+    const response = new URL(native.complete.mock.calls[0][1]).searchParams.get('response') ?? '';
+
+    expect(JSON.parse(decodeBase64Url(response))).toMatchObject({ status: 'failure', error: { code: 'PREVIOUS_TRANSACTION_PENDING' } });
   });
 
   it('answers a rejection through the callback', async () => {

@@ -190,7 +190,10 @@ export class DappService {
       return this.failUnexpected(request);
     }
 
-    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: error.code, message: error.message } });
+    // An unknown broadcast outcome carries the hash, so the dApp can track the transaction.
+    const data = error instanceof TransactionPendingError ? { data: { hash: error.hash } } : {};
+
+    return this.respond(request, { status: DappResponseStatus.FAILURE, error: { code: error.code, message: error.message }, ...data });
   }
 
   // Crashes (error boundaries) must not leak internal error text to the dApp.
