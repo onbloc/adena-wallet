@@ -213,6 +213,21 @@ describe('useSensitiveClipboard', () => {
       expect(Clipboard.setString).toHaveBeenCalledTimes(2);
     });
 
+    it('wipes on background again when a later native copy fails', async () => {
+      mockNative.current = { setSensitiveString: jest.fn() };
+      const { result } = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      mockNative.current.setSensitiveString.mockImplementation(() => {
+        throw new Error('unavailable');
+      });
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      expect(Clipboard.setString).toHaveBeenCalledWith(SECRET);
+
+      await act(async () => emitAppState('background'));
+      expect(Clipboard.setString).toHaveBeenLastCalledWith('');
+    });
+
     it('falls back to the plain clipboard when the module throws', async () => {
       mockNative.current = {
         setSensitiveString: jest.fn(() => {

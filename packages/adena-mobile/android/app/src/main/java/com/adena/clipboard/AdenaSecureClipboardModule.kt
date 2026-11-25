@@ -9,45 +9,51 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PersistableBundle
 import com.adena.specs.NativeAdenaSecureClipboardSpec
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.ReactApplicationContext
 
 /** Puts a secret on the clipboard flagged as sensitive, so the system clipboard preview masks it. */
-class AdenaSecureClipboardModule(reactContext: ReactApplicationContext) : NativeAdenaSecureClipboardSpec(reactContext) {
+class AdenaSecureClipboardModule(reactContext: ReactApplicationContext) :
+    NativeAdenaSecureClipboardSpec(reactContext), LifecycleEventListener {
 
   private val handler = Handler(Looper.getMainLooper())
-  private var pendingClear: Runnable? = null
+  private val clearTask = Runnable { SecureClipboardExpiry.clearIfExpired(reactApplicationContext) }
+
+  init {
+    // Eagerly created at app start: enforces a deadline missed while the process was dead.
+    if (!SecureClipboardExpiry.clearIfExpired(reactContext)) {
+      SecureClipboardExpiry.remainingMs(reactContext)?.let { handler.postDelayed(clearTask, it) }
+    }
+    reactContext.addLifecycleEventListener(this)
+  }
 
   override fun getName(): String = NAME
 
   override fun setSensitiveString(value: String, expiresInMs: Double) {
     val clipboard = reactApplicationContext.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+    val delayMs = expiresInMs.toLong().coerceAtLeast(MIN_EXPIRY_MS)
+    handler.removeCallbacks(clearTask)
+    SecureClipboardExpiry.arm(reactApplicationContext, value, delayMs)
+
     val clip = ClipData.newPlainText("", value)
     clip.description.extras = PersistableBundle().apply { putBoolean(EXTRA_IS_SENSITIVE, true) }
     clipboard.setPrimaryClip(clip)
-    scheduleClear(clipboard, value, expiresInMs.toLong().coerceAtLeast(MIN_EXPIRY_MS))
+    // Fast path while the process lives; the alarm covers process death and deep sleep (uptime pauses).
+    handler.postDelayed(clearTask, delayMs)
   }
 
-  // JS timers pause while the app is backgrounded, so the deadline runs on the main looper instead.
-  private fun scheduleClear(clipboard: ClipboardManager, value: String, delayMs: Long) {
-    pendingClear?.let(handler::removeCallbacks)
-    val task = Runnable {
-      pendingClear = null
-      // Android 10+ hides the clipboard from background apps (null); clearing then beats leaving the secret.
-      val current = runCatching { clipboard.primaryClip?.getItemAt(0)?.text?.toString() }.getOrNull()
-      if (current == null || current == value) {
-        clear(clipboard)
-      }
-    }
-    pendingClear = task
-    handler.postDelayed(task, delayMs)
+  override fun onHostResume() {
+    SecureClipboardExpiry.clearIfExpired(reactApplicationContext)
   }
 
-  private fun clear(clipboard: ClipboardManager) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      clipboard.clearPrimaryClip()
-    } else {
-      clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
-    }
+  override fun onHostPause() = Unit
+
+  override fun onHostDestroy() = Unit
+
+  override fun invalidate() {
+    reactApplicationContext.removeLifecycleEventListener(this)
+    handler.removeCallbacks(clearTask)
+    super.invalidate()
   }
 
   companion object {

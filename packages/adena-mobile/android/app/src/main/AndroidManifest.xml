@@ -47,5 +47,9 @@
             <data android:scheme="adena" android:host="request" />
         </intent-filter>
       </activity>
+      <!-- Clears an expired copied secret; only the app's own alarm can reach it. -->
+      <receiver
+        android:name=".clipboard.SecureClipboardClearReceiver"
+        android:exported="false" />
     </application>
 </manifest>

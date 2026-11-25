@@ -18,7 +18,7 @@ class AdenaSecureClipboardPackage : BaseReactPackage() {
                 name = AdenaSecureClipboardModule.NAME,
                 className = AdenaSecureClipboardModule.NAME,
                 canOverrideExistingModule = false,
-                needsEagerInit = false,
+                needsEagerInit = true,
                 isCxxModule = false,
                 isTurboModule = true,
             ),
