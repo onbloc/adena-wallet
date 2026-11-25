@@ -119,7 +119,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
   const [maxApproximate, setMaxApproximate] = useState(false);
   const maxEpochRef = useRef(0);
   const sendingRef = useRef(false);
-  const feeSelection = useFeeSelection(prepared?.estimate ?? null, network);
+  const feeSelection = useFeeSelection(prepared?.estimate ?? null, prepared?.network ?? network);
 
   const tokensQuery = useQuery({
     queryKey: queryKeys.swapTokens(network.id),

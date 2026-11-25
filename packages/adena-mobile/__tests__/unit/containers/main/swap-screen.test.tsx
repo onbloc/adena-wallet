@@ -6,6 +6,7 @@ import { SwapToken } from '../../../../src/domain/swap';
 import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS, REPLACEABLE_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { queryKeys } from '../../../../src/queries/query-keys';
 import { SWAP_QUOTE_TTL_MS, SwapMaxResult } from '../../../../src/services/swap.service';
+import { useSessionStore } from '../../../../src/stores/session.store';
 import { GnoswapFakeOptions, GNS, installGnoswapFakes, qeval } from '../../../helpers/gnoswap-fakes';
 import { renderScreen, resetStores, setupWallet, toastMessage } from '../../../helpers/render-screen';
 import { createTestContainer } from '../../../helpers/test-container';
@@ -330,6 +331,22 @@ describe('SwapScreen', () => {
     expect(await within(screen.getByTestId('swap-buy')).findByText('4', undefined, LOOKUP)).toBeTruthy();
     expect(screen.getByText('Review swap')).toBeTruthy();
     expect(env.gno.state.broadcasts).toHaveLength(0);
+  });
+
+  it('labels the review fee with the reviewed network even if the current network changes', async () => {
+    const { env, network } = await setup();
+
+    await pickGns();
+    await typeAmount('1');
+    await screen.findByText('4.15136', undefined, LOOKUP);
+    await press('Review swap');
+    await screen.findByText('Confirm swap', undefined, LOOKUP);
+    jest.spyOn(env.container.networkService, 'getCurrentNetwork')
+      .mockReturnValue({ ...network, feeToken: { ...network.feeToken, symbol: 'OTHER' } });
+    await act(async () => useSessionStore.setState(state => ({ revision: state.revision + 1 })));
+
+    expect(screen.getAllByText(/ GNOT$/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/ OTHER$/)).toBeNull();
   });
 
   it('stores a swap with an unknown outcome for its account and network, so it stays blocked after a restart', async () => {
