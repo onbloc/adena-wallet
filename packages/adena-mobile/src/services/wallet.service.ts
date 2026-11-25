@@ -207,7 +207,7 @@ export class WalletService {
   }
 
   // The backup cannot be read again without its password, so a restore cut short is undone
-  // and the app returns to onboarding. Queued behind a restore still running in this process.
+  // and the app returns to onboarding. Queued behind a restore still running in this JS runtime, in any root.
   private rollBackInterruptedRestore(): Promise<void> {
     return this.accountService.runExclusive(async () => {
       if (this.restoreMarker?.isPending()) {

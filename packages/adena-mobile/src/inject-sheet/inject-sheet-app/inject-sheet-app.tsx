@@ -18,8 +18,8 @@ export interface InjectSheetAppProps {
   callerPackage?: string;
 }
 
-// Separate root for the Android overlay. It owns its own container, so its keyring
-// session is independent of (and never unlocked by) the main wallet UI.
+// Separate root for the Android overlay. It owns its own container, so its keyring session is independent
+// of (and never unlocked by) the main wallet UI; wallet mutations, restore included, share one runtime queue.
 const InjectSheetRoot = ({ requestUrl, sheetToken, callerPackage }: InjectSheetAppProps): ReactElement | null => {
   const boot = useNativeContainerQuery();
   const container = boot.data ?? null;

@@ -22,15 +22,14 @@ export interface AppendAccountOptions {
 }
 
 export class AccountService {
-  // Account and keyring mutations share this queue (WalletService runs on it too), so index
+  // Account and keyring mutations share `mutations` (WalletService runs on it too), so index
   // allocation and keyring removal always see each other's result.
-  private readonly mutations = new SerialQueue();
-
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly keyringSession: KeyringSession,
     private readonly chainRegistry: ChainRegistry,
     private readonly random: () => number = Math.random,
+    private readonly mutations: SerialQueue = new SerialQueue(),
   ) {}
 
   getAccounts(): Account[] {

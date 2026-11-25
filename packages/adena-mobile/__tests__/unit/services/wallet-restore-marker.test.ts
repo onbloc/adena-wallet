@@ -120,4 +120,45 @@ describe('WalletService.restoreWallet restore marker', () => {
     expect(await secureStore.hasItem(SecureKey.VAULT_STAGING)).toBe(false);
     expect(keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
   });
+
+  it('does not let another root in the same runtime roll back a restore still running', async () => {
+    const main = createTestContainer({ sameRuntime: true });
+    const sheet = createTestContainer({ sameRuntime: true, relaunch: { secureStore: main.secureStore, keyValueStore: main.keyValueStore } });
+    const append = main.container.accountService.appendAccount.bind(main.container.accountService);
+    let resume = (): void => undefined;
+    const paused = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+
+    // The main app's restore stops right after its vault write.
+    jest.spyOn(main.container.accountService, 'appendAccount').mockImplementation(async (...args) => {
+      await paused;
+      return append(...args);
+    });
+    const restoring = main.container.walletService.restoreWallet({ keyrings: [...keyrings], accounts: [{ keyringId: 'hd', name: 'Main', hdIndex: 0 }], password: TEST_PASSWORD });
+
+    for (let tries = 0; !(await main.secureStore.hasItem(SecureKey.VAULT)) && tries < 500; tries += 1) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+
+    let sheetStatus: string | undefined;
+    const status = sheet.container.walletService.getStatus().then((value) => {
+      sheetStatus = value;
+      return value;
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(sheetStatus).toBeUndefined();
+    expect(await main.secureStore.hasItem(SecureKey.VAULT)).toBe(true);
+
+    resume();
+    expect((await restoring).name).toBe('Main');
+    jest.restoreAllMocks();
+    expect(await status).toBe('locked');
+    expect(await main.container.walletService.getStatus()).toBe('unlocked');
+    expect(main.keyValueStore.getString(StorageKey.RESTORE_PENDING)).toBeUndefined();
+
+    await sheet.container.walletService.unlock(TEST_PASSWORD);
+    expect(sheet.container.accountService.getAccounts().map(account => account.keyringId)).toEqual(['hd', 'pk']);
+  });
 });

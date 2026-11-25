@@ -56,6 +56,7 @@ import { TransactionService } from '../services/transaction.service';
 import { VaultService } from '../services/vault.service';
 import { WalletService } from '../services/wallet.service';
 import { KeyValueStore } from '../storage/key-value-store';
+import { SerialQueue } from '../utils/serial-queue';
 
 // Platform-level dependencies. Swap any of them to mock a layer.
 export interface Infrastructure {
@@ -80,7 +81,13 @@ export interface Infrastructure {
   hapticEngine?: HapticEngine;
   // Picks new accounts' avatar colors; injectable for deterministic tests.
   random?: () => number;
+  // Wallet mutation queue; defaults to the one shared by every container in this JS runtime.
+  walletMutations?: SerialQueue;
 }
+
+// The main app and each Android inject sheet build their own container over the same storage. Sharing
+// this queue lets a restore and another root's rollback check never interleave; keyring sessions stay separate.
+const runtimeWalletMutations = new SerialQueue();
 
 export interface Services {
   walletService: WalletService;
@@ -135,7 +142,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const keyringSession = new KeyringSession();
   const attemptLimiter = new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore), infra.now);
   const vaultService = new VaultService(vaultRepository, infra.vaultCipher ?? new ScryptXChaChaVaultCipher(), attemptLimiter);
-  const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry, infra.random);
+  const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry, infra.random, infra.walletMutations ?? runtimeWalletMutations);
   const accountPhotoService = overrides.accountPhotoService ?? new AccountPhotoService(new StorageAccountPhotoRepository(keyValueStore));
   const networkService = overrides.networkService ?? new NetworkService(networkRepository, chainRegistry);
   const balanceService = overrides.balanceService ?? new BalanceService(chainRegistry, accountService);

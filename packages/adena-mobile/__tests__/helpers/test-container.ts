@@ -7,6 +7,7 @@ import { BackupCodec } from '../../src/security/backup-codec';
 import { MemorySecureStore } from '../../src/security/memory-secure-store';
 import { ScryptXChaChaVaultCipher } from '../../src/security/vault-cipher';
 import { MemoryKeyValueStore } from '../../src/storage/memory-key-value-store';
+import { SerialQueue } from '../../src/utils/serial-queue';
 import { createFakeGnoProvider } from './fake-gno-provider';
 import { FakeHttpClient } from './fake-http';
 
@@ -22,11 +23,14 @@ export const createTestBackupCodec = (): BackupCodec =>
 // Every platform dependency is swapped for an in-memory fake.
 // `cloudBackupStoreOverride` swaps the in-memory cloud for another store (e.g. the native adapter over a mock).
 // `relaunch` reuses the storage of an earlier container, like the app starting again on the same device.
+// `sameRuntime` keeps the runtime-wide wallet queue, like another root (inject sheet) in the running app;
+// otherwise each container gets its own, as a separate process would.
 export const createTestContainer = (options: {
   now?: () => number;
   cloudBackup?: MemoryCloudBackupStoreOptions;
   cloudBackupStoreOverride?: CloudBackupStore;
   relaunch?: { secureStore: MemorySecureStore; keyValueStore: MemoryKeyValueStore };
+  sameRuntime?: boolean;
 } = {}) => {
   const secureStore = options.relaunch?.secureStore ?? new MemorySecureStore();
   const keyValueStore = options.relaunch?.keyValueStore ?? new MemoryKeyValueStore();
@@ -39,6 +43,7 @@ export const createTestContainer = (options: {
     http,
     vaultCipher: new ScryptXChaChaVaultCipher({ N: 2 ** 10, r: 8, p: 1 }),
     now: options.now,
+    walletMutations: options.sameRuntime ? undefined : new SerialQueue(),
     cloudBackupStore: options.cloudBackupStoreOverride ?? cloudBackupStore,
     backupCodec: createTestBackupCodec(),
     chainModules: [createGnoModule({ providerFactory: gno.factory, http }), createCosmosModule({ http })],
