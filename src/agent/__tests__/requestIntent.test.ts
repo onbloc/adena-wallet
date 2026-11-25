@@ -520,10 +520,6 @@ describe('preparation argument proposals', () => {
     JSON.stringify({ ...exact, asset: { kind: 'id', value: 'i'.repeat(257) } }),
     JSON.stringify({ ...exact, amount: undefined }),
     JSON.stringify({ ...exact, amount: '1' }),
-    JSON.stringify({ ...exact, amount: { kind: 'exact' } }),
-    JSON.stringify({ ...exact, amount: { kind: 'exact', value: 1 } }),
-    ...['', '-1', '+1', '.5', '1.', '1e3', '1,000', 'NaN', 'Infinity', ' 1 ', '1\n', '1\r', '1'.repeat(41)]
-      .map(value => JSON.stringify({ ...exact, amount: { kind: 'exact', value } })),
     ...[
       { numerator: '1' },
       { denominator: '2' },
@@ -557,6 +553,42 @@ describe('preparation argument proposals', () => {
     const { llm, calls } = scriptedLlm(classificationEvents(text));
     await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
     expect(calls).toHaveLength(1);
+  });
+
+  it.each(['', 'abc', '-1', '+1', '.5', '1.', '1e3', '1,000', 'NaN', 'Infinity', ' 1 ', '1\n', '1\r', '1'.repeat(41)])(
+    'asks for the amount, without retrying, when only the exact amount is not a number: %j',
+    async value => {
+      const { llm, calls } = scriptedLlm(classificationEvents(JSON.stringify({ ...exact, amount: { kind: 'exact', value } })));
+      const result = await proposePreparation(llm, request, options);
+      expect(result).toMatchObject({ aborted: false, proposal: { operation: 'clarification', question: expect.stringContaining('amount') } });
+      expect(calls).toHaveLength(1);
+    }
+  );
+
+  it.each([{ kind: 'exact' }, { kind: 'exact', value: 1 }, { kind: 'exact', value: null }])(
+    'asks for the amount when the exact value is missing or not text: %j',
+    async amount => {
+      const { llm } = scriptedLlm(classificationEvents(JSON.stringify({ ...exact, amount })));
+      await expect(proposePreparation(llm, request, options)).resolves.toMatchObject({ proposal: { operation: 'clarification' } });
+    }
+  );
+
+  it('asks for the amount of an approval as well', async () => {
+    const { llm } = scriptedLlm(classificationEvents(JSON.stringify({ ...exact, operation: 'approve', amount: { kind: 'exact', value: 'abc' } })));
+    await expect(proposePreparation(llm, request, options)).resolves.toMatchObject({ proposal: { operation: 'clarification' } });
+  });
+
+  const notANumber = { kind: 'exact', value: 'abc' };
+  it.each([
+    ['the recipient is empty', { ...exact, recipient: '', amount: notANumber }],
+    ['the asset is malformed', { ...exact, asset: { kind: 'symbol', value: '' }, amount: notANumber }],
+    ['a field is extra', { ...exact, from: 'g1attacker', amount: notANumber }],
+    ['the amount carries an extra field', { ...exact, amount: { ...notANumber, numerator: '1' } }],
+    ['the amount is a malformed fraction', { ...exact, amount: { kind: 'fraction', numerator: '1', denominator: '0' } }],
+    ['the amount is absent', { ...exact, amount: undefined }],
+  ])('still fails closed when the amount is not the only flaw: %s', async (_label, proposal) => {
+    const { llm } = scriptedLlm(classificationEvents(JSON.stringify(proposal)));
+    await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
   });
 
   it.each([undefined, 'length', 'tool-calls', 'error', 'content-filter'])('rejects non-complete finish reason %s', async finishReason => {

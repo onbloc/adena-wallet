@@ -84,6 +84,7 @@ APPROVE: letting/allowing a spender use tokens from the user's account. This gra
 Copy the supplied address or name exactly. Addresses are opaque strings: do not validate their format or require a known contact. The wallet resolves names and validates addresses.
 asset is {"kind":"symbol","value":"supplied symbol"} or {"kind":"id","value":"exact supplied asset ID"}. GNOT is valid native currency; no raw ID is required. Do not substitute assets.
 amount is {"kind":"exact","value":"original decimal string"} (at most 40 characters, non-negative, preserve leading zeros), or {"kind":"fraction","numerator":"integer","denominator":"positive integer"} only for an explicit share of the user's current balance. Half is 1/2, all is 1/1, 12.5% is 125/1000. Code obtains the balance; never calculate or guess it. Fraction integers have at most 78 digits.
+An amount is a number the user wrote, or an explicit share of the balance. If no amount is written, or what is written is not a number, ask for it with a clarification: never use 1 or any other default. Ask only about the field that is missing: when the user wrote an amount, never ask for it again.
 If a field is actually absent or conflicting, or there are multiple actions or an action plus unrelated tasks, return {"operation":"clarification","question":"concise question resolving the missing information"}. Never invent a recipient, amount or asset, lower a refused amount, or include sender/chain/permission fields.
 Examples:
 User: Could you pay Dana 4.25 XYZ?
@@ -116,6 +117,24 @@ const preparationProposalSchema = z.discriminatedUnion('operation', [
   }),
 ]);
 export type PreparationProposal = z.infer<typeof preparationProposalSchema>;
+
+const AMOUNT_QUESTION = 'What amount? Write it as a number, for example 1.5.';
+
+/**
+ * A transfer or approval whose only flaw is an exact amount that is not a number (empty, "abc")
+ * has no amount: ask for it. Any other malformed answer stays invalid.
+ */
+function askForAmount(decoded: unknown): PreparationProposal | undefined {
+  if (typeof decoded !== 'object' || decoded === null || !('amount' in decoded)) return undefined;
+  const { amount } = decoded;
+  if (typeof amount !== 'object' || amount === null || !('kind' in amount) || amount.kind !== 'exact') return undefined;
+  if (Object.keys(amount).some((key) => key !== 'kind' && key !== 'value')) return undefined;
+  const withAmount = preparationProposalSchema.safeParse({ ...decoded, amount: { kind: 'exact', value: '1' } });
+  return withAmount.success && withAmount.data.operation !== 'clarification'
+    ? { operation: 'clarification', question: AMOUNT_QUESTION }
+    : undefined;
+}
+
 export type PreparationPlanning = {
   metrics: Metrics;
   warnings: string[];
@@ -140,6 +159,8 @@ async function generateStrict<T>(
     onContextCompacted?: (droppedTurns: number) => void;
   },
   invalidOutput: () => Error,
+  /** A reading of malformed output that is safe to use instead of failing. */
+  recover?: (decoded: unknown) => T | undefined,
 ): Promise<StrictGeneration<T>> {
   const started = Date.now();
   const emptyMetrics = (): Metrics => ({ totalMs: Date.now() - started, ttftMs: null });
@@ -183,7 +204,11 @@ async function generateStrict<T>(
   let decoded: unknown;
   try { decoded = JSON.parse(text); } catch { throw invalidOutput(); }
   const parsed = schema.safeParse(decoded);
-  if (!parsed.success) throw invalidOutput();
+  if (!parsed.success) {
+    const recovered = recover?.(decoded);
+    if (recovered === undefined) throw invalidOutput();
+    return { ...result, aborted: false, value: recovered };
+  }
   return { ...result, aborted: false, value: parsed.data };
 }
 
@@ -243,7 +268,7 @@ export async function proposePreparation(
   const result = await generateStrict(llm, {
     messages: context,
     system: PREPARATION_PROMPT,
-  }, preparationProposalSchema, options, invalidPreparation);
+  }, preparationProposalSchema, options, invalidPreparation, askForAmount);
   if (result.aborted) return result;
   return { aborted: false, proposal: result.value, metrics: result.metrics, warnings: result.warnings };
 }
