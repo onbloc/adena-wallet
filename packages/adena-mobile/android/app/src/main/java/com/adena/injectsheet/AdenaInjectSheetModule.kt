@@ -21,22 +21,25 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
   override fun getName(): String = NAME
 
   override fun complete(sheetToken: String, callbackUrl: String) {
-    // Each launched sheet answers once; an unknown or already answered token is dropped.
-    val caller = launched.remove(sheetToken) ?: return
+    val caller = launched.remove(sheetToken)
     val activity = sheet(sheetToken)
     if (activity == null) {
       // The sheet closed while JS was still signing; the dApp must still get the result.
-      if (isAllowedCallback(callbackUrl)) {
+      // Without a caller entry the token is unknown or already answered.
+      if (caller != null && isAllowedCallback(callbackUrl)) {
         openCallback(reactApplicationContext.applicationContext, Uri.parse(callbackUrl), caller.packageName)
       }
       return
     }
+    // Each live sheet answers once, even if its caller entry is gone.
+    if (!activity.claimAnswer()) return
+    val callerPackage = caller?.packageName ?: activity.callerPackage
     activity.runOnUiThread {
       // The response goes only to the callback the user reviewed, never back to the launching app:
       // a caller can claim any callback origin, so a result intent would hand it another origin's response.
       activity.setResult(Activity.RESULT_OK)
       if (isAllowedCallback(callbackUrl)) {
-        openCallback(activity, Uri.parse(callbackUrl), caller.packageName)
+        openCallback(activity, Uri.parse(callbackUrl), callerPackage)
       }
       activity.finish()
     }
@@ -45,6 +48,7 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
   override fun dismiss(sheetToken: String) {
     launched.remove(sheetToken)
     val activity = sheet(sheetToken) ?: return
+    activity.claimAnswer()
     activity.runOnUiThread {
       activity.setResult(Activity.RESULT_CANCELED)
       activity.finish()
@@ -99,17 +103,24 @@ class AdenaInjectSheetModule(reactContext: ReactApplicationContext) : NativeAden
     private class Caller(val packageName: String?)
 
     private val sheets = ConcurrentHashMap<String, WeakReference<InjectSheetActivity>>()
-    // Outlives the activity so a late complete can still reach the callback; bounded and answered once.
-    private val launched: MutableMap<String, Caller> = Collections.synchronizedMap(
-        object : LinkedHashMap<String, Caller>() {
-          override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Caller>?): Boolean = size > MAX_LAUNCHED
-        },
-    )
+    // Outlives the activity so a late complete can still reach the callback; answered once. The cap evicts
+    // only entries whose sheet is gone, so a live sheet always keeps its caller.
+    private val launched: MutableMap<String, Caller> = Collections.synchronizedMap(LinkedHashMap())
     @Volatile private var instance: WeakReference<AdenaInjectSheetModule>? = null
 
     fun register(token: String, activity: InjectSheetActivity) {
       sheets[token] = WeakReference(activity)
-      launched[token] = Caller(activity.callerPackage)
+      synchronized(launched) {
+        launched[token] = Caller(activity.callerPackage)
+        var excess = launched.size - MAX_LAUNCHED
+        val tokens = launched.keys.iterator()
+        while (excess > 0 && tokens.hasNext()) {
+          if (sheets[tokens.next()]?.get() == null) {
+            tokens.remove()
+            excess--
+          }
+        }
+      }
     }
 
     fun unregister(token: String) {

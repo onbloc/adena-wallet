@@ -9,6 +9,7 @@ import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Translucent activity that handles `adena://request` links on top of the calling dApp.
@@ -27,6 +28,11 @@ class InjectSheetActivity : ReactActivity() {
 
   // Set by JS while an approval signs or broadcasts; back must not close the sheet then.
   @Volatile var busy = false
+
+  private val answered = AtomicBoolean(false)
+
+  /** True only for the first complete or dismiss of this sheet. */
+  fun claimAnswer(): Boolean = answered.compareAndSet(false, true)
 
   override fun onCreate(savedInstanceState: Bundle?) {
     WindowProtection.apply(this)
