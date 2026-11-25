@@ -214,6 +214,6 @@ describe('activity amounts for GRC20 tokens', () => {
     const gns = { id: 'gno.land/r/gnoswap/gns.GNS', type: 'grc20', pkgPath: 'gno.land/r/gnoswap/gns', symbol: 'GNS', decimals: 6, denom: 'GNS' };
 
     expect(formatActivityAmount({ value: '10000000000', denom: 'gno.land/r/gnoswap/gns' }, [gns])).toBe('10,000 GNS');
-    expect(formatActivityAmount({ value: '5', denom: 'gno.land/r/demo/unknown' }, [gns])).toBe('5 unknown');
+    expect(formatActivityAmount({ value: '5', denom: 'gno.land/r/demo/unknown' }, [gns])).toBe('5 unknown (raw)');
   });
 });
