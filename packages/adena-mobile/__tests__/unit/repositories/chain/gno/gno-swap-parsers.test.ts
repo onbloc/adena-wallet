@@ -140,6 +140,12 @@ describe('pool candidates', () => {
     expect(buildPoolCandidates(pools, WUGNOT, 'gno.land/r/none/x.X')).toEqual([]);
   });
 
+  it('rejects a non-array pools payload but accepts an empty list', () => {
+    expect(() => parsePools({ pools: [] }, TIERS)).toThrow(SwapDataError);
+    expect(() => parsePools(undefined, TIERS)).toThrow(SwapDataError);
+    expect(parsePools([], TIERS)).toEqual([]);
+  });
+
   it('skips pools with unknown fee tiers or prices', () => {
     expect(parsePools([{ fee: '2500', price: '1', tokenA: { path: WUGNOT }, tokenB: { path: GNS } }, { fee: '3000', price: '-1', tokenA: { path: WUGNOT }, tokenB: { path: GNS } }], TIERS)).toEqual([]);
   });

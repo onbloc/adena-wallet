@@ -220,8 +220,13 @@ export interface SwapPool {
   tvlUsd: number;
 }
 
-export const parsePools = (raw: unknown, feeTiers: number[]): SwapPool[] =>
-  (Array.isArray(raw) ? raw : []).flatMap((item): SwapPool[] => {
+// `/pools` data; a non-array answer is an outage, not an empty market, so it rejects.
+export const parsePools = (raw: unknown, feeTiers: number[]): SwapPool[] => {
+  if (!Array.isArray(raw)) {
+    throw new SwapDataError('pools response is malformed');
+  }
+
+  return raw.flatMap((item): SwapPool[] => {
     const pool = asRecord(item);
     const tokenA = asRecord(pool?.tokenA)?.path;
     const tokenB = asRecord(pool?.tokenB)?.path;
@@ -234,6 +239,7 @@ export const parsePools = (raw: unknown, feeTiers: number[]): SwapPool[] =>
 
     return [{ tokenA, tokenB, fee, price, tvlUsd: positiveNumber(pool?.tvl) ?? 0 }];
   });
+};
 
 const hopThrough = (pool: SwapPool, tokenIn: string): SwapHop => {
   const forward = pool.tokenA === tokenIn;

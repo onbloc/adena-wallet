@@ -104,6 +104,12 @@ describe('SwapService', () => {
     await expectCode(service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
   });
 
+  it('reports a failed quote when the API is down and the pools answer is malformed', async () => {
+    const { service, network, gnot, gns } = await setup({ route: null, pools: { pools: [] } });
+
+    await expectCode(service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+  });
+
   it('still reports no route when the API is down but the pools answer without one', async () => {
     const { service, network, gnot, gns } = await setup({ route: null, pools: [] });
 
