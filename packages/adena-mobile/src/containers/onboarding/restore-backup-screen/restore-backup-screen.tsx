@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { ReactElement, useEffect, useRef, useState } from 'react';
 
-import { RestoreBackupPage, RestoreBackupPageState, RestoreDeleteStep } from '../../../components/pages';
+import { RestoreBackupPage, RestoreBackupPageState, RestoreBackupVersionOption, RestoreDeleteStep } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { AppErrorCode, isAppError } from '../../../core/errors';
 import { useContainer } from '../../../di/container-provider';
@@ -9,7 +9,14 @@ import { OnboardingStackParamList } from '../../../navigation/types';
 import { cloudProviderName, describeBackupError, formatBackupTime } from '../../../presenters/cloud-backup.presenter';
 import { useRestorableBackupsQuery } from '../../../queries/cloud-backup.queries';
 import { CloudBackupProvider } from '../../../repositories/cloud-backup/cloud-backup-store';
+import { RestorableBackupVersion } from '../../../services/cloud-backup.service';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
+
+const versionOption = (version: RestorableBackupVersion, index: number): RestoreBackupVersionOption => ({
+  id: version.fileName,
+  label: `${version.revision === null ? 'Version' : `Revision ${version.revision}`} · ${formatBackupTime(version.modifiedAt)}`,
+  description: [index === 0 && 'Latest', version.current && 'Used on this device'].filter(Boolean).join(' · ') || undefined,
+});
 
 const CLOUD_ERRORS: AppErrorCode[] = [
   AppErrorCode.CLOUD_BACKUP_UNAVAILABLE,
@@ -28,6 +35,9 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
 
   const [selectedId, setSelectedId] = useState<string>();
   const [password, setPassword] = useState('');
+  const [selectedVersionId, setSelectedVersionId] = useState<string>();
+  const [versionSheetVisible, setVersionSheetVisible] = useState(false);
+  const [showOlderVersionHint, setShowOlderVersionHint] = useState(false);
   const [error, setError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -51,7 +61,11 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
   }, [navigation]);
 
   const backups = backupsQuery.data ?? [];
-  const selected = backups.find(backup => backup.fileName === selectedId)?.fileName ?? backups[0]?.fileName;
+  const selectedBackup = backups.find(backup => backup.fileName === selectedId) ?? backups[0];
+  const selected = selectedBackup?.fileName;
+  // The newest version stays the default until the user picks another one.
+  const versions = selectedBackup?.versions ?? [];
+  const selectedVersion = versions.find(version => version.fileName === selectedVersionId)?.fileName ?? selected;
   const pendingDelete = backups.find(backup => backup.fileName === deleteTarget);
 
   const state: RestoreBackupPageState = backupsQuery.data
@@ -61,13 +75,15 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
           kind: 'ready',
           backups: backups.map(backup => ({ id: backup.fileName, label: `Backup from ${formatBackupTime(backup.modifiedAt)}` })),
           selectedId: selected!,
+          versions: versions.map(versionOption),
+          selectedVersionId: selectedVersion,
         }
     : backupsQuery.error && !backupsQuery.isFetching
       ? { kind: 'error', ...describeBackupError(backupsQuery.error, provider) }
       : { kind: 'loading' };
 
   const handleSubmit = async (): Promise<void> => {
-    if (!selected || !password || submittingRef.current) {
+    if (!selectedVersion || !password || submittingRef.current) {
       return;
     }
 
@@ -76,7 +92,8 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
     const operation = ++operationRef.current;
 
     try {
-      const content = await cloudBackupService.openBackup(selected, password);
+      // Every version goes through the same restore attempt limiter.
+      const content = await cloudBackupService.openBackup(selectedVersion, password);
 
       // Dropped unused when the user left meanwhile.
       if (operation !== operationRef.current) {
@@ -94,6 +111,8 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
 
       if (isAppError(openError, AppErrorCode.INVALID_PASSWORD)) {
         setError('Incorrect backup password.');
+        // An older version may still use an earlier backup password.
+        setShowOlderVersionHint(selectedVersion === versions[0]?.fileName && versions.length > 1);
       }
       else if (CLOUD_ERRORS.some(code => isAppError(openError, code))) {
         setError(describeBackupError(openError, provider).description);
@@ -154,6 +173,15 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
 
   const handleSelect = (id: string): void => {
     setSelectedId(id);
+    setSelectedVersionId(undefined);
+    setShowOlderVersionHint(false);
+    setError(undefined);
+  };
+
+  const handleSelectVersion = (id: string): void => {
+    setSelectedVersionId(id);
+    setVersionSheetVisible(false);
+    setShowOlderVersionHint(false);
     setError(undefined);
   };
 
@@ -176,6 +204,11 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
       deleting={deleting}
       onConfirmDelete={handleConfirmDelete}
       onCancelDelete={() => !deleting && closeDelete()}
+      showOlderVersionHint={showOlderVersionHint}
+      versionSheetVisible={versionSheetVisible}
+      onOpenVersions={() => !submittingRef.current && setVersionSheetVisible(true)}
+      onSelectVersion={handleSelectVersion}
+      onCloseVersions={() => setVersionSheetVisible(false)}
     />
   );
 };

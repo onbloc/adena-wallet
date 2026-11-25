@@ -42,11 +42,24 @@ export type CloudBackupStatus
       uploading?: { error?: unknown };
     };
 
+// One stored file of a backup. Each write may use a different backup password.
+export interface RestorableBackupVersion {
+  fileName: string;
+  // Null for an unread single-file backup.
+  revision: number | null;
+  modifiedAt: number;
+  // The file this device last wrote or restored.
+  current: boolean;
+}
+
 export interface RestorableBackup {
+  // The default version: the newest readable one.
   fileName: string;
   modifiedAt: number;
   // The backup this device last wrote or restored.
   current: boolean;
+  // Every version a restore can open, newest first; the first is the default.
+  versions: RestorableBackupVersion[];
 }
 
 export interface CreateBackupInput {
@@ -267,7 +280,7 @@ export class CloudBackupService {
     });
   }
 
-  // One entry per backup, pointing at its newest readable version; newest first.
+  // One entry per backup with every version it can open, newest first; unreadable ones are left out unless none is readable.
   // Without `interactive`, Google Drive fails with CLOUD_BACKUP_NOT_SIGNED_IN until access is granted.
   async findBackups(options: { interactive?: boolean } = {}): Promise<RestorableBackup[]> {
     if (options.interactive) {
@@ -276,14 +289,25 @@ export class CloudBackupService {
 
     const files = await this.store.list();
     const backupIds = new Set(files.map(file => parseBackupFileName(file.name)?.backupId).filter(id => id !== undefined));
-    const currentBackupId = this.stateRepository.get()?.backupId;
+    const state = this.stateRepository.get();
     const backups: RestorableBackup[] = [];
 
     for (const backupId of backupIds) {
       const group = versionFilesOf(files, backupId);
-      const newest = group.length === 1 ? group[0] : newestVersion(await this.readVersionsOf(group, backupId)) ?? newestFile(group);
+      // Pruning keeps only the version each write replaced, so a password from two writes back is no longer listed.
+      const readable = group.length === 1 ? [] : readableVersions(await this.readVersionsOf(group, backupId));
+      const fallback = group.length === 1 ? group[0] : newestFile(group);
+      const versions = readable.length > 0
+        ? readable.map(version => ({ name: version.name, modifiedAt: version.modifiedAt, revision: (version.header as BackupHeader).revision }))
+        : [{ name: fallback.name, modifiedAt: fallback.modifiedAt, revision: parseBackupFileName(fallback.name)?.revision ?? null }];
+      const [newest] = versions;
 
-      backups.push({ fileName: newest.name, modifiedAt: newest.modifiedAt, current: backupId === currentBackupId });
+      backups.push({
+        fileName: newest.name,
+        modifiedAt: newest.modifiedAt,
+        current: backupId === state?.backupId,
+        versions: versions.map(({ name, modifiedAt, revision }) => ({ fileName: name, revision, modifiedAt, current: name === state?.fileName })),
+      });
     }
 
     return backups.sort((a, b) => b.modifiedAt - a.modifiedAt);
@@ -540,10 +564,10 @@ const knownRevision = (version: RemoteVersion): number | null =>
 const versionFilesOf = (files: CloudBackupFile[], backupId: string): CloudBackupFile[] =>
   files.filter(file => parseBackupFileName(file.name)?.backupId === backupId);
 
-// The readable version with the highest revision; the later write breaks a tie.
-const newestVersion = (versions: RemoteVersion[]): RemoteVersion | undefined => versions
+// Readable versions by highest revision; the later write breaks a tie.
+const readableVersions = (versions: RemoteVersion[]): RemoteVersion[] => versions
   .filter(version => typeof version.header !== 'string')
-  .sort((a, b) => (b.header as BackupHeader).revision - (a.header as BackupHeader).revision || b.modifiedAt - a.modifiedAt)[0];
+  .sort((a, b) => (b.header as BackupHeader).revision - (a.header as BackupHeader).revision || b.modifiedAt - a.modifiedAt);
 
 const newestFile = (files: CloudBackupFile[]): CloudBackupFile => [...files].sort((a, b) => b.modifiedAt - a.modifiedAt)[0];
 

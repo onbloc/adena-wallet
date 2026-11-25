@@ -283,10 +283,9 @@ describe('CloudBackupService', () => {
 
     cloudBackupStore.files.set(backupFileName('1'.repeat(32)), { contents: '{}', modifiedAt: 10 });
     cloudBackupStore.files.set(backupFileName('2'.repeat(32)), { contents: '{}', modifiedAt: 30 });
-    expect(await backup.findBackups({ interactive: true })).toEqual([
-      { fileName: backupFileName('2'.repeat(32)), modifiedAt: 30, current: false },
-      { fileName: backupFileName('1'.repeat(32)), modifiedAt: 10, current: false },
-    ]);
+    const only = (fileName: string, modifiedAt: number) => ({ fileName, modifiedAt, current: false, versions: [{ fileName, revision: null, modifiedAt, current: false }] });
+
+    expect(await backup.findBackups({ interactive: true })).toEqual([only(backupFileName('2'.repeat(32)), 30), only(backupFileName('1'.repeat(32)), 10)]);
   });
 
   it('restores every keyring and account into a new wallet with a new password', async () => {
@@ -426,13 +425,16 @@ describe('CloudBackupService', () => {
     expect(await b.backup.getStatus()).toMatchObject({ remoteChange: 'updatedElsewhere' });
     expect(await codeOf(() => createOn(a.backup, TEST_PASSWORD))).toBe(AppErrorCode.BACKUP_CONFLICT);
 
-    // A restore offers the backup once, as its newest readable version (the later write).
+    // A restore offers the backup once, defaulting to its newest readable version (the later write) and listing every copy.
     const restoring = createTestContainer({ cloudBackup: { files: a.cloudBackupStore.files } }).container.cloudBackupService;
     const backups = await restoring.findBackups();
     const newest = headers.filter(header => header.revision === 2).sort((x, y) => y.createdAt - x.createdAt)[0];
 
     expect(backups).toHaveLength(1);
     expect(parseBackupFileName(backups[0].fileName)?.revision).toBe(2);
+    expect(backups[0].versions.map(version => version.revision)).toEqual([2, 2, 1]);
+    expect(backups[0].versions[0].fileName).toBe(backups[0].fileName);
+    expect(new Set(backups[0].versions.map(version => version.fileName))).toEqual(new Set(a.cloudBackupStore.files.keys()));
     expect((await restoring.openBackup(backups[0].fileName, BACKUP_PASSWORD)).createdAt).toBe(newest.createdAt);
     jest.restoreAllMocks();
   });
@@ -473,7 +475,9 @@ describe('CloudBackupService', () => {
     const service = target.container.cloudBackupService;
 
     target.cloudBackupStore.files.set(legacy, file);
-    expect(await service.findBackups()).toEqual([{ fileName: legacy, modifiedAt: file.modifiedAt, current: false }]);
+    expect(await service.findBackups()).toEqual([
+      { fileName: legacy, modifiedAt: file.modifiedAt, current: false, versions: [{ fileName: legacy, revision: null, modifiedAt: file.modifiedAt, current: false }] },
+    ]);
     await service.restoreWallet(await service.openBackup(legacy, BACKUP_PASSWORD), NEW_WALLET_PASSWORD);
     expect(await service.getStatus()).toMatchObject({ kind: 'backedUp', fileName: legacy });
     expect(await service.getStatus()).not.toHaveProperty('remoteChange');
