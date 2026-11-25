@@ -11,7 +11,7 @@ import { DEFAULT_GNO_FEE_POLICY, GnoChainRepository } from '../../../../../src/r
 import { GnoMessage } from '../../../../../src/repositories/chain/gno/gno-messages';
 import { feeSizeHeadroomBytes } from '../../../../../src/repositories/chain/gno/gno-tx-encoder';
 import { BUILT_IN_NETWORKS } from '../../../../../src/resources';
-import { createFakeGnoProvider } from '../../../../helpers/fake-gno-provider';
+import { createFakeGnoProvider, txNotFoundError } from '../../../../helpers/fake-gno-provider';
 import { TEST_MNEMONIC } from '../../../../helpers/test-container';
 
 const network = { ...BUILT_IN_NETWORKS[0], chainId: 'test-chain' };
@@ -363,6 +363,19 @@ describe('GnoChainRepository', () => {
       expect(await Secp256k1.verifySignature(signature, sha256(signBytes), keyPair.publicKey)).toBe(true);
     });
 
+    it('reports the signer state, and signs a pinned sequence only while it is the on-chain one', async () => {
+      const { repository, state } = setup();
+
+      await expect(repository.signTransaction(draftOf([send()]), keyPair, network)).resolves.toMatchObject({ sequence: '3', accountNumber: '7' });
+      await expect(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '3', accountNumber: '7' })).resolves.toMatchObject({ sequence: '3' });
+
+      state.sequence = '4';
+      await expect(errorOf(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '3', accountNumber: '7' })))
+        .resolves.toMatchObject({ code: 'PREVIOUS_TRANSACTION_PENDING' });
+      await expect(errorOf(repository.signTransaction(draftOf([send()]), keyPair, network, { sequence: '4', accountNumber: '8' })))
+        .resolves.toMatchObject({ code: 'PREVIOUS_TRANSACTION_PENDING' });
+    });
+
     it('refuses to sign for a different chain', async () => {
       const { repository } = setup({ chainId: 'other-chain' });
 
@@ -388,7 +401,7 @@ describe('GnoChainRepository', () => {
     it('broadcasts in commit mode and returns hash, height and data', async () => {
       const { repository, state, mutable } = setup();
 
-      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'HASH', height: '42', data: undefined });
+      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'HASH', height: '42', data: undefined, committed: true });
       expect(state.broadcasts).toEqual(['AAAA']);
 
       let endpoint: unknown;
@@ -398,7 +411,7 @@ describe('GnoChainRepository', () => {
         return { hash: 'H2', height: '9', deliver_tx: { ResponseBase: { Data: 'ZGF0YQ==' } } };
       };
 
-      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'H2', height: '9', data: 'ZGF0YQ==' });
+      await expect(repository.broadcastTransaction({ encoded: 'AAAA' }, network)).resolves.toEqual({ hash: 'H2', height: '9', data: 'ZGF0YQ==', committed: true });
       expect(endpoint).toBe('broadcast_tx_commit');
     });
 
@@ -462,6 +475,43 @@ describe('GnoChainRepository', () => {
 
       await expect(repository.getTransactionStatus('ABCD', network)).resolves.toBe('pending');
       await expect(new GnoChainRepository(failingFactory).getTransactionStatus('ABCD', network)).resolves.toBe('pending');
+    });
+  });
+
+  describe('findTransaction', () => {
+    it('reports a hash the node does not know as null and throws on any other failure', async () => {
+      const { repository, state, mutable } = setup();
+
+      state.transactions.ABCD = 'committed';
+      await expect(repository.findTransaction('ABCD', network)).resolves.toBe('committed');
+      state.transactions.ABCD = 'failed';
+      await expect(repository.findTransaction('ABCD', network)).resolves.toBe('failed');
+      await expect(repository.findTransaction('EEEE', network)).resolves.toBeNull();
+
+      mutable.getTransaction = async () => {
+        throw new Error('socket hang up');
+      };
+
+      await expect(errorOf(repository.findTransaction('ABCD', network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      await expect(errorOf(new GnoChainRepository(failingFactory).findTransaction('ABCD', network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      expect(txNotFoundError('X').message).toContain('Could not find tx result for hash');
+    });
+  });
+
+  describe('getAccountSequence', () => {
+    it('reads the on-chain sequence and throws when it cannot', async () => {
+      const { repository, state, mutable } = setup();
+
+      state.sequence = '12';
+      await expect(repository.getAccountSequence(caller, network)).resolves.toBe('12');
+
+      mutable.getAccount = async () => ({ BaseAccount: { sequence: 'x' } });
+      await expect(errorOf(repository.getAccountSequence(caller, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
+      mutable.getAccount = async () => {
+        throw new Error('timeout');
+      };
+
+      await expect(errorOf(repository.getAccountSequence(caller, network))).resolves.toMatchObject({ code: 'NETWORK_ERROR' });
     });
   });
 });

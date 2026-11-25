@@ -32,6 +32,9 @@ export const AppErrorCode = {
 export const BIOMETRICS_INVALIDATED_MESSAGE
   = 'Biometrics changed on this device. Unlock with your password and turn biometric unlock on again.';
 
+// A replacement send found the pinned sequence no longer current on chain.
+export const PINNED_SEQUENCE_MISMATCH_MESSAGE = 'The previous transaction changed state. Reopen this screen to check it again.';
+
 export type AppErrorCode = (typeof AppErrorCode)[keyof typeof AppErrorCode];
 
 export class AppError extends Error {

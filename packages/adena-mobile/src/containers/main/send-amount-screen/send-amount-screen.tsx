@@ -30,6 +30,8 @@ interface PreparedTransfer {
   memo: string;
   draft: TransactionDraft;
   estimate: FeeEstimate;
+  // Reviewed while a previous unconfirmed tx could be replaced; sent pinned to its sequence.
+  replacesPending?: boolean;
 }
 
 export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'SendAmount'>): ReactElement => {
@@ -117,9 +119,8 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
       const transfer = { token: prepared.token, amount: prepared.amount };
 
       await transactionService.assertSufficientFunds(draft, prepared.account, prepared.network, transfer, prepared.estimate.storageDeposit);
-      return transactionService.signAndBroadcast(draft, prepared.account, prepared.network);
+      return transactionService.signAndBroadcast(draft, prepared.account, prepared.network, { replacePending: prepared.replacesPending });
     },
-    onSuccess: handleCommitted,
   });
 
   const review: TransferReview | undefined = useMemo(() => {
@@ -166,7 +167,7 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
     prepare.mutate(undefined, {
       onSuccess: (result) => {
         feeSelection.reset();
-        setPrepared(result);
+        setPrepared({ ...result, replacesPending: pendingBroadcast.replacesPending });
       },
     });
   };
@@ -181,7 +182,17 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
 
     sendingRef.current = true;
     send.mutateAsync()
-      .catch((error) => {
+      .then((result) => {
+        if (result.committed) {
+          handleCommitted();
+          return;
+        }
+
+        // Only accepted into the mempool: wait for it like an unknown outcome.
+        pendingBroadcast.trackSubmitted(result, sender, sentNetwork);
+        send.reset();
+        setPrepared(null);
+      }, (error) => {
         // Unknown outcome: close the review so the same draft cannot be confirmed again.
         if (pendingBroadcast.track(error, sender, sentNetwork)) {
           send.reset();

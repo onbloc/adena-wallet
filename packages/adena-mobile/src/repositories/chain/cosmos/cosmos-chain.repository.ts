@@ -1,11 +1,19 @@
 import { ripemd160, Secp256k1, sha256 } from '@cosmjs/crypto';
 import { fromBase64, toBase64, toBech32, toHex } from '@cosmjs/encoding';
 
-import { AppError, AppErrorCode, TransactionPendingError } from '../../../core/errors';
+import { AppError, AppErrorCode, PINNED_SEQUENCE_MISMATCH_MESSAGE, TransactionPendingError } from '../../../core/errors';
 import { TokenBalance } from '../../../domain/account';
 import { COSMOS_FEE_POLICY, FeeEstimate } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
-import { BroadcastResult, MessageSummary, SignedTransaction, TransactionDraft, TransactionStatus } from '../../../domain/transaction';
+import {
+  BroadcastResult,
+  MessageSummary,
+  SignedTransaction,
+  SignerSequence,
+  TransactionDraft,
+  TransactionLookup,
+  TransactionStatus,
+} from '../../../domain/transaction';
 import { CosmosAccountInfo, CosmosLcdClient, CosmosTxRejectedError } from '../../../infrastructure/http/cosmos-lcd.client';
 import { HttpStatusError } from '../../../infrastructure/http/http-client';
 import { isValidAddress, normalizeAddress } from '../../../utils/address';
@@ -138,7 +146,7 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     return { gasUsed, gasPrice: new BigNumber(gasPrice).toFixed(), denom: feeDenom, policy: COSMOS_FEE_POLICY };
   }
 
-  async signTransaction(draft: TransactionDraft<CosmosMessage>, key: SigningKey, network: Network): Promise<SignedTransaction> {
+  async signTransaction(draft: TransactionDraft<CosmosMessage>, key: SigningKey, network: Network, pin?: SignerSequence): Promise<SignedTransaction> {
     const chainId = await this.getChainId(network);
 
     if (chainId !== draft.chainId) {
@@ -150,20 +158,25 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     }
 
     const { accountNumber, sequence } = await this.resolveAccount(network, this.deriveAddress(key.publicKey, network));
+
+    if (pin && (pin.sequence !== sequence || (pin.accountNumber !== undefined && pin.accountNumber !== accountNumber))) {
+      throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PINNED_SEQUENCE_MISMATCH_MESSAGE);
+    }
+
     const bodyBytes = encodeTxBody(draft.messages, draft.memo);
     const authInfoBytes = encodeAuthInfo(key.publicKey, sequence, toCosmosFee(draft.fee));
     const signBytes = encodeSignDoc(bodyBytes, authInfoBytes, draft.chainId, accountNumber);
     const signature = await Secp256k1.createSignature(sha256(signBytes), key.privateKey);
     const txBytes = encodeTxRaw(bodyBytes, authInfoBytes, new Uint8Array([...signature.r(32), ...signature.s(32)]));
 
-    return { encoded: toBase64(txBytes) };
+    return { encoded: toBase64(txBytes), accountNumber, sequence };
   }
 
   transactionHash(signed: SignedTransaction): string {
     return cosmosTxHash(signed);
   }
 
-  // BROADCAST_MODE_SYNC: success means the tx passed CheckTx, as in the extension.
+  // BROADCAST_MODE_SYNC: success only means the tx passed CheckTx, so it is reported as not committed yet.
   async broadcastTransaction(signed: SignedTransaction, network: Network): Promise<BroadcastResult> {
     const restUrl = restUrlOf(network);
     const hash = cosmosTxHash(signed);
@@ -171,7 +184,7 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     try {
       const result = await this.lcd.broadcastSync(restUrl, signed.encoded);
 
-      return { hash: result.txhash || hash, height: result.height };
+      return { hash: result.txhash || hash, height: result.height, committed: false };
     }
     catch (error) {
       if (isDefinitiveRejection(error)) {
@@ -182,15 +195,22 @@ export class CosmosChainRepository implements ChainRepository<CosmosMessage> {
     }
   }
 
-  async getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
-    try {
-      const tx = await this.lcd.getTx(restUrlOf(network), hash);
+  getTransactionStatus(hash: string, network: Network): Promise<TransactionStatus> {
+    return this.findTransaction(hash, network).then(found => found ?? 'pending', () => 'pending');
+  }
 
-      return tx === null ? 'pending' : tx.code === 0 ? 'committed' : 'failed';
-    }
-    catch {
-      return 'pending';
-    }
+  async findTransaction(hash: string, network: Network): Promise<TransactionLookup> {
+    const tx = await this.lcd.getTx(restUrlOf(network), hash).catch((error) => {
+      throw networkError(error);
+    });
+
+    return tx === null ? null : tx.code === 0 ? 'committed' : 'failed';
+  }
+
+  async getAccountSequence(address: string, network: Network): Promise<string> {
+    return (await this.resolveAccount(network, address).catch((error) => {
+      throw networkError(error);
+    })).sequence;
   }
 }
 

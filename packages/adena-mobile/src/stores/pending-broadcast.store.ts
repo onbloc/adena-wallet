@@ -3,11 +3,14 @@ import { create } from 'zustand';
 import { Network } from '../domain/network';
 
 export interface PendingBroadcast {
-  hash: string;
   accountId: string;
   network: Network;
   // `checking` is being polled; `unconfirmed` means polling gave up but the tx may still have committed.
   phase: 'checking' | 'unconfirmed';
+  // Identifies one `checking` round; a new one starts on each send or recheck.
+  round: number;
+  // Last reconcile found it not on chain with its sequence still current, so a pinned replacement is safe.
+  replaceable: boolean;
   // Hook instance that sent it (0 when restored from storage); only that screen runs its post-commit navigation.
   ownerId: number;
 }
@@ -18,7 +21,8 @@ interface PendingBroadcastState {
   set: (scope: string, pending: PendingBroadcast | null) => void;
 }
 
-export const pendingScope = (accountId: string, networkId: string): string => `${accountId}:${networkId}`;
+// Per account and chain id, matching PendingBroadcastRepository: networks on the same chain share it.
+export const pendingScope = (accountId: string, chainId: string): string => `${accountId}:${chainId}`;
 
 // Polling state shared by every send screen; the persisted PendingBroadcastRepository record is what blocks sending.
 export const usePendingBroadcastStore = create<PendingBroadcastState>(set => ({

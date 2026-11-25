@@ -89,12 +89,12 @@ describe('WalletService', () => {
     const imported = await container.walletService.importPrivateKey(PRIVATE_KEY);
     const repository = container.pendingBroadcastRepository;
 
-    repository.save({ hash: 'A', accountId: first.id, networkId: 'n', createdAt: 0 });
-    repository.save({ hash: 'B', accountId: imported.id, networkId: 'n', createdAt: 0 });
+    repository.save({ hashes: ['A'], accountId: first.id, chainId: 'n', createdAt: 0 });
+    repository.save({ hashes: ['B'], accountId: imported.id, chainId: 'n', createdAt: 0 });
     await container.walletService.removeAccount(imported.id, TEST_PASSWORD);
 
     expect(repository.get(imported.id, 'n')).toBeUndefined();
-    expect(repository.get(first.id, 'n')?.hash).toBe('A');
+    expect(repository.get(first.id, 'n')?.hashes).toEqual(['A']);
   });
 
   it('unlocks with biometrics only after the user enabled it', async () => {

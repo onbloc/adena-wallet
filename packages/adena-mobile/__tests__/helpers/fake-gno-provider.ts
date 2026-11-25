@@ -19,7 +19,13 @@ export interface FakeGnoProviderState {
   simulated: Tx[];
   // Optional override of the simulate result (defaults to `{ gas_used: gasUsed }`).
   simulate?: (tx: Tx) => Partial<ResponseDeliverTx>;
+  // Indexed txs by hash; any other hash gets the node's not-found error.
+  transactions: Record<string, 'committed' | 'failed'>;
 }
+
+// The JSON-RPC error text tm2 returns for an unknown tx hash, as the RPC client relays it.
+export const txNotFoundError = (hash: string): Error =>
+  new Error(JSON.stringify({ code: -32603, message: 'Internal error', data: `Could not find tx result for hash #${hash}` }));
 
 const encodeData = (value: unknown): string => toBase64(new TextEncoder().encode(JSON.stringify(value)));
 
@@ -41,6 +47,7 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
     evaluate: () => '',
     signatures: {},
     simulated: [],
+    transactions: {},
     ...overrides,
   };
 
@@ -77,6 +84,15 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
     }),
     evaluateExpression: async (pkgPath: string, expression: string) => state.evaluate(pkgPath, expression),
     getFunctionSignatures: async (pkgPath: string) => state.signatures[pkgPath] ?? [],
+    getTransaction: async (hash: string) => {
+      const status = state.transactions[hash];
+
+      if (!status) {
+        throw txNotFoundError(hash);
+      }
+
+      return { hash, height: '41', tx_result: { ResponseBase: { Error: status === 'failed' ? { '@type': '/std.InternalError' } : null } } };
+    },
     sendTransaction: async (encoded: string) => {
       state.broadcasts.push(encoded);
       return { hash: 'HASH', height: '42', deliver_tx: { ResponseBase: { Data: null } }, check_tx: {} };

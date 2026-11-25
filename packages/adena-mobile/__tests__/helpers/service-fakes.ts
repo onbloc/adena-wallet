@@ -64,6 +64,8 @@ export const createFakeChainModule = (family: ChainFamily) => {
       transactionHash: jest.fn(() => 'FAKE-HASH'),
       broadcastTransaction: jest.fn(),
       getTransactionStatus: jest.fn(async () => 'pending'),
+      findTransaction: jest.fn(async () => null),
+      getAccountSequence: jest.fn(async () => '0'),
     },
     assets: {
       family,

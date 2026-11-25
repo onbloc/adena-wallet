@@ -25,6 +25,8 @@ interface PreparedNftTransfer {
   toAddress: string;
   draft: TransactionDraft;
   estimate: FeeEstimate;
+  // Reviewed while a previous unconfirmed tx could be replaced; sent pinned to its sequence.
+  replacesPending?: boolean;
 }
 
 export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'SendNft'>): ReactElement => {
@@ -86,9 +88,8 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
 
       // The storage deposit is paid in the fee token on top of the fee, as for token sends.
       await transactionService.assertSufficientFunds(draft, prepared.account, prepared.network, undefined, prepared.estimate.storageDeposit);
-      return transactionService.signAndBroadcast(draft, prepared.account, prepared.network);
+      return transactionService.signAndBroadcast(draft, prepared.account, prepared.network, { replacePending: prepared.replacesPending });
     },
-    onSuccess: handleCommitted,
   });
 
   const handleChangeRecipient = (value: string): void => {
@@ -122,7 +123,7 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
     prepare.mutate(undefined, {
       onSuccess: (result) => {
         feeSelection.reset();
-        setPrepared(result);
+        setPrepared({ ...result, replacesPending: pendingBroadcast.replacesPending });
       },
     });
   };
@@ -137,7 +138,17 @@ export const SendNftScreen = ({ navigation, route }: NativeStackScreenProps<Main
 
     sendingRef.current = true;
     send.mutateAsync()
-      .catch((error) => {
+      .then((result) => {
+        if (result.committed) {
+          handleCommitted();
+          return;
+        }
+
+        // Only accepted into the mempool: wait for it like an unknown outcome.
+        pendingBroadcast.trackSubmitted(result, sender, sentNetwork);
+        send.reset();
+        setPrepared(null);
+      }, (error) => {
         // Unknown outcome: close the review so the same draft cannot be confirmed again.
         if (pendingBroadcast.track(error, sender, sentNetwork)) {
           send.reset();

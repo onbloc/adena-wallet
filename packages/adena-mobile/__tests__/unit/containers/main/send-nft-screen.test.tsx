@@ -6,11 +6,13 @@ import { SendNftScreen } from '../../../../src/containers/main/send-nft-screen';
 import { TransactionPendingError } from '../../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../../src/domain/fee';
 import { NftCollection, NftItem } from '../../../../src/domain/nft';
-import { TransactionDraft, TransactionStatus } from '../../../../src/domain/transaction';
-import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS } from '../../../../src/hooks/use-pending-broadcast';
+import { BroadcastResult, TransactionDraft } from '../../../../src/domain/transaction';
+import { PENDING_NOTICE, PENDING_POLL_INTERVAL_MS, REPLACEABLE_NOTICE } from '../../../../src/hooks/use-pending-broadcast';
 import { StoragePendingBroadcastRepository } from '../../../../src/repositories/pending-broadcast.repository';
+import { PendingReconciliation } from '../../../../src/services/transaction.service';
 import { MemoryKeyValueStore } from '../../../../src/storage/memory-key-value-store';
 import { usePendingBroadcastStore } from '../../../../src/stores/pending-broadcast.store';
+import { useToastStore } from '../../../../src/stores/toast.store';
 import { normalizeAddress } from '../../../../src/utils/address';
 import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper';
 
@@ -39,8 +41,8 @@ const setup = async (extraParams: Record<string, unknown> = {}, ownAddress = 'g1
   const transactionService = {
     estimateFee: jest.fn(async () => ESTIMATE),
     assertSufficientFunds: jest.fn(async (..._args: unknown[]) => undefined),
-    signAndBroadcast: jest.fn(async (_draft: TransactionDraft) => ({ hash: 'h', height: '1' })),
-    getTransactionStatus: jest.fn(async (): Promise<TransactionStatus> => 'pending'),
+    signAndBroadcast: jest.fn(async (_draft: TransactionDraft, ..._rest: unknown[]): Promise<BroadcastResult> => ({ hash: 'h', height: '1', committed: true })),
+    reconcilePending: jest.fn(async (..._args: unknown[]): Promise<PendingReconciliation> => ({ status: 'pending' })),
   };
   const { Wrapper } = createWrapper({
     nftService,
@@ -108,12 +110,12 @@ describe('SendNftScreen', () => {
     await fireEvent.changeText(screen.getByPlaceholderText('Recipient address'), FIRST);
     await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
     const confirm = await screen.findByTestId('review-confirm');
-    const broadcast = deferred<{ hash: string; height: string }>();
+    const broadcast = deferred<BroadcastResult>();
 
     transactionService.signAndBroadcast.mockImplementationOnce(() => broadcast.promise);
     await fireEvent.press(confirm);
     await fireEvent.press(confirm);
-    await act(async () => broadcast.resolve({ hash: 'h', height: '1' }));
+    await act(async () => broadcast.resolve({ hash: 'h', height: '1', committed: true }));
 
     expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(1);
     expect(navigation.popToTop).toHaveBeenCalledTimes(1);
@@ -169,11 +171,50 @@ describe('SendNftScreen', () => {
       expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Review transfer' }).props.accessibilityState?.disabled).toBe(true);
 
-      transactionService.getTransactionStatus.mockResolvedValueOnce('committed');
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'committed', hash: 'ABC' });
       await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
 
       expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(1);
       expect(navigation.popToTop).toHaveBeenCalledTimes(1);
+    });
+
+    it('waits for a tx only accepted into the mempool, then reports it once committed', async () => {
+      const { transactionService, navigation } = await setup();
+
+      transactionService.signAndBroadcast.mockResolvedValueOnce({ hash: 'SYNC', height: '0', committed: false });
+      await fireEvent.changeText(screen.getByPlaceholderText('Recipient address'), FIRST);
+      await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
+      await fireEvent.press(await screen.findByTestId('review-confirm'));
+      await act(() => jest.advanceTimersByTimeAsync(500));
+
+      expect(navigation.popToTop).not.toHaveBeenCalled();
+      expect(useToastStore.getState().toast?.message).toBe('Transaction sent. Waiting for confirmation.');
+      expect(screen.getByText(PENDING_NOTICE)).toBeTruthy();
+
+      transactionService.reconcilePending.mockResolvedValueOnce({ status: 'committed', hash: 'SYNC' });
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+
+      expect(navigation.popToTop).toHaveBeenCalledTimes(1);
+      expect(useToastStore.getState().toast?.message).toBe('NFT sent');
+    });
+
+    it('sends a replacement through the pinned path while the previous tx is replaceable', async () => {
+      const { transactionService } = await setup();
+
+      transactionService.signAndBroadcast.mockRejectedValueOnce(new TransactionPendingError('ABC'));
+      await fireEvent.changeText(screen.getByPlaceholderText('Recipient address'), FIRST);
+      await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
+      await fireEvent.press(await screen.findByTestId('review-confirm'));
+      await act(() => jest.advanceTimersByTimeAsync(500));
+
+      transactionService.reconcilePending.mockResolvedValue({ status: 'replaceable', sequence: '3' });
+      await act(() => jest.advanceTimersByTimeAsync(PENDING_POLL_INTERVAL_MS));
+      expect(screen.getByText(REPLACEABLE_NOTICE)).toBeTruthy();
+
+      await fireEvent.press(screen.getByRole('button', { name: 'Review transfer' }));
+      await fireEvent.press(await screen.findByTestId('review-confirm'));
+      expect(transactionService.signAndBroadcast).toHaveBeenCalledTimes(2);
+      expect(transactionService.signAndBroadcast.mock.calls[1][3]).toEqual({ replacePending: true });
     });
   });
 });

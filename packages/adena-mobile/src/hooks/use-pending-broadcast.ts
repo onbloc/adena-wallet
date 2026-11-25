@@ -4,6 +4,8 @@ import { TransactionPendingError } from '../core/errors';
 import { useContainer } from '../di/container-provider';
 import { Account } from '../domain/account';
 import { Network } from '../domain/network';
+import { BroadcastResult } from '../domain/transaction';
+import { PendingReconciliation } from '../services/transaction.service';
 import { PendingBroadcast, pendingScope, usePendingBroadcastStore } from '../stores/pending-broadcast.store';
 import { useToastStore } from '../stores/toast.store';
 
@@ -12,34 +14,44 @@ export const PENDING_POLL_ATTEMPTS = 20;
 
 export const PENDING_NOTICE = 'Your transaction was sent but is not confirmed yet. Check Activity before sending again.';
 export const UNCONFIRMED_NOTICE = 'We still couldn’t confirm your previous transaction. Sending stays paused until it is confirmed or fails. Check Activity, or reopen this screen to check again.';
+export const REPLACEABLE_NOTICE = 'Your previous transaction was not confirmed. Sending again replaces it, so only one can go through.';
+export const NOT_INCLUDED_MESSAGE = 'Your previous transaction was not sent. You can send again.';
 
 export interface PendingBroadcastGuard {
-  // False until a previous broadcast with an unknown outcome is known to have committed or failed.
+  // False while a previous send of unknown outcome blocks this account and chain, unless it may be replaced.
   canSend: boolean;
+  // A send now must go through signAndBroadcast's `replacePending` path.
+  replacesPending: boolean;
   notice?: string;
   // Takes over an unknown broadcast outcome; returns false for any other error.
   track: (error: unknown, account: Account, network: Network) => boolean;
+  // Takes over a tx the node accepted but has not committed yet (BroadcastResult.committed false).
+  trackSubmitted: (result: BroadcastResult, account: Account, network: Network) => void;
 }
 
 let nextOwnerId = 1;
+let nextRound = 1;
 
 // A broadcast that timed out may still commit, so re-sending could pay twice.
-// Its hash is persisted per account and network and polled; sending there stays blocked,
-// even after polling gives up or the app restarts, until it commits or fails.
+// The record is persisted per account and chain and reconciled against the chain; sending stays
+// blocked until it commits, fails, or its sequence is consumed by another tx. While its sequence is
+// still current, only a replacement pinned to that sequence is allowed.
 export const usePendingBroadcast = (account: Account | null, network: Network, onCommitted: () => void): PendingBroadcastGuard => {
   const { transactionService, pendingBroadcastRepository: repository } = useContainer();
   const showToast = useToastStore(state => state.show);
   const accountId = account?.id;
-  const scope = accountId ? pendingScope(accountId, network.id) : null;
+  const scope = accountId ? pendingScope(accountId, network.chainId) : null;
   const pending = usePendingBroadcastStore(state => (scope ? state.entries[scope] : undefined)) ?? null;
   const setEntry = usePendingBroadcastStore(state => state.set);
-  const stored = accountId ? repository.get(accountId, network.id) : undefined;
+  const stored = accountId ? repository.get(accountId, network.chainId) : undefined;
   const [ownerId] = useState(() => nextOwnerId++);
   const onCommittedRef = useRef(onCommitted);
+  const accountRef = useRef(account);
 
   useEffect(() => {
     onCommittedRef.current = onCommitted;
-  }, [onCommitted]);
+    accountRef.current = account;
+  }, [account, onCommitted]);
 
   // Opening a send screen checks a given-up or persisted tx again, whoever wrote the record
   // (e.g. TransactionService right before the app was killed mid-broadcast).
@@ -48,38 +60,37 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
       return;
     }
 
-    const key = pendingScope(accountId, network.id);
+    const key = pendingScope(accountId, network.chainId);
     const current = usePendingBroadcastStore.getState().entries[key];
-    const record = repository.get(accountId, network.id);
 
     if (current?.phase === 'unconfirmed') {
-      setEntry(key, { ...current, phase: 'checking' });
+      setEntry(key, { ...current, phase: 'checking', round: nextRound++ });
     }
-    else if (!current && record) {
-      setEntry(key, { hash: record.hash, accountId, network, phase: 'checking', ownerId: 0 });
+    else if (!current && repository.get(accountId, network.chainId)) {
+      setEntry(key, { accountId, network, phase: 'checking', round: nextRound++, replaceable: false, ownerId: 0 });
     }
   }, [accountId, network, repository, setEntry]);
 
-  const checking = pending?.phase === 'checking' ? pending : null;
+  // Keyed by round, so updating `replaceable` mid-round does not restart polling.
+  const checkingRound = pending?.phase === 'checking' && scope ? pending.round : null;
 
   useEffect(() => {
-    if (!checking) {
+    const sender = accountRef.current;
+    const checking = scope ? usePendingBroadcastStore.getState().entries[scope] : undefined;
+
+    if (checkingRound === null || !scope || !sender || checking?.round !== checkingRound) {
       return;
     }
 
-    const key = pendingScope(checking.accountId, checking.network.id);
+    const key = scope;
     let cancelled = false;
     let attempts = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
 
     const settle = (next: PendingBroadcast | null): boolean => {
       // Another mounted screen may have settled the same entry already.
-      if (cancelled || usePendingBroadcastStore.getState().entries[key] !== checking) {
+      if (cancelled || usePendingBroadcastStore.getState().entries[key]?.round !== checkingRound) {
         return false;
-      }
-
-      if (!next) {
-        repository.remove(checking.accountId, checking.network.id, checking.hash);
       }
 
       setEntry(key, next);
@@ -88,32 +99,59 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
 
     const poll = async (): Promise<void> => {
       attempts += 1;
-      const status = await transactionService.getTransactionStatus(checking.hash, checking.network).catch(() => 'pending' as const);
+
+      const result: PendingReconciliation = await transactionService.reconcilePending(sender, checking.network)
+        .catch(() => ({ status: 'pending' as const }));
 
       if (cancelled) {
         return;
       }
 
-      if (status === 'committed') {
-        if (settle(null)) {
-          if (checking.ownerId === ownerId) {
-            onCommittedRef.current();
+      // reconcilePending already dropped the record; repeated here in case another writer re-saved it.
+      if (result.status === 'committed' || result.status === 'failed') {
+        repository.remove(checking.accountId, checking.network.chainId, result.hash);
+      }
+
+      switch (result.status) {
+        case 'committed':
+          if (settle(null)) {
+            if (checking.ownerId === ownerId) {
+              onCommittedRef.current();
+            }
+            else {
+              showToast('Your previous transaction was confirmed.', 'success');
+            }
           }
-          else {
-            showToast('Your previous transaction was confirmed.', 'success');
+
+          break;
+        case 'failed':
+          if (settle(null)) {
+            showToast('The transaction failed. You can try again.', 'error');
+          }
+
+          break;
+        case 'not_included':
+          if (settle(null)) {
+            showToast(NOT_INCLUDED_MESSAGE, 'info');
+          }
+
+          break;
+        case 'none':
+          settle(null);
+          break;
+        default: {
+          const replaceable = result.status === 'replaceable';
+          const exhausted = attempts >= PENDING_POLL_ATTEMPTS;
+          const latest = usePendingBroadcastStore.getState().entries[key];
+
+          if (latest && (exhausted || latest.replaceable !== replaceable)) {
+            settle({ ...latest, replaceable, phase: exhausted ? 'unconfirmed' : 'checking' });
+          }
+
+          if (!exhausted) {
+            timer = setTimeout(poll, PENDING_POLL_INTERVAL_MS);
           }
         }
-      }
-      else if (status === 'failed') {
-        if (settle(null)) {
-          showToast('The transaction failed. You can try again.', 'error');
-        }
-      }
-      else if (attempts >= PENDING_POLL_ATTEMPTS) {
-        settle({ ...checking, phase: 'unconfirmed' });
-      }
-      else {
-        timer = setTimeout(poll, PENDING_POLL_INTERVAL_MS);
       }
     };
 
@@ -123,28 +161,41 @@ export const usePendingBroadcast = (account: Account | null, network: Network, o
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [checking, ownerId, repository, setEntry, showToast, transactionService]);
+  }, [checkingRound, ownerId, repository, scope, setEntry, showToast, transactionService]);
+
+  const watch = useCallback((hash: string, sender: Account, sentNetwork: Network): void => {
+    // TransactionService normally saved it before broadcasting; only write when it is missing.
+    if (!repository.get(sender.id, sentNetwork.chainId)?.hashes.includes(hash)) {
+      repository.save({ hashes: [hash], accountId: sender.id, chainId: sentNetwork.chainId, createdAt: Date.now() });
+    }
+
+    setEntry(pendingScope(sender.id, sentNetwork.chainId), {
+      accountId: sender.id, network: sentNetwork, phase: 'checking', round: nextRound++, replaceable: false, ownerId,
+    });
+    showToast('Transaction sent. Waiting for confirmation.', 'info');
+  }, [ownerId, repository, setEntry, showToast]);
 
   const track = useCallback((error: unknown, sender: Account, sentNetwork: Network): boolean => {
     if (!(error instanceof TransactionPendingError)) {
       return false;
     }
 
-    // TransactionService normally saved it before broadcasting; only write when it is missing or differs.
-    if (repository.get(sender.id, sentNetwork.id)?.hash !== error.hash) {
-      repository.save({ hash: error.hash, accountId: sender.id, networkId: sentNetwork.id, createdAt: Date.now() });
-    }
-
-    setEntry(pendingScope(sender.id, sentNetwork.id), { hash: error.hash, accountId: sender.id, network: sentNetwork, phase: 'checking', ownerId });
-    showToast('Transaction sent. Waiting for confirmation.', 'info');
+    watch(error.hash, sender, sentNetwork);
     return true;
-  }, [ownerId, repository, setEntry, showToast]);
+  }, [watch]);
+
+  const trackSubmitted = useCallback((result: BroadcastResult, sender: Account, sentNetwork: Network): void => {
+    watch(result.hash, sender, sentNetwork);
+  }, [watch]);
 
   const blocked = Boolean(pending || stored);
+  const replaceable = blocked && Boolean(pending?.replaceable);
 
   return {
-    canSend: !blocked,
-    notice: blocked ? (pending?.phase === 'unconfirmed' ? UNCONFIRMED_NOTICE : PENDING_NOTICE) : undefined,
+    canSend: !blocked || replaceable,
+    replacesPending: replaceable,
+    notice: !blocked ? undefined : replaceable ? REPLACEABLE_NOTICE : pending?.phase === 'unconfirmed' ? UNCONFIRMED_NOTICE : PENDING_NOTICE,
     track,
+    trackSubmitted,
   };
 };
