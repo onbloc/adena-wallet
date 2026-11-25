@@ -7,7 +7,7 @@ import { FeeEstimate, GNO_FEE_POLICY } from '../../../src/domain/fee';
 import { DEFAULT_SWAP_SETTINGS, SwapToken } from '../../../src/domain/swap';
 import { TransactionDraft } from '../../../src/domain/transaction';
 import { BUILT_IN_NETWORKS } from '../../../src/resources';
-import { SWAP_QUOTE_TTL_MS } from '../../../src/services/swap.service';
+import { SWAP_QUOTE_TTL_MS, SWAP_REVIEW_TTL_MS } from '../../../src/services/swap.service';
 import { GNS, installGnoswapFakes, qeval, ROUTER, ROUTER_ADDRESS, WUGNOT } from '../../helpers/gnoswap-fakes';
 import { setupWallet } from '../../helpers/render-screen';
 import { createTestContainer } from '../../helpers/test-container';
@@ -169,12 +169,24 @@ describe('SwapService', () => {
     expect(env.gno.state.broadcasts).toHaveLength(0);
   });
 
-  it('refuses to sign a quote that expired while the review was open', async () => {
+  it('confirms a review opened on an aging quote once the quote TTL has passed', async () => {
+    const { service, network, account, gnot, gns, env } = await setup();
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
+
+    now += SWAP_QUOTE_TTL_MS - 10_000;
+    const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+    now += 30_000;
+    await service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' });
+    expect(env.gno.state.broadcasts).toHaveLength(1);
+  });
+
+  it('refuses to sign a review left open past its TTL', async () => {
     const { service, network, account, gnot, gns, env, dryExpressions } = await setup();
     const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
     const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
 
-    now += SWAP_QUOTE_TTL_MS + 1;
+    now += SWAP_REVIEW_TTL_MS + 1;
     await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.SWAP_PRICE_MOVED);
     expect(dryExpressions).toHaveLength(1);
     expect(env.gno.state.broadcasts).toHaveLength(0);

@@ -28,6 +28,8 @@ import { maxFeeReserve, SignAndBroadcastOptions, TransactionService } from './tr
 
 // A quote older than this is fetched again before it can be reviewed.
 export const SWAP_QUOTE_TTL_MS = 60_000;
+// An open review can be confirmed this long after prepare; the fresh dry run at submit guards the price.
+export const SWAP_REVIEW_TTL_MS = 120_000;
 
 export interface SwapQuoteRequest {
   network: Network;
@@ -61,6 +63,7 @@ export interface PreparedSwap {
   deadlineMinutes: number;
   draft: TransactionDraft;
   estimate: FeeEstimate;
+  preparedAt: number;
 }
 
 export interface SwapMaxInput {
@@ -244,7 +247,7 @@ export class SwapService {
     }
   }
 
-  private async buildDraft(prepared: Omit<PreparedSwap, 'draft' | 'estimate'>, fee: TransactionFee): Promise<TransactionDraft> {
+  private async buildDraft(prepared: Omit<PreparedSwap, 'draft' | 'estimate' | 'preparedAt'>, fee: TransactionFee): Promise<TransactionDraft> {
     const { config, repository } = this.require(prepared.network);
     const { account, network, input, output, quote } = prepared;
     const messages = await repository.buildSwapMessages({
@@ -299,7 +302,7 @@ export class SwapService {
     const draft = await this.buildDraft(base, { gasWanted: '0', gasFee: '' });
     const estimate = await this.transactionService.estimateFee(draft, account, network);
 
-    return { ...base, draft, estimate };
+    return { ...base, draft, estimate, preparedAt: this.now() };
   }
 
   // Native input keeps back the simulated fee (default tier x MAX margin) and storage deposit of the real
@@ -357,13 +360,13 @@ export class SwapService {
     return { amount: max.toString(), approximate };
   }
 
-  // Rejects an expired quote, re-quotes the exact signed route, refreshes the deadline, then signs and broadcasts.
+  // Rejects an expired review, re-quotes the exact signed route, refreshes the deadline, then signs and broadcasts.
   async submit(prepared: PreparedSwap, fee: TransactionFee, options: SignAndBroadcastOptions = {}): Promise<BroadcastResult> {
     const { config, repository } = this.require(prepared.network);
     const { quote, account, network } = prepared;
 
-    if (this.now() - quote.quotedAt > SWAP_QUOTE_TTL_MS) {
-      throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The quote expired. Review a new quote.');
+    if (this.now() - prepared.preparedAt > SWAP_REVIEW_TTL_MS) {
+      throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The review expired. Review a new quote.');
     }
 
     const exactOut = quote.exactType === SwapType.EXACT_OUT;
