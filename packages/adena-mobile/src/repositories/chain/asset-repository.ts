@@ -20,6 +20,8 @@ export interface AssetRepository<TMessage = unknown> {
   readonly family: ChainFamily;
   getCuratedTokens(network: Network): Promise<Token[]>;
   findToken(tokenId: string, network: Network): Promise<Token | null>;
+  // On-chain metadata only, without the curated overlay; null when the chain does not know the token.
+  findChainToken(tokenId: string, network: Network): Promise<Token | null>;
   searchRegistry(network: Network, offset: number, limit: number): Promise<RegistryPage>;
   discoverHeldTokens(address: string, network: Network): Promise<Token[]>;
   // Raw balances keyed by token id; tokens missing from the result are unknown.

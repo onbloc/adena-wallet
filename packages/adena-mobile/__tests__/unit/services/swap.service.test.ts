@@ -4,7 +4,9 @@ import { TM2Error, Tx } from '@gnolang/tm2-js-client';
 
 import { AppErrorCode, isAppError } from '../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../src/domain/fee';
+import { ChainFamily } from '../../../src/domain/network';
 import { DEFAULT_SWAP_SETTINGS, SwapToken } from '../../../src/domain/swap';
+import { TokenType } from '../../../src/domain/token';
 import { TransactionDraft } from '../../../src/domain/transaction';
 import { GnoTokenResourceRepository } from '../../../src/repositories/chain/gno/gno-token-resource.repository';
 import { BUILT_IN_NETWORKS } from '../../../src/resources';
@@ -221,6 +223,36 @@ describe('SwapService', () => {
     await expectCode(mismatch.service.prepare({ ...input, quote: { ...quote, routeArr: `${WUGNOT}:${GNS}:500` } }), AppErrorCode.SWAP_PRICE_MOVED);
     now += SWAP_QUOTE_TTL_MS + 1;
     await expectCode(mismatch.service.prepare({ ...input, quote }), AppErrorCode.SWAP_PRICE_MOVED);
+  });
+
+  describe('on-chain token metadata', () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    // Curated list entry for GNS that the asset repository overlays on registry metadata.
+    const curateGns = (decimals: number): void => {
+      const curated = { id: GNS, networkId: 'gnoland1', family: ChainFamily.GNO, type: TokenType.GRC20, name: 'Gnoswap Curated', symbol: 'cGNS', decimals, isNative: false };
+
+      jest.spyOn(GnoTokenResourceRepository.prototype, 'get').mockResolvedValue({ tokens: [curated], complete: true, routes: {} });
+    };
+
+    const prepareGns = async (options: Parameters<typeof installGnoswapFakes>[1]) => {
+      const env = await setup(options);
+      const quote = await env.service.getQuote({ network: env.network, input: env.gnot, output: env.gns, exactType: 'EXACT_IN', amount: '1000000' });
+
+      return env.service.prepare({ account: env.account, network: env.network, input: env.gnot, output: env.gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+    };
+
+    it('refuses API decimals that match the curated list but not the registry', async () => {
+      curateGns(6);
+      await expectCode(prepareGns({ decimals: { [GNS]: 8 } }), AppErrorCode.SWAP_INVALID_TOKEN);
+    });
+
+    it('accepts API decimals that match the registry despite stale curated decimals, under the registry symbol and name', async () => {
+      curateGns(8);
+      const prepared = await prepareGns({});
+
+      expect(prepared.output).toMatchObject({ id: GNS, decimals: 6, symbol: 'GNS', name: 'GNS' });
+    });
   });
 
   describe('approve form', () => {

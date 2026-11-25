@@ -71,6 +71,7 @@ export const createFakeChainModule = (family: ChainFamily) => {
       family,
       getCuratedTokens: jest.fn(async (): Promise<Token[]> => []),
       findToken: jest.fn(async (): Promise<Token | null> => null),
+      findChainToken: jest.fn(async (): Promise<Token | null> => null),
       searchRegistry: jest.fn(),
       discoverHeldTokens: jest.fn(async (): Promise<Token[]> => []),
       getBalances: jest.fn(async () => ({})),

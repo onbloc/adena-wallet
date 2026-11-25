@@ -236,7 +236,9 @@ export class SwapService {
     return (diff < 0n ? -diff : diff) <= BigInt(hops);
   }
 
-  // GRC20 decimals from the API must match the chain; the shown symbol and name are replaced with the chain's.
+  // GRC20 decimals from the API must match the raw registry metadata (no curated overlay), whose symbol and
+  // name the review then shows. Wrapped GNOT is the registry's wugnot like any GRC20; native GNOT keeps the
+  // bundled network metadata because the router trades it 1:1 in raw units as wugnot, so wugnot decimals never apply.
   private async onChainTokens(network: Network, tokens: SwapToken[]): Promise<SwapToken[]> {
     const assets = this.chainRegistry.assets(network);
 
@@ -245,9 +247,9 @@ export class SwapService {
         return token;
       }
 
-      const onChain = await assets.findToken(token.id, network);
+      const onChain = await assets.findChainToken(token.id, network);
 
-      if (!onChain || onChain.decimals !== token.decimals) {
+      if (!onChain || onChain.type !== TokenType.GRC20 || onChain.decimals !== token.decimals) {
         throw new AppError(AppErrorCode.SWAP_INVALID_TOKEN, `${token.symbol} details don’t match the chain. Swap is blocked for this token.`);
       }
 
