@@ -1,5 +1,6 @@
 import { isAppError } from '../../../src/core/errors';
-import { isValidMnemonic } from '../../../src/crypto/mnemonic';
+import { deriveKeyPair } from '../../../src/crypto/key-pair';
+import { isValidMnemonic, mnemonicToSeed } from '../../../src/crypto/mnemonic';
 import { StorageAccountRepository } from '../../../src/repositories/account.repository';
 import { SecureBiometricCredentialRepository } from '../../../src/repositories/biometric-credential.repository';
 import { StoragePreferenceRepository } from '../../../src/repositories/preference.repository';
@@ -127,6 +128,37 @@ describe('WalletService', () => {
         [account.keyringId, 0, account.publicKey],
         [imported.keyringId, 0, imported.publicKey],
       ]);
+    });
+
+    it('still unlocks when a keyring holds the same key as another after general storage was lost', async () => {
+      const { wallet, accounts, account, keyValueStore } = await setup();
+      const second = await accounts.createAccount(account.keyringId, 'HD_WALLET');
+      const first = deriveKeyPair(await mnemonicToSeed(TEST_MNEMONIC), 0);
+
+      // The first HD account is removed, then its key is imported on its own.
+      await wallet.removeAccount(account.id, TEST_PASSWORD);
+      const imported = await wallet.importPrivateKey(Buffer.from(first.privateKey).toString('hex'), TEST_PASSWORD);
+
+      wallet.lock();
+      keyValueStore.clearAll();
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+      expect(accounts.getAccounts().map(item => item.publicKey)).toEqual([account.publicKey]);
+      expect(imported.publicKey).toBe(account.publicKey);
+      expect(second.publicKey).not.toBe(account.publicKey);
+
+      wallet.lock();
+      await expect(wallet.unlock(TEST_PASSWORD)).resolves.toBeUndefined();
+    });
+
+    it('closes the session when rebuilding accounts fails', async () => {
+      const { container, wallet, accounts, keyValueStore } = await setup();
+
+      wallet.lock();
+      keyValueStore.clearAll();
+      jest.spyOn(accounts, 'appendAccount').mockRejectedValueOnce(new Error('Storage write failed'));
+      await expect(wallet.unlock(TEST_PASSWORD)).rejects.toThrow('Storage write failed');
+      expect(container.keyringSession.isUnlocked()).toBe(false);
+      expect(await wallet.getStatus()).toBe('locked');
     });
 
     it('keeps existing accounts untouched', async () => {

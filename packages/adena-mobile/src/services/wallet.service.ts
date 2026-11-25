@@ -3,7 +3,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 
 import { APP_CONFIG } from '../config/app';
-import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE } from '../core/errors';
+import { AppError, AppErrorCode, BIOMETRICS_INVALIDATED_MESSAGE, isAppError } from '../core/errors';
 import { deriveKeyPair, keyPairFromPrivateKey, wipeKeyPair } from '../crypto/key-pair';
 import { isValidPrivateKeyHex, KeyringRecord, KeyringType } from '../crypto/keyring';
 import { generateMnemonic, isValidMnemonic, mnemonicToSeed, normalizeMnemonic } from '../crypto/mnemonic';
@@ -162,7 +162,15 @@ export class WalletService {
   private async openSession(content: VaultContent, epoch: number): Promise<void> {
     this.assertCurrent(epoch);
     this.keyringSession.open(content.keyrings);
-    await this.restoreMissingAccounts(content.keyrings);
+
+    try {
+      await this.restoreMissingAccounts(content.keyrings);
+    }
+    catch (error) {
+      // A failed unlock must not leave decrypted keyrings in memory behind a locked UI.
+      this.keyringSession.close();
+      throw error;
+    }
   }
 
   private assertNoPendingReset(): void {
@@ -312,7 +320,12 @@ export class WalletService {
 
     for (const keyring of keyrings) {
       if (!accounts.some(account => account.keyringId === keyring.id)) {
-        await this.accountService.appendAccount(keyring.id, keyring.type);
+        // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
+        await this.accountService.appendAccount(keyring.id, keyring.type).catch((error: unknown) => {
+          if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
+            throw error;
+          }
+        });
       }
     }
   }
