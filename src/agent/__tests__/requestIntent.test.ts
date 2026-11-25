@@ -14,14 +14,20 @@ function classificationEvents(text: string, overrides: Partial<Extract<GenerateE
   ];
 }
 
-function scriptedLlm(events: GenerateEvent[], before?: (options?: LLMGenerateOptions) => void) {
+function scriptedLlm(events: GenerateEvent[], before?: (options?: LLMGenerateOptions) => void, fit = '{"supported":true}', balanceFit = '{"needsBalance":true}', scope = '{"kind":"all"}') {
   const calls: { settings: GenerateSettings; options?: LLMGenerateOptions }[] = [];
   const llm: LLM = {
     contextTokens: 8192,
     async *generate(settings, generateOptions) {
       calls.push({ settings, options: generateOptions });
-      before?.(generateOptions);
-      yield* events;
+      if (!settings.system?.startsWith('Read the original conversation. For the latest request')
+        && !settings.system?.startsWith('Determine whether the latest user request')) before?.(generateOptions);
+      yield* settings.system?.startsWith('Determine whether the latest user request')
+        ? classificationEvents(balanceFit, { metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 } })
+        : settings.system?.startsWith('Read the original conversation. For the latest request')
+          ? classificationEvents(scope, { metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 } })
+          : settings.system?.startsWith('Decide whether the selected read tools')
+            ? classificationEvents(fit, { metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 } }) : events;
     },
   };
   return { llm, calls };
@@ -73,6 +79,25 @@ describe('request intent classification', () => {
       aborted: false, intent, metrics, warnings: ['provider warning'],
       messages: [{ role: 'user', content: 'Classify this request.' }],
     });
+  });
+
+  it('verifies a mixed classification against the original user question, not its rewritten explanation', async () => {
+    const original = 'How do the two assets differ?';
+    const wire = { route: 'lookup_explanation', requests: [{ target: 'balance', request: { kind: 'all' } }], explanation: 'Show my portfolio.' };
+    const { llm, calls } = scriptedLlm(classificationEvents(JSON.stringify(wire)), undefined, undefined, '{"needsBalance":false}');
+    const result = await classifyRequest(llm, { prompt: original }, options);
+    expect(result).toMatchObject({ aborted: false, intent: { kind: 'explanation' } });
+    expect(calls[1].settings.messages).toEqual([{ role: 'user', content: original }]);
+  });
+
+  it('checks portfolio scope against the original request and never invents an asset', async () => {
+    const wire = { route: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] };
+    const scope = JSON.stringify({ kind: 'one', asset: { kind: 'symbol', value: 'XYZ' } });
+    const { llm } = scriptedLlm(classificationEvents(JSON.stringify(wire)), undefined, undefined, undefined, scope);
+    const valid = await classifyRequest(llm, { prompt: 'How much XYZ do I hold?' }, options);
+    expect(valid).toMatchObject({ intent: { kind: 'lookup', requests: [{ target: 'balance', request: JSON.parse(scope) }] } });
+    const invalid = await classifyRequest(llm, { prompt: 'How much ABC do I hold?' }, options);
+    expect(invalid).toMatchObject({ intent: { kind: 'clarification' } });
   });
 
   it('retains non-system history without mutating the caller conversation', async () => {
@@ -353,6 +378,12 @@ describe('lookup tool selection', () => {
     });
   });
 
+  it.each(['{"supported":false}', '{}', 'not JSON'])('abstains if capability fit is rejected or unverifiable: %s', async fit => {
+    const { llm } = scriptedLlm(classificationEvents('{"toolNames":["read_allowance"]}'), undefined, fit);
+    const result = await selectLookupTools(llm, 'List allowances.', tools, options);
+    expect(result).toEqual({ aborted: false, toolNames: [], metrics, warnings: [] });
+  });
+
   it.each([
     '', 'not JSON', 'null', '[]', '{}', '{"toolNames":null}', '{"toolNames":"read_height"}',
     '{"toolNames":[1]}', '{"toolNames":["read_height"],"extra":true}',
@@ -495,6 +526,40 @@ describe('preparation argument proposals', () => {
     const result = await proposePreparation(llm, request, options);
     expect(result).toEqual({ aborted: false, proposal, metrics, warnings: ['provider warning'] });
     expect(calls).toHaveLength(1);
+  });
+  it.each([
+    ['Approve Alice to spend 1 GNS', 'gns', 'GNS'],
+    ['Approve Alice to spend 1 GNS or 1 gns', 'GnS', 'GnS'],
+    ['Approve Alice to spend 1 gno.land/r/example/GNS', 'gno.land/r/example/gns', 'gno.land/r/example/gns'],
+    ['Approve Alice to spend 1 xGNS', 'gns', 'gns'],
+  ])('copies only an unambiguous bare asset spelling from the request: %s', async (text, value, expected) => {
+    const proposal = { ...exact, asset: { kind: 'id', value } };
+    const { llm } = scriptedLlm(classificationEvents(JSON.stringify(proposal)));
+    const result = await proposePreparation(llm, [{ role: 'user', content: text }], options);
+    expect(result).toMatchObject({ aborted: false, proposal: { asset: { kind: 'id', value: expected } } });
+  });
+  it('constrains explicit paths and recipients to the request without guessing token identifiers', async () => {
+    const proposed = { operation: 'approve', recipient: 'Alice', asset: { kind: 'id', value: 'gno.land/r/example/token' }, amount: { kind: 'exact', value: '2' } };
+    const { llm, calls } = scriptedLlm(classificationEvents(JSON.stringify(proposed)));
+    await proposePreparation(llm, [{ role: 'user', content: 'Approve Alice to spend 2 of the token at gno.land/r/example/token.' }], options);
+    const schema = calls[0].settings.outputSchema!;
+    expect(schema.safeParse(proposed).success).toBe(true);
+    expect(schema.safeParse({ ...proposed, recipient: 'Mallory' }).success).toBe(false);
+    expect(schema.safeParse({ ...proposed, recipient: 'gno.land/r/example/token' }).success).toBe(false);
+    expect(schema.safeParse({ ...proposed, asset: { kind: 'id', value: 'gno.land/r/other/gns' } }).success).toBe(false);
+    const missing = scriptedLlm(classificationEvents(JSON.stringify(proposed)));
+    await proposePreparation(missing.llm, [{ role: 'user', content: 'Send 2 to Alice.' }], options);
+    expect(missing.calls[0].settings.outputSchema!.safeParse(proposed).success).toBe(true);
+  });
+  it('constrains a single-turn balance share but not a synthesized follow-up', async () => {
+    const proposal = { ...exact, amount: { kind: 'fraction', numerator: '1', denominator: '2' } };
+    const single = scriptedLlm(classificationEvents(JSON.stringify(proposal)));
+    await proposePreparation(single.llm, [{ role: 'user', content: 'Send half of my GNOT to Alice.' }], options);
+    expect(single.calls[0].settings.outputSchema!.safeParse(proposal).success).toBe(true);
+    expect(single.calls[0].settings.outputSchema!.safeParse(exact).success).toBe(false);
+    const followup = scriptedLlm(classificationEvents(JSON.stringify(proposal)));
+    await proposePreparation(followup.llm, [{ role: 'user', content: 'Send half of my GNOT\nAlice' }], options);
+    expect(followup.calls[0].settings.outputSchema!.safeParse(exact).success).toBe(true);
   });
 
 

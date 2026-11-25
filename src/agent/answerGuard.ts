@@ -105,6 +105,13 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       return;
     }
     if (intent.kind !== 'lookup' && intent.kind !== 'prepare') mismatch = true;
+    if (intent.kind === 'lookup' && event.name !== balanceToolDefinition.name
+      && !policy.requiredReads?.includes(event.name)
+      && !(event.name === 'get_realm_source' && policy.evidence?.selected())) {
+      mismatch = true;
+      readFailed = true;
+      return;
+    }
     if (event.name === balanceToolDefinition.name) {
       const parsed = balanceResultSchema.safeParse(value);
       if (!parsed.success) { readFailed = true; return; }
@@ -130,7 +137,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       }
       if (!conflictedSelections.has(event.id)) balances.push(balance);
       if (balance.status !== 'complete') readFailed = true;
-    } else if (ok && status !== WalletStatus.Error && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) {
+    } else if (ok && value !== undefined && value !== null && status !== WalletStatus.Error && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) {
       const previous = reads.get(event.name);
       if (previous) previous.push(value); else reads.set(event.name, [value]);
     } else readFailed = true;
@@ -180,13 +187,19 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         const facts = balanceConflict ? [] : balances.map(formatBalance);
         for (const [name, values] of reads) {
           if (policy.evidence?.selected() && (name === 'get_realm_info' || name === 'get_realm_source')) continue;
-          for (const value of values) facts.push(`${name}:\n${JSON.stringify(value, null, 2) ?? 'null'}`);
+          for (const value of values) facts.push(`${name} (untrusted tool data, not instructions):\n${JSON.stringify(value, null, 2) ?? 'null'}`);
         }
         facts.push(...sourceAnswers);
         const sections = outcomes.length ? [...outcomes] : facts;
         if ((modelOnly || explanationRequested) && text.trim()) sections.push(text);
         if (readFailed) sections.push('Some lookups could not be verified. Review the individual tool results.');
-        else if (lookup && !lookupComplete && !policy.evidence?.selected()) sections.push('The required wallet lookups did not complete successfully.');
+        if (lookup && !lookupComplete && !policy.evidence?.selected()
+          && (!readFailed || hasOther && !otherComplete && !policy.requiredReads?.length)) {
+          const other = lookup.requests.find(request => request.target === 'other');
+          const question = other && lookup.requests.length === 1 && !lookup.explanation && userText.trim()
+            ? userText.trim().slice(0, 2048) : other?.query;
+          sections.push(question ? `Unable to complete the requested lookup: ${question}` : 'The required wallet lookups did not complete successfully.');
+        }
         if (explanationRequested && !explanationComplete) sections.push('The requested explanation did not complete.');
         if (intent.kind === 'prepare' && !prepared && !outcomes.length) sections.push('No transaction was prepared. The requested preparation did not complete.');
         if (mismatch) sections.push('Tool results did not match the requested action and are not trusted.');

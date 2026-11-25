@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { fromBaseUnits } from './amount';
 
-import { ToolName, WalletStatus } from './constants';
+import { ToolName, WalletErrorCode, WalletStatus } from './constants';
 import { WalletError, type Contact, type PreparedTransaction, type TransactionHandler, type WalletSdk } from './port';
 import type { WalletTool } from '../../harness/core';
 
@@ -16,6 +17,8 @@ export type WalletToolsContext = {
   contacts: readonly Contact[];
   /** The current user request, not model-generated content or conversation history. */
   userText: string;
+  /** Recipient retained from a validated, scoped clarification. */
+  authorizedRecipient?: string;
   /** Gets every transaction a tool prepares; the app signs it. The model never sees it. */
   onTransaction: TransactionHandler;
 };
@@ -62,6 +65,15 @@ function walletTool<Schema extends z.ZodType>({ name, effect, description, schem
 const resolveContact = (contacts: readonly Contact[], recipient: string) =>
   contacts.find((contact) => contact.alias.toLowerCase() === recipient.trim().toLowerCase())?.address ??
   recipient;
+/** The native bank denomination is already in base units, unlike token display amounts. */
+function resolveAmountUnit(amount: string, token: string): { amount: string; token: string } {
+  if (token !== 'ugnot') return { amount, token };
+  if (!/^\d{1,40}$/.test(amount)) {
+    throw new WalletError(WalletErrorCode.InvalidAmount, 'An ugnot amount must be a whole number of base units.');
+  }
+  return { amount: fromBaseUnits(BigInt(amount), 6), token: 'GNOT' };
+}
+
 
 function mentions(text: string, value: string): boolean {
   const needle = value.trim().toLowerCase();
@@ -73,7 +85,8 @@ function mentions(text: string, value: string): boolean {
     const before = index === 0 ? '' : String.fromCodePoint(text.codePointAt(previousIndex)!);
     const afterIndex = index + needle.length;
     const after = afterIndex === text.length ? '' : String.fromCodePoint(text.codePointAt(afterIndex)!);
-    if (!word.test(before) && !word.test(after)) return true;
+    const suffix = /^(?:에게로|한테로|께서는|에게|한테|으로|께서|에서|부터|까지|은|는|이|가|을|를|에|로|와|과|께|도|만)(?![\p{L}\p{M}\p{N}_])/u.test(text.slice(afterIndex));
+    if (!word.test(before) && (!word.test(after) || suffix)) return true;
   }
   return false;
 }
@@ -84,7 +97,7 @@ function mentions(text: string, value: string): boolean {
  * sources for the same fact. `approve` and `get_approvals` are offered only if the wallet
  * implements them.
  */
-export function createWalletTools({ sdk, account, contacts, userText, onTransaction }: WalletToolsContext): Record<string, WalletTool> {
+export function createWalletTools({ sdk, account, contacts, userText, authorizedRecipient, onTransaction }: WalletToolsContext): Record<string, WalletTool> {
   const approve = sdk.approve?.bind(sdk);
   const getAllowances = sdk.getAllowances?.bind(sdk);
   const text = userText.toLowerCase();
@@ -93,6 +106,7 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
     const resolved = resolveContact(contacts, target).trim().toLowerCase();
     const named = contacts.filter(contact => contact.alias.trim().toLowerCase() === alias);
     if (named.some(contact => contact.address.trim().toLowerCase() !== resolved)) return false;
+    if (authorizedRecipient !== undefined && resolved === authorizedRecipient.trim().toLowerCase()) return true;
     if (mentions(text, target) || mentions(text, resolved)) return true;
     return contacts.some(contact => contact.address.trim().toLowerCase() === resolved &&
       contacts.every(other => other.alias.trim().toLowerCase() !== contact.alias.trim().toLowerCase() ||
@@ -132,11 +146,11 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
       }),
       authorize: ({ to }) => authorized(to),
       run: async ({ to, amount, token }, signal, cancelled) => {
+        const requested = resolveAmountUnit(amount, token);
         const prepared = await handoff(() => sdk.transfer({
           from: account,
           to: resolveContact(contacts, to),
-          amount,
-          token,
+          ...requested,
         }), signal, cancelled);
         if (!prepared) return undefined;
         const { summary } = prepared;
@@ -163,11 +177,11 @@ export function createWalletTools({ sdk, account, contacts, userText, onTransact
         }),
         authorize: ({ spender }) => authorized(spender),
         run: async ({ spender, amount, token }, signal, cancelled) => {
+          const requested = resolveAmountUnit(amount, token);
           const prepared = await handoff(() => approve({
             from: account,
             spender: resolveContact(contacts, spender),
-            amount,
-            token,
+            ...requested,
           }), signal, cancelled);
           if (!prepared) return undefined;
           const { summary } = prepared;

@@ -187,6 +187,18 @@ describe('createWalletTools', () => {
   });
 });
 
+it.each([ToolName.Transfer, ToolName.Approve])('converts whole ugnot base units for %s without changing other tokens', async name => {
+  const { tools, wallet } = setup();
+  const target = name === ToolName.Transfer ? { to: RECIPIENT } : { spender: RECIPIENT };
+  await run(tools[name], { ...target, amount: '1000000', token: 'ugnot' });
+  expect(wallet.calls[0].params).toEqual(expect.objectContaining({ amount: '1', token: 'GNOT' }));
+  await run(tools[name], { ...target, amount: '1', token: 'other-token' });
+  expect(wallet.calls[1].params).toEqual(expect.objectContaining({ amount: '1', token: 'other-token' }));
+  const invalid = await run(tools[name], { ...target, amount: '1.5', token: 'ugnot' });
+  expect(invalid).toEqual(expect.objectContaining({ status: WalletStatus.Error, code: WalletErrorCode.InvalidAmount }));
+  expect(wallet.calls).toHaveLength(2);
+});
+
 describe('trusted recipient authorization', () => {
   it.each([
     ['Send 1 GNOT', ToolName.Transfer, { ...input, to: FRIEND.alias }],
@@ -195,6 +207,8 @@ describe('trusted recipient authorization', () => {
     ['Approve 1 GNOT', ToolName.Approve, { spender: RECIPIENT, amount: '1', token: 'gns' }],
     ['Send 1 GNOT to Caroline', ToolName.Transfer, { ...input, to: FRIEND.alias }],
     [`Send 1 GNOT to ${RECIPIENT}xyz`, ToolName.Transfer, input],
+    [`${RECIPIENT}에게다른사람`, ToolName.Transfer, input],
+    ['carol에게다른사람', ToolName.Transfer, { ...input, to: FRIEND.alias }],
   ])('rejects an unmentioned target in %p', async (userText, name, params) => {
     const wallet = fakeWallet();
     const onTransaction = jest.fn();
@@ -214,6 +228,8 @@ describe('trusted recipient authorization', () => {
     ['Send to Carol', ToolName.Transfer, { ...input, to: FRIEND.address }, FRIEND.address],
     [`Send to ${FRIEND.address}`, ToolName.Transfer, { ...input, to: FRIEND.alias }, FRIEND.address],
     ['Approve Carol', ToolName.Approve, { spender: FRIEND.address, amount: '1', token: 'gns' }, FRIEND.address],
+    [`${RECIPIENT}에게 보내줘`, ToolName.Transfer, input, RECIPIENT],
+    ['carol에게 보내줘', ToolName.Transfer, { ...input, to: FRIEND.alias }, FRIEND.address],
   ])('allows a target explicitly named in %p', async (userText, name, params, expectedAddress) => {
     const wallet = fakeWallet();
     const onTransaction = jest.fn();

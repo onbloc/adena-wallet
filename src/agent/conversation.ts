@@ -10,7 +10,7 @@ import {
   type GenerateEvent,
   type GenerateSettings,
 } from '../llm/core';
-import type { AIAgent } from './agent';
+import type { AIAgent, BalanceReferent, PendingClarification } from './agent';
 
 export type ConversationSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { prompt: string };
 export type ConversationOptions = {
@@ -30,6 +30,8 @@ export class AgentConversation {
   private readonly account?: string;
   private readonly allowTransactionPreparation: boolean;
   private active?: AbortController;
+  private pendingClarification?: PendingClarification;
+  private balanceReferent?: BalanceReferent;
   private revision = 0;
 
   constructor(private readonly agent: AIAgent, options: ConversationOptions = {}) {
@@ -53,6 +55,8 @@ export class AgentConversation {
 
   reset(): void {
     this.revision++;
+    this.pendingClarification = undefined;
+    this.balanceReferent = undefined;
     this.active?.abort();
     this.session.reset();
   }
@@ -63,6 +67,10 @@ export class AgentConversation {
   ): AsyncGenerator<GenerateEvent> {
     if (this.active) throw new Error('A conversation already has an active turn.');
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
+    const pendingClarification = this.allowTransactionPreparation ? this.pendingClarification : undefined;
+    this.pendingClarification = undefined;
+    const balanceReferent = this.balanceReferent;
+    this.balanceReferent = undefined;
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
     const reservedOutput = this.account ? Math.min(outputTokens, 512) : outputTokens;
@@ -81,6 +89,8 @@ export class AgentConversation {
     const { prompt, ...generation } = settings;
     let answer = '';
     let completed = false;
+    let nextClarification: PendingClarification | undefined;
+    let nextBalanceReferent: BalanceReferent | undefined;
     try {
       for await (const event of this.agent.run(
         { ...generation, messages: this.session.messages(prompt) },
@@ -89,8 +99,14 @@ export class AgentConversation {
           signal: controller.signal,
           allowTransactionPreparation: this.allowTransactionPreparation,
           contextTokens: this.contextTokens,
+          pendingClarification,
+          onPreparationClarification: (text, slot) => { nextClarification = { text, slot }; },
+          balanceReferent,
+          onBalanceReferent: (asset) => { nextBalanceReferent = asset; },
           onContextCompacted: (count) => {
             if (revision !== this.revision || controller.signal.aborted) return;
+            nextClarification = undefined;
+            nextBalanceReferent = undefined;
             this.session.trimOldest(count);
           },
         }
@@ -98,13 +114,19 @@ export class AgentConversation {
         if (event.type === GenerateEventType.Text) answer += event.delta;
         if (event.type === GenerateEventType.Done && !completed) {
           completed = true;
-          if (revision === this.revision && !controller.signal.aborted && canRememberTurn(event)) {
-            this.session.complete(prompt, answer);
+          if (revision === this.revision && !controller.signal.aborted && !event.aborted) {
+            if (this.allowTransactionPreparation && event.finishReason === 'stop') this.pendingClarification = nextClarification;
+            if (event.finishReason === 'stop') this.balanceReferent = nextBalanceReferent;
+            if (canRememberTurn(event)) this.session.complete(prompt, answer);
           }
         }
         yield event;
       }
     } finally {
+      if (controller.signal.aborted) {
+        this.pendingClarification = undefined;
+        this.balanceReferent = undefined;
+      }
       controller.abort();
       signal?.removeEventListener('abort', abort);
       if (this.active === controller) this.active = undefined;
