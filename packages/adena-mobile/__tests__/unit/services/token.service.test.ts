@@ -75,6 +75,19 @@ describe('TokenService', () => {
       expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')?.visible).toBe(false);
     });
 
+    it('keeps the listing and metadata of saved tokens when the curated list is unavailable', async () => {
+      const { service, repository, assets } = setup();
+      const foo = managed({ id: 'foo', name: 'Foo', imageUrl: 'https://foo.svg', source: TokenSource.DISCOVERED, listed: true });
+
+      repository.save(account.id, GNO_NETWORK.id, [foo]);
+      assets.getCuratedTokens.mockRejectedValue(new Error('The token list is unavailable'));
+
+      const listed = (await service.getTokenList(account, GNO_NETWORK)).find(token => token.id === 'foo');
+
+      expect(listed).toMatchObject({ listed: true, name: 'Foo', imageUrl: 'https://foo.svg' });
+      expect(repository.get(account.id, GNO_NETWORK.id)?.find(token => token.id === 'foo')?.listed).toBe(true);
+    });
+
     it('always lists the network coins first, enriched by curated metadata', async () => {
       const { service, repository, assets } = setup();
 

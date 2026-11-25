@@ -22,7 +22,8 @@ describe('createGnoModule', () => {
     expect([module.chain.family, module.assets.family, module.nfts.family, module.history.family]).toEqual(['gno', 'gno', 'gno', 'gno']);
 
     await expect(module.chain.getChainId(network)).resolves.toBe('gnoland-1');
-    await module.assets.getCuratedTokens(network);
+    // The fake http has no responses, so the list is incomplete and rejected.
+    await expect(module.assets.getCuratedTokens(network)).rejects.toThrow('The token list is unavailable');
     expect(http.calls.some(url => url.endsWith(`/grc20/${network.id}.json`))).toBe(true);
   });
 });

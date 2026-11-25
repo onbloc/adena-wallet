@@ -22,7 +22,7 @@ export class TokenService {
     const assets = this.chainRegistry.assets(network);
     const address = this.accountService.getAddress(account, network);
     const [curated, discovered] = await Promise.all([
-      assets.getCuratedTokens(network).catch(() => [] as Token[]),
+      assets.getCuratedTokens(network).catch(() => null),
       assets.discoverHeldTokens(address, network).catch(() => [] as Token[]),
     ]);
     // Read after the network calls so visibility or custom-token changes made meanwhile are kept.
@@ -32,7 +32,7 @@ export class TokenService {
 
     // Network coins (GNOT; ATONE + PHOTON) are always listed first and cannot be hidden.
     getDefaultTokensFor(network).forEach((token) => {
-      byId.set(token.id, toManaged({ ...token, ...curated.find(item => item.id === token.id) }, 'default'));
+      byId.set(token.id, toManaged({ ...token, ...curated?.find(item => item.id === token.id) }, 'default'));
     });
     stored.filter(token => !token.isNative).forEach(token => byId.set(token.id, token));
     discovered.forEach((token) => {
@@ -42,6 +42,11 @@ export class TokenService {
     });
     // Refresh metadata from the latest resources without touching user choices.
     const merged = [...byId.values()].map((token) => {
+      // Without the curated list, keep the last known metadata and listing.
+      if (!curated) {
+        return token;
+      }
+
       const fresh = curated.find(item => item.id === token.id);
 
       if (fresh) {
