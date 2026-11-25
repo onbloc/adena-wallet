@@ -19,11 +19,12 @@ describe('useDeepLinkHandler', () => {
   const parseRequestUrl = jest.fn((url: string) => ({ requestId: url }));
   const isProcessed = jest.fn((_request: unknown) => false);
   const answerDuplicate = jest.fn((request: { requestId: string }) => `cb://duplicate?${request.requestId}`);
+  const reconcile = jest.fn((_request: unknown) => Promise.resolve());
   let initialUrl: string | null;
   let navigate: jest.SpyInstance;
 
   const setup = (navigationReady = true) => {
-    const container = { dappService: { parseRequestUrl, isProcessed, answerDuplicate } } as unknown as AppContainer;
+    const container = { dappService: { parseRequestUrl, isProcessed, answerDuplicate, reconcile } } as unknown as AppContainer;
     const wrapper = ({ children }: PropsWithChildren) => <ContainerProvider container={container}>{children}</ContainerProvider>;
 
     return renderHook((ready: boolean) => useDeepLinkHandler(ready), { wrapper, initialProps: navigationReady });
@@ -66,6 +67,7 @@ describe('useDeepLinkHandler', () => {
       urlListener({ url: link('done') });
       urlListener({ url: link('fresh') });
     });
+    expect(reconcile).toHaveBeenCalledWith({ requestId: link('done') });
     expect(openURL).toHaveBeenCalledWith(`cb://duplicate?${link('done')}`);
     expect(useToastStore.getState().toast).toMatchObject({ message: 'This request was already handled.' });
     expect(useDappRequestStore.getState().active?.url).toBe(link('fresh'));

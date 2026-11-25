@@ -94,8 +94,9 @@ describe('InjectSheetScreen', () => {
   const parseRequestUrl = jest.fn((url: string, _caller?: string) => ({ requestId: url }));
   const isProcessed = jest.fn((_request: unknown) => false);
   const answerDuplicate = jest.fn((_request: unknown) => 'cb://duplicate');
+  const reconcile = jest.fn((_request: unknown) => Promise.resolve());
   const walletService = { unlock: jest.fn(), unlockWithBiometrics: jest.fn(), lock: jest.fn() };
-  const container = { dappService: { parseRequestUrl, isProcessed, answerDuplicate }, walletService } as unknown as AppContainer;
+  const container = { dappService: { parseRequestUrl, isProcessed, answerDuplicate, reconcile }, walletService } as unknown as AppContainer;
   let session: SheetSession;
 
   const renderScreen = (requestUrl?: string, callerPackage?: string) => render(
@@ -423,6 +424,7 @@ describe('InjectSheetScreen', () => {
     await renderScreen('adena://request?payload=x');
     expect(flowRequest()).toBeNull();
     expect(page().unavailable?.title).toBe('Request already handled');
+    expect(reconcile).toHaveBeenCalledWith({ requestId: 'adena://request?payload=x' });
     await act(async () => page().onReject());
     expect(answerDuplicate).toHaveBeenCalledWith({ requestId: 'adena://request?payload=x' });
     expect(mockNative.current?.complete).toHaveBeenCalledWith('sheet-1', 'cb://duplicate');

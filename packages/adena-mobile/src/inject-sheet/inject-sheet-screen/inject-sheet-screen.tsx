@@ -116,6 +116,13 @@ export const InjectSheetScreen = ({ requestUrl, callerPackage, session: provided
     }
   }, [callerPackage, dappService, requestUrl]);
 
+  // Settles a tx left unconfirmed by an interrupted approval before the duplicate is answered on close.
+  useEffect(() => {
+    if (parsed.duplicate && parsed.request) {
+      dappService.reconcile(parsed.request).catch(() => undefined);
+    }
+  }, [dappService, parsed]);
+
   // The overlay session is always locked, so connecting and signing both need fresh authentication.
   const flow = useDappRequestFlow(status === WalletStatus.EMPTY || parsed.duplicate || done ? null : parsed.request, {
     allowCrossNetwork: true,

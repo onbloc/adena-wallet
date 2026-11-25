@@ -505,3 +505,68 @@ describe('DappService', () => {
     });
   });
 });
+
+describe('DappService after the process stops mid-broadcast', () => {
+  // Signs for real but the broadcast never settles, then relaunches over the same storage.
+  const interrupted = async () => {
+    const env = await setup();
+    const request = env.txRequest();
+    const context = env.service.resolveContext(request);
+    const { draft } = await env.service.prepareTransaction(request, context);
+    const broadcast = jest.spyOn(env.container.transactionService, 'broadcast').mockReturnValue(new Promise(() => undefined));
+
+    void env.service.approveTransaction(request, context, draft);
+
+    for (let tick = 0; tick < 100 && broadcast.mock.calls.length === 0; tick++) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+
+    const [record] = env.container.pendingBroadcastRepository.list(env.account.id, env.network.chainId);
+    const relaunched = createTestContainer({ relaunch: { secureStore: env.secureStore, keyValueStore: env.keyValueStore } });
+    const signAndBroadcast = jest.spyOn(relaunched.container.transactionService, 'signAndBroadcast');
+    const sign = jest.spyOn(relaunched.container.transactionService, 'sign');
+
+    expect(broadcast).toHaveBeenCalledTimes(1);
+    expect(record?.hashes).toHaveLength(1);
+
+    return {
+      ...env,
+      hash: record.hashes[0],
+      relaunched,
+      service: relaunched.container.dappService,
+      noResend: () => {
+        expect(signAndBroadcast).not.toHaveBeenCalled();
+        expect(sign).not.toHaveBeenCalled();
+        expect(relaunched.gno.state.broadcasts).toEqual([]);
+      },
+    };
+  };
+
+  it('answers a duplicate with the journaled hash without signing or sending again', async () => {
+    const { service, txRequest, hash, network, relaunched, noResend } = await interrupted();
+    const pending = { requestId: 'req-1', status: 'failure', error: { code: 'TRANSACTION_PENDING', message: 'The transaction was sent but not confirmed yet' }, data: { hash } };
+
+    expect(service.isProcessed(txRequest())).toBe(true);
+    expect(readResponse(service.answerDuplicate(txRequest()))).toEqual(pending);
+    await relaunched.container.walletService.unlock(TEST_PASSWORD);
+    const duplicate = txRequest();
+    const error = await catchError(() => service.approveTransaction(duplicate, service.resolveContext(duplicate), { networkId: network.id, chainId: network.chainId, messages: [], fee: { gasWanted: '1', gasFee: '1ugnot' }, memo: '' }));
+
+    expect(readResponse(service.fail(duplicate, error))).toEqual(pending);
+    await service.reconcile(txRequest());
+    expect(readResponse(service.answerDuplicate(txRequest()))).toEqual(pending);
+    noResend();
+  });
+
+  it.each([
+    ['committed', (hash: string) => ({ status: 'success', data: { hash, committed: true } })],
+    ['failed', () => ({ status: 'failure', error: { code: 'TRANSACTION_FAILED', message: 'The transaction failed on chain' } })],
+  ] as const)('settles a %s tx from the chain', async (status, expected) => {
+    const { service, txRequest, hash, relaunched, noResend } = await interrupted();
+
+    relaunched.gno.state.transactions[hash] = status;
+    await service.reconcile(txRequest());
+    expect(readResponse(service.answerDuplicate(txRequest()))).toEqual({ requestId: 'req-1', ...expected(hash) });
+    noResend();
+  });
+});

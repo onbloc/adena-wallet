@@ -57,7 +57,11 @@ export const useDeepLinkHandler = (navigationReady: boolean): void => {
       // Reopening an answered link gets an error response instead of a second prompt.
       if (dappService.isProcessed(request)) {
         showToast('This request was already handled.', 'error');
-        Linking.openURL(dappService.answerDuplicate(request)).catch(() => undefined);
+        // A tx left unconfirmed by an interrupted approval is looked up first, never re-sent.
+        dappService.reconcile(request)
+          .catch(() => undefined)
+          .then(() => Linking.openURL(dappService.answerDuplicate(request)))
+          .catch(() => undefined);
         return;
       }
 

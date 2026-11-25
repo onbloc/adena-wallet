@@ -31,6 +31,8 @@ type ResponseBody = Omit<DappResponse, 'requestId'>;
 const failure = (code: string, message: string, data?: Record<string, unknown>): ResponseBody =>
   ({ status: DappResponseStatus.FAILURE, error: { code, message }, ...(data ? { data } : {}) });
 
+const PENDING_MESSAGE = new TransactionPendingError('').message;
+
 const ANSWERED = failure(AppErrorCode.DUPLICATE_REQUEST, 'This request was already answered.');
 
 // What the dApp was (or will be) told, kept so a duplicate gets the same outcome instead of a new prompt.
@@ -57,9 +59,14 @@ const toProcessed = (response: ResponseBody): ProcessedDappRequest => {
 const fromProcessed = ({ state, tx, error }: ProcessedDappRequest): ResponseBody => {
   switch (state) {
     case ProcessedDappRequestState.IN_PROGRESS:
+      // Once the tx is journaled it may be on chain, so the dApp gets its hash.
+      if (tx) {
+        return failure(AppErrorCode.TRANSACTION_PENDING, PENDING_MESSAGE, { hash: tx.hash });
+      }
+
       return failure(AppErrorCode.REQUEST_IN_PROGRESS, 'This request is still being processed. Wait for its result.');
     case ProcessedDappRequestState.PENDING:
-      return failure(error?.code ?? AppErrorCode.TRANSACTION_PENDING, error?.message ?? 'The transaction was sent but not confirmed yet', tx && { hash: tx.hash });
+      return failure(error?.code ?? AppErrorCode.TRANSACTION_PENDING, error?.message ?? PENDING_MESSAGE, tx && { hash: tx.hash });
     case ProcessedDappRequestState.DONE:
       return tx ? { status: DappResponseStatus.SUCCESS, data: { ...tx } } : ANSWERED;
     default:
@@ -94,6 +101,9 @@ export interface PreparedDappTransaction {
 
 // Handles external dApp requests received through deep links.
 export class DappService {
+  // Transaction approvals running in this process; an in-progress mark outside it was interrupted.
+  private readonly approving = new Set<string>();
+
   constructor(
     private readonly networkService: NetworkService,
     private readonly accountService: AccountService,
@@ -121,6 +131,35 @@ export class DappService {
     const record = this.processedRequests.get(processedKey(request)) ?? { state: ProcessedDappRequestState.DONE };
 
     return buildCallbackUrl(request.callbackUrl, { requestId: request.requestId, ...fromProcessed(record) });
+  }
+
+  // Settles a tx left unconfirmed by an interrupted approval from the chain only; it is never sent again.
+  async reconcile(request: DappRequest): Promise<void> {
+    const key = processedKey(request);
+    const record = this.processedRequests.get(key);
+    const hash = record?.tx?.hash;
+    const network = record?.chainId ? this.networkService.findByChainId(record.chainId) : undefined;
+    const unsettled = (current: ProcessedDappRequest | undefined): boolean => !this.approving.has(key) && current?.tx?.hash === hash
+      && (current?.state === ProcessedDappRequestState.IN_PROGRESS || current?.state === ProcessedDappRequestState.PENDING);
+
+    if (!hash || !network || !unsettled(record)) {
+      return;
+    }
+
+    const status = await this.transactionService.getTransactionStatus(hash, network).catch(() => 'pending' as const);
+
+    // An approval may have settled it meanwhile.
+    if (!unsettled(this.processedRequests.get(key))) {
+      return;
+    }
+
+    const settled: ProcessedDappRequest = status === 'committed'
+      ? { state: ProcessedDappRequestState.DONE, tx: { hash, committed: true } }
+      : status === 'failed'
+        ? { state: ProcessedDappRequestState.FAILED, error: { code: AppErrorCode.TRANSACTION_FAILED, message: 'The transaction failed on chain' } }
+        : { state: ProcessedDappRequestState.PENDING, tx: { hash }, chainId: network.chainId, error: { code: AppErrorCode.TRANSACTION_PENDING, message: PENDING_MESSAGE } };
+
+    this.processedRequests.set(key, settled);
   }
 
   resolveContext(request: DappRequest): DappRequestContext {
@@ -207,8 +246,10 @@ export class DappService {
     draft: TransactionDraft,
   ): Promise<string> {
     const { account, network } = context;
+    const key = processedKey(request);
 
     this.begin(request);
+    this.approving.add(key);
 
     try {
       this.connectedAppService.markUsed(request.callbackOrigin, account.id, network.id, request.callerPackage);
@@ -219,20 +260,26 @@ export class DappService {
         return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { signedTx: signed.encoded, address: context.address } });
       }
 
-      const result = await this.transactionService.signAndBroadcast(draft, account, network);
+      const result = await this.transactionService.signAndBroadcast(draft, account, network, {
+        // Saved before the broadcast, so a restart mid-broadcast still answers with this hash.
+        onSigned: hash => this.processedRequests.set(key, { state: ProcessedDappRequestState.IN_PROGRESS, tx: { hash }, chainId: network.chainId }),
+      });
 
       return this.respond(request, { status: DappResponseStatus.SUCCESS, data: { ...result } });
     }
     catch (error) {
       // An unknown broadcast outcome keeps the mark with its hash, so the request cannot be broadcast again.
       if (error instanceof TransactionPendingError) {
-        this.processedRequests.set(processedKey(request), toProcessed(failure(error.code, error.message, { hash: error.hash })));
+        this.processedRequests.set(key, { ...toProcessed(failure(error.code, error.message, { hash: error.hash })), chainId: network.chainId });
       }
       else {
-        this.processedRequests.remove(processedKey(request));
+        this.processedRequests.remove(key);
       }
 
       throw error;
+    }
+    finally {
+      this.approving.delete(key);
     }
   }
 

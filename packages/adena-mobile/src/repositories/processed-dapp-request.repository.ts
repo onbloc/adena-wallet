@@ -3,7 +3,7 @@ import { StorageKey } from '../migration/storage-keys';
 import { KeyValueStore, readJson, writeJson } from '../storage/key-value-store';
 
 export const ProcessedDappRequestState = {
-  // Approved and still signing or broadcasting.
+  // Approved and still signing or broadcasting; with a hash once the tx is journaled.
   IN_PROGRESS: 'in_progress',
   // Broadcast with an unknown outcome; the hash lets the dApp track it.
   PENDING: 'pending',
@@ -20,6 +20,8 @@ export interface ProcessedDappRequest {
   tx?: { hash: string; height?: string; committed?: boolean };
   // The failure the dApp was answered with (failed or pending).
   error?: { code: string; message: string };
+  // Chain of `tx`, to look it up again after a restart.
+  chainId?: string;
 }
 
 // Remembers answered dApp requests so reopening the same link cannot prompt again.
@@ -40,11 +42,12 @@ export const MAX_PROCESSED_REQUESTS = 500;
 
 const STATES: string[] = Object.values(ProcessedDappRequestState);
 
-const toRecord = ({ state, tx, error }: ProcessedEntry): ProcessedDappRequest => ({
+const toRecord = ({ state, tx, error, chainId }: ProcessedEntry): ProcessedDappRequest => ({
   // Entries written before states existed only say the request was answered.
   state: state && STATES.includes(state) ? state : ProcessedDappRequestState.DONE,
   ...(typeof tx?.hash === 'string' ? { tx } : {}),
   ...(typeof error?.code === 'string' && typeof error.message === 'string' ? { error } : {}),
+  ...(typeof chainId === 'string' ? { chainId } : {}),
 });
 
 export class StorageProcessedDappRequestRepository implements ProcessedDappRequestRepository {

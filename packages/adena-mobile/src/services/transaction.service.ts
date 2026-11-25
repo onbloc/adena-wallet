@@ -45,6 +45,8 @@ export const PREVIOUS_TRANSACTION_RESOLVED_MESSAGE = 'The previous transaction w
 export interface SignAndBroadcastOptions {
   // Replace the unconfirmed tx of this account and chain: signed with its sequence, so only one can commit.
   replacePending?: boolean;
+  // Called with the hash once it is journaled, before the tx is sent.
+  onSigned?: (hash: string) => void;
 }
 
 export interface EstimateFeeOptions {
@@ -228,7 +230,7 @@ export class TransactionService {
     draft: TransactionDraft,
     account: Account,
     network: Network,
-    { replacePending = false }: SignAndBroadcastOptions = {},
+    { replacePending = false, onSigned }: SignAndBroadcastOptions = {},
   ): Promise<BroadcastResult> {
     const { records: replaced, pin } = replacePending ? this.replacementTarget(account, network) : {};
 
@@ -269,6 +271,18 @@ export class TransactionService {
         sequence: signed.sequence,
         accountNumber: signed.accountNumber,
       });
+    }
+
+    try {
+      onSigned?.(hash);
+    }
+    catch (error) {
+      // Nothing was sent, so the hash must not block the next send.
+      if (!alreadyTracked) {
+        this.pendingBroadcasts.discardHash(account.id, network.chainId, hash);
+      }
+
+      throw error;
     }
 
     try {
