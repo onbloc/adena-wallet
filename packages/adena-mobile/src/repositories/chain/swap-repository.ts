@@ -1,5 +1,5 @@
 import { Network } from '../../domain/network';
-import { SwapQuoteSource, SwapRoute, SwapToken, SwapType } from '../../domain/swap';
+import { SwapApproveRoute, SwapQuoteSource, SwapRoute, SwapToken, SwapType } from '../../domain/swap';
 import { Token } from '../../domain/token';
 import { DexApiConfig } from '../../resources';
 
@@ -38,6 +38,8 @@ export interface SwapMessagesRequest {
   routeArr: string;
   quoteArr: string;
   deadline: number;
+  // Resolved once by getApproveRoute so prepare and submit sign the same approve form.
+  approveRoute: SwapApproveRoute | null;
 }
 
 // DEX access for one chain family: token list, route candidates, read-only router quotes and swap messages.
@@ -48,5 +50,9 @@ export interface SwapRepository<TMessage = unknown> {
   // Executes DrySwapRoute on the router; rejects with the router's message when the route fails.
   drySwap(network: Network, config: DexApiConfig, request: DrySwapRequest): Promise<{ amountIn: string; amountOut: string }>;
   getRouterFeeBps(network: Network, config: DexApiConfig): Promise<number>;
+  // Null when the input has no curated approve route or the curated list is unavailable.
+  getApproveRoute(network: Network, input: Token): Promise<SwapApproveRoute | null>;
   buildSwapMessages(request: SwapMessagesRequest): Promise<TMessage[]>;
+  // One entry per message naming what it executes, ignoring the deadline.
+  messageTargets(messages: TMessage[]): string[];
 }

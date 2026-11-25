@@ -9,6 +9,7 @@ import {
   hopCount,
   isRawAmount,
   slippageToBps,
+  SwapApproveRoute,
   swapDeadline,
   swapLimits,
   SwapQuote,
@@ -61,6 +62,8 @@ export interface PreparedSwap {
   maxAmountIn: string;
   minAmountOut: string;
   deadlineMinutes: number;
+  // Pinned at prepare so the confirm signs the approve form the fee was estimated for.
+  approveRoute: SwapApproveRoute | null;
   draft: TransactionDraft;
   estimate: FeeEstimate;
   preparedAt: number;
@@ -265,13 +268,14 @@ export class SwapService {
       routeArr: quote.routeArr,
       quoteArr: quote.quoteArr,
       deadline: swapDeadline(this.now(), prepared.deadlineMinutes),
+      approveRoute: prepared.approveRoute,
     });
 
     return { networkId: network.id, chainId: network.chainId, messages, fee, memo: '' };
   }
 
   async prepare({ account, network, input, output, quote, settings }: PrepareSwapInput): Promise<PreparedSwap> {
-    const { config } = this.require(network);
+    const { config, repository } = this.require(network);
 
     if (quote.networkId !== network.id || quote.inputTokenId !== input.id || quote.outputTokenId !== output.id
       || quote.inputPath !== input.swapPath || quote.outputPath !== output.swapPath) {
@@ -298,7 +302,8 @@ export class SwapService {
       throw new AppError(AppErrorCode.INVALID_AMOUNT, 'The amount is below the minimum swap');
     }
 
-    const base = { account, network, input, output, quote, slippageBps, ...limits, deadlineMinutes: settings.deadlineMinutes };
+    const approveRoute = await repository.getApproveRoute(network, input);
+    const base = { account, network, input, output, quote, slippageBps, ...limits, deadlineMinutes: settings.deadlineMinutes, approveRoute };
     const draft = await this.buildDraft(base, { gasWanted: '0', gasFee: '' });
     const estimate = await this.transactionService.estimateFee(draft, account, network);
 
@@ -312,7 +317,7 @@ export class SwapService {
       return { amount: balance, approximate: false };
     }
 
-    const { config } = this.require(network);
+    const { config, repository } = this.require(network);
     const { minDeposit } = config.swap.wrappedNative;
     const balanceValue = BigInt(isRawAmount(balance) ? balance : '0');
     const fallbackReserve = BigInt(config.swap.nativeFeeReserve);
@@ -343,6 +348,7 @@ export class SwapService {
         slippageBps,
         ...swapLimits(quote, slippageBps),
         deadlineMinutes: settings.deadlineMinutes,
+        approveRoute: await repository.getApproveRoute(network, input),
       }, { gasWanted: '0', gasFee: '' });
       const estimate = await this.transactionService.estimateFee(draft, account, network);
 
@@ -389,6 +395,12 @@ export class SwapService {
     }
 
     const draft = await this.buildDraft(prepared, fee);
+    const reviewed = repository.messageTargets(prepared.draft.messages);
+    const rebuilt = repository.messageTargets(draft.messages);
+
+    if (rebuilt.length !== reviewed.length || rebuilt.some((target, index) => target !== reviewed[index])) {
+      throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The swap transaction changed since the review. Review a new quote.');
+    }
 
     await this.transactionService.assertSufficientFunds(draft, account, network, { token: prepared.input, amount: prepared.maxAmountIn }, prepared.estimate.storageDeposit);
     return this.transactionService.signAndBroadcast(draft, account, network, options);

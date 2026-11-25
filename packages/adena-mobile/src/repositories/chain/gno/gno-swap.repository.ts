@@ -2,7 +2,7 @@ import { TM2Error } from '@gnolang/tm2-js-client';
 
 import { AppError, AppErrorCode } from '../../../core/errors';
 import { Network } from '../../../domain/network';
-import { MAX_INT64, SwapQuoteSource, SwapToken, SwapType } from '../../../domain/swap';
+import { MAX_INT64, SwapApproveRoute, SwapQuoteSource, SwapToken, SwapType } from '../../../domain/swap';
 import { Token, TokenType } from '../../../domain/token';
 import { GnoswapApiClient } from '../../../infrastructure/http/gnoswap-api.client';
 import { DexApiConfig, DexSwapConfig, getGrc20RegistryConfig } from '../../../resources';
@@ -10,7 +10,7 @@ import { DrySwapRequest, SwapMessagesRequest, SwapRepository, SwapRouteCandidate
 import { GnoMessage } from './gno-messages';
 import { GnoProviderFactory } from './gno-provider';
 import { gnoLiteral } from './gno-qeval';
-import { buildSwapMessages, SwapMessageToken } from './gno-swap-messages';
+import { buildSwapMessages, swapMessageTargets } from './gno-swap-messages';
 import { buildPoolCandidates, parseDrySwapResult, parsePools, parseRouteResponse, parseSwapFee, parseSwapPrices, parseSwapTokens, SwapDataError } from './gno-swap-parsers';
 import { GnoTokenResourceRepository } from './gno-token-resource.repository';
 
@@ -110,23 +110,29 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
     return value;
   }
 
+  async getApproveRoute(network: Network, input: Token): Promise<SwapApproveRoute | null> {
+    if (input.type !== TokenType.GRC20) {
+      return null;
+    }
+
+    const list = await this.tokenResources.get(network).catch(() => null);
+
+    return list?.routes[input.id]?.approve ?? null;
+  }
+
   async buildSwapMessages(request: SwapMessagesRequest): Promise<GnoMessage[]> {
     const swap = swapConfigOf(request.config);
-    const routes = request.input.type === TokenType.GRC20
-      ? (await this.tokenResources.get(request.network).catch(() => ({ routes: {} as Record<string, never> }))).routes
-      : {};
-    const toMessageToken = (token: Token, swapPath: string): SwapMessageToken => ({
-      native: token.type === TokenType.NATIVE,
-      swapPath,
-      approveRoute: routes[token.id]?.approve,
-    });
 
     return buildSwapMessages({
       caller: request.caller,
       config: swap,
       registry: getGrc20RegistryConfig(request.network.chainId),
-      input: toMessageToken(request.input, request.inputPath),
-      output: toMessageToken(request.output, request.outputPath),
+      input: {
+        native: request.input.type === TokenType.NATIVE,
+        swapPath: request.inputPath,
+        approveRoute: request.input.type === TokenType.GRC20 ? request.approveRoute ?? undefined : undefined,
+      },
+      output: { native: request.output.type === TokenType.NATIVE, swapPath: request.outputPath },
       exactType: request.exactType,
       amountIn: request.amountIn,
       amountOut: request.amountOut,
@@ -135,5 +141,9 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
       quoteArr: request.quoteArr,
       deadline: request.deadline,
     });
+  }
+
+  messageTargets(messages: GnoMessage[]): string[] {
+    return swapMessageTargets(messages);
   }
 }

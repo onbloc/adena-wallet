@@ -84,6 +84,18 @@ const approveMessage = (input: SwapMessagesInput, amountIn: string): GnoMessage 
   return registryApprove(caller, registry, token.swapPath, spender, amountIn);
 };
 
+// A MsgCall's realm function or a MsgRun's code; amounts and the deadline are call args and left out.
+export const swapMessageTargets = (messages: GnoMessage[]): string[] => messages.map((message) => {
+  switch (message.type) {
+    case GnoMessageType.VM_CALL:
+      return `${message.type} ${message.value.pkg_path}.${message.value.func}`;
+    case GnoMessageType.VM_RUN:
+      return `${message.type} ${JSON.stringify(message.value.package.files)}`;
+    default:
+      return `${message.type} ${JSON.stringify(message.value)}`;
+  }
+});
+
 const isPositiveRaw = (value: string | undefined): value is string => isRawAmount(value) && BigInt(value) > 0n;
 
 // EXACT_IN: [wugnot.Deposit] -> approve(amountIn) -> ExactInSwapRoute -> [wugnot.Withdraw(minOut)].

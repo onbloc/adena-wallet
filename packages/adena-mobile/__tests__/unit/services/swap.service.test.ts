@@ -6,6 +6,7 @@ import { AppErrorCode, isAppError } from '../../../src/core/errors';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../src/domain/fee';
 import { DEFAULT_SWAP_SETTINGS, SwapToken } from '../../../src/domain/swap';
 import { TransactionDraft } from '../../../src/domain/transaction';
+import { GnoTokenResourceRepository } from '../../../src/repositories/chain/gno/gno-token-resource.repository';
 import { BUILT_IN_NETWORKS } from '../../../src/resources';
 import { SWAP_QUOTE_TTL_MS, SWAP_REVIEW_TTL_MS } from '../../../src/services/swap.service';
 import { GNS, installGnoswapFakes, qeval, ROUTER, ROUTER_ADDRESS, WUGNOT } from '../../helpers/gnoswap-fakes';
@@ -201,6 +202,52 @@ describe('SwapService', () => {
     await expectCode(mismatch.service.prepare({ ...input, quote: { ...quote, routeArr: `${WUGNOT}:${GNS}:500` } }), AppErrorCode.SWAP_PRICE_MOVED);
     now += SWAP_QUOTE_TTL_MS + 1;
     await expectCode(mismatch.service.prepare({ ...input, quote }), AppErrorCode.SWAP_PRICE_MOVED);
+  });
+
+  describe('approve form', () => {
+    const curated = { tokens: [], complete: true, routes: { [GNS]: { approve: { name: 'Approve', args: ['$spender', '$amount'] } } } };
+
+    afterEach(() => jest.restoreAllMocks());
+
+    const prepareGrc20 = async () => {
+      let listAvailable = true;
+
+      jest.spyOn(GnoTokenResourceRepository.prototype, 'get').mockImplementation(async () => {
+        if (!listAvailable) {
+          throw new Error('token list unavailable');
+        }
+
+        return curated;
+      });
+      const env = await setup({ grc20Balances: { [GNS]: '100000000' } });
+      const quote = await env.service.getQuote({ network: env.network, input: env.gns, output: env.gnot, exactType: 'EXACT_IN', amount: '1000000' });
+      const prepared = await env.service.prepare({ account: env.account, network: env.network, input: env.gns, output: env.gnot, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+      listAvailable = false;
+      return { ...env, prepared };
+    };
+
+    it('signs the curated approve prepared for the review even when the token list is gone at confirm', async () => {
+      const { service, env, prepared } = await prepareGrc20();
+
+      expect(prepared.approveRoute).toEqual(curated.routes[GNS].approve);
+      await service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' });
+      const tx = Tx.decode(fromBase64(env.gno.state.broadcasts[0]));
+      const approve = MsgCall.decode(tx.messages[0].value);
+
+      expect(tx.messages[0].type_url).toBe('/vm.m_call');
+      expect([approve.pkg_path, approve.func, approve.args]).toEqual(['gno.land/r/gnoswap/gns', 'Approve', [ROUTER_ADDRESS, '1000000']]);
+    });
+
+    it('refuses to sign messages that differ from the reviewed draft', async () => {
+      const { service, env, prepared } = await prepareGrc20();
+      const repository = env.container.chainRegistry.swap(prepared.network)!;
+      const reviewed = prepared.draft.messages as { type: string; value: Record<string, unknown> }[];
+
+      jest.spyOn(repository, 'buildSwapMessages').mockResolvedValueOnce([{ ...reviewed[0], value: { ...reviewed[0].value, func: 'Transfer' } }, ...reviewed.slice(1)]);
+      await expectCode(service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' }), AppErrorCode.SWAP_PRICE_MOVED);
+      expect(env.gno.state.broadcasts).toHaveLength(0);
+    });
   });
 
   it('checks the input balance together with the fee before signing', async () => {

@@ -24,6 +24,12 @@ export interface SwapToken extends Token {
   volume24hUsd?: number;
 }
 
+// A token realm's own approve function ($spender/$amount placeholders); null approves through the registry.
+export interface SwapApproveRoute {
+  name: string;
+  args: string[];
+}
+
 export interface SwapHop {
   tokenIn: string;
   tokenOut: string;
