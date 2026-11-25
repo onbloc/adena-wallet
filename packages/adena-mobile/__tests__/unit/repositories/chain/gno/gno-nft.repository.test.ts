@@ -180,8 +180,9 @@ describe('GnoNftRepository', () => {
 
       const first = await repository.getItems(OWNER, realm, network);
 
-      expect(first).toMatchObject({ items: [{ nftId: '1' }], cursor: '1:', hasNext: true });
-      await expect(repository.getItems(OWNER, realm, network, first.cursor)).resolves.toMatchObject({ items: [{ nftId: '2' }], cursor: null, hasNext: false });
+      expect(first).toMatchObject({ items: [{ nftId: '1', collectionId: `${PKG}.NFT.1` }], cursor: '1:', hasNext: true });
+      // Items keep their source collection, not the group's first id.
+      await expect(repository.getItems(OWNER, realm, network, first.cursor)).resolves.toMatchObject({ items: [{ nftId: '2', collectionId: `${PKG}.NFT.2` }], cursor: null, hasNext: false });
     });
 
     it('excludes operated-only tokens and reads past pages left empty by them', async () => {

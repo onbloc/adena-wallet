@@ -135,7 +135,7 @@ export class GnoNftRepository implements NftRepository {
       const { items: page, page: info } = await this.api.getCollectionItems(network.apiUrl, address, ids[position.index], position.cursor);
 
       items.push(...page.filter(item => item.isOwned !== false).map(item => ({
-        collectionId: collection.id,
+        collectionId: ids[position.index],
         packagePath: item.packagePath || collection.packagePath,
         nftId: item.nftId,
         name: item.name || collection.name,

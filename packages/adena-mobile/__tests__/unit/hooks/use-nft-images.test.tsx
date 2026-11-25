@@ -34,6 +34,23 @@ describe('useNftImages', () => {
     expect(getTokenUri).toHaveBeenCalledTimes(2);
   });
 
+  it('shares one lookup between requests for the same realm and token id', async () => {
+    const getTokenUri = jest.fn(async () => 'https://img/1');
+    const container = { nftService: { getTokenUri } } as unknown as AppContainer;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <ContainerProvider container={container}><QueryClientProvider client={client}>{children}</QueryClientProvider></ContainerProvider>
+    );
+    const { result } = await renderHook(() => useNftImages(network, [
+      { key: 'a', packagePath: 'gno.land/r/punks', nftId: '1', enabled: true },
+      { key: 'b', packagePath: 'gno.land/r/punks', nftId: '1', enabled: true },
+    ]), { wrapper });
+
+    await waitFor(() => expect(result.current.b).toEqual({ uri: 'https://img/1', loading: false }));
+    expect(result.current.a).toEqual({ uri: 'https://img/1', loading: false });
+    expect(getTokenUri).toHaveBeenCalledTimes(1);
+  });
+
   it('returns an empty map for no requests', async () => {
     const container = { nftService: { getTokenUri: jest.fn() } } as unknown as AppContainer;
     const wrapper = ({ children }: PropsWithChildren) => (

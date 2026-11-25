@@ -21,7 +21,8 @@ export interface NftCollectionPageProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
-  onOpen: (nftId: string) => void;
+  // Receives the card key (see nftItemKey), not the bare token id.
+  onOpen: (key: string) => void;
   onBack: () => void;
   refreshing?: boolean;
   onRefresh?: () => void;

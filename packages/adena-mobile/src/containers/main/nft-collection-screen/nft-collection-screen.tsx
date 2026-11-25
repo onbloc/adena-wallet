@@ -4,6 +4,7 @@ import React, { ReactElement, useMemo, useState } from 'react';
 
 import { NftCollectionPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
+import { nftItemKey } from '../../../domain/nft';
 import { useNftImages } from '../../../hooks/use-nft-images';
 import { usePullToRefresh } from '../../../hooks/use-pull-to-refresh';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
@@ -16,7 +17,7 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
   const itemsQuery = useNftItemsQuery(account, network, collection);
   const items = useMemo(() => itemsQuery.data?.pages.flatMap(page => page.items) ?? [], [itemsQuery.data]);
   const images = useNftImages(network, items.map(item => ({
-    key: item.nftId,
+    key: nftItemKey(item),
     packagePath: item.packagePath,
     nftId: item.nftId,
     enabled: collection.supportsTokenUri,
@@ -39,8 +40,8 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
     itemsQuery.fetchNextPage();
   };
 
-  const handleOpen = (nftId: string): void => {
-    const item = items.find(entry => entry.nftId === nftId);
+  const handleOpen = (key: string): void => {
+    const item = items.find(entry => nftItemKey(entry) === key);
 
     if (item) {
       navigation.navigate('NftDetail', { collection, item });
@@ -58,13 +59,11 @@ export const NftCollectionScreen = ({ navigation, route }: NativeStackScreenProp
         { label: 'Symbol', value: collection.symbol },
         { label: 'Network', value: network.networkName },
       ]}
-      items={items.map(item => ({
-        key: item.nftId,
-        title: `#${item.nftId}`,
-        subtitle: item.name,
-        imageUri: images[item.nftId]?.uri,
-        imageLoading: images[item.nftId]?.loading ?? false,
-      }))}
+      items={items.map((item) => {
+        const key = nftItemKey(item);
+
+        return { key, title: `#${item.nftId}`, subtitle: item.name, imageUri: images[key]?.uri, imageLoading: images[key]?.loading ?? false };
+      })}
       loading={itemsQuery.isPending}
       error={itemsQuery.error ? toErrorMessage(itemsQuery.error) : undefined}
       hasMore={Boolean(itemsQuery.hasNextPage)}
