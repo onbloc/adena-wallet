@@ -444,6 +444,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
       .then((result) => {
         if (result.committed) {
           announceConfirmed();
+          resetQuoteState();
           submit.reset();
           setPrepared(null);
           setAmount('');

@@ -316,6 +316,21 @@ describe('SwapScreen', () => {
     expect(env.gno.state.broadcasts).toHaveLength(1);
   });
 
+  it('drops the approximate-Max notice once the swap completes', async () => {
+    const { env } = await setup();
+
+    jest.spyOn(env.container.swapService, 'maxInputAmount').mockResolvedValue({ amount: '99000000', approximate: true });
+    await pickGns();
+    await press('Max');
+    expect(await screen.findByText(/The amount is approximate\./, undefined, LOOKUP)).toBeTruthy();
+    await screen.findByText('Review swap', undefined, LOOKUP);
+    await press('Review swap');
+    await fireEvent.press(await screen.findByTestId('review-confirm', undefined, LOOKUP));
+
+    await waitFor(() => expect(toastMessage()).toBe('Swap confirmed'), LOOKUP);
+    expect(screen.queryByText(/The amount is approximate\./)).toBeNull();
+  });
+
   it('closes the review and fetches a new quote when the price moved before confirm', async () => {
     let amountOut = '4151365';
     const { env } = await setup({ drySwap: () => `("1000000" string)\n("${amountOut}" string)\n(undefined)` });
