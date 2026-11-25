@@ -1,6 +1,6 @@
 import { AppError, AppErrorCode } from '../../core/errors';
 import { CLOUD_BACKUP_ERROR, Spec } from '../../native/NativeAdenaCloudBackup';
-import { BACKUP_FILE_PATTERN, CloudBackupFile, CloudBackupProvider, CloudBackupStore } from './cloud-backup-store';
+import { BACKUP_FILE_PATTERN, CloudBackupFile, CloudBackupProvider, CloudBackupStore, UploadState } from './cloud-backup-store';
 
 const PROVIDER_NAME: Record<CloudBackupProvider, string> = {
   icloud: 'iCloud',
@@ -85,6 +85,16 @@ export class NativeCloudBackupStore implements CloudBackupStore {
 
   remove(name: string): Promise<void> {
     return this.call(native => native.remove(checkedName(name)));
+  }
+
+  async uploadStatus(name: string): Promise<UploadState> {
+    const state = await this.call(native => native.uploadStatus(checkedName(name)));
+
+    if (state !== UploadState.UPLOADED && state !== UploadState.UPLOADING) {
+      throw new AppError(AppErrorCode.STORAGE_ERROR, `The ${PROVIDER_NAME[this.provider]} upload status could not be read.`);
+    }
+
+    return state;
   }
 
   private async call<T>(task: (native: Spec) => Promise<T>, timeoutMs = this.timeouts.callMs): Promise<T> {

@@ -146,6 +146,12 @@ class AdenaCloudBackupModule(reactContext: ReactApplicationContext) : NativeAden
     null
   }
 
+  // A Drive file exists only once its upload completed.
+  override fun uploadStatus(name: String, promise: Promise) = runIo(promise) {
+    findFiles(checkedName(name)).firstOrNull() ?: throw DriveException(E_NOT_FOUND, "The backup file does not exist")
+    "uploaded"
+  }
+
   override fun remove(name: String, promise: Promise) = runIo(promise) {
     findFiles(checkedName(name)).forEach { file -> deleteQuietly(file.id) }
     null

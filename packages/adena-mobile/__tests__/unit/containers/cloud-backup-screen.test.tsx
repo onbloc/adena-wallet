@@ -274,4 +274,58 @@ describe('CloudBackupScreen', () => {
     await waitFor(() => expect(screen.getByText('Your backup is ready')).toBeTruthy());
     expect(env.cloudBackupStore.signInCalls).toBeGreaterThan(1);
   });
+
+  // iCloud uploads in the background: a local copy is not reported as backed up.
+  it('shows an upload still running instead of success, and confirms it on focus', async () => {
+    const env = createTestContainer({ cloudBackup: { backgroundUploads: true } });
+
+    await setupWallet(env);
+    const { navigation } = await renderScreen(CloudBackupScreen, { env });
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Back up now' }));
+    await enterWalletPassword();
+    await enterBackupPassword();
+
+    expect(await screen.findByText('Uploading to iCloud…')).toBeTruthy();
+    expect(screen.getByLabelText('Recovery phrase, Uploading')).toBeTruthy();
+    expect(toastMessage()).toBeUndefined();
+    expect(env.container.cloudBackupService.getLocalStatus()).toMatchObject({ uploading: {} });
+
+    await act(() => navigation.emit('focus'));
+    expect(await screen.findByText('Uploading to iCloud…')).toBeTruthy();
+    expect(toastMessage()).toBeUndefined();
+
+    env.cloudBackupStore.finishUpload([...env.cloudBackupStore.files.keys()][0]);
+    await act(() => navigation.emit('focus'));
+    expect(await screen.findByText('Your backup is ready')).toBeTruthy();
+    expect(screen.getByLabelText('Recovery phrase, Backed up')).toBeTruthy();
+    expect(toastMessage()).toBe('Backed up to iCloud');
+  });
+
+  it('shows an upload error after returning to the foreground and checks again', async () => {
+    const env = createTestContainer({ cloudBackup: { backgroundUploads: true } });
+    const listeners: ((state: string) => void)[] = [];
+
+    jest.spyOn(AppState, 'addEventListener').mockImplementation(((_event: string, listener: (state: string) => void) => {
+      listeners.push(listener);
+      return { remove: jest.fn() };
+    }) as never);
+    await setupWallet(env);
+    await env.container.cloudBackupService.createBackup({ walletPassword: TEST_PASSWORD, backupPassword: BACKUP_PASSWORD, confirmPassword: BACKUP_PASSWORD });
+    const [name] = [...env.cloudBackupStore.files.keys()];
+
+    await renderScreen(CloudBackupScreen, { env });
+    expect(await screen.findByText('Uploading to iCloud…')).toBeTruthy();
+
+    env.cloudBackupStore.failUpload(name, new AppError(AppErrorCode.CLOUD_BACKUP_QUOTA, 'iCloud storage is full'));
+    await act(async () => listeners.forEach(listener => listener('active')));
+    expect(await screen.findByText('Couldn\'t upload to iCloud yet')).toBeTruthy();
+    expect(screen.getByText(/Free up iCloud storage/)).toBeTruthy();
+    expect(env.container.cloudBackupService.getLocalStatus()).toMatchObject({ uploading: {} });
+
+    env.cloudBackupStore.finishUpload(name);
+    await fireEvent.press(screen.getByRole('button', { name: 'Check again' }));
+    expect(await screen.findByText('Your backup is ready')).toBeTruthy();
+    jest.restoreAllMocks();
+  });
 });

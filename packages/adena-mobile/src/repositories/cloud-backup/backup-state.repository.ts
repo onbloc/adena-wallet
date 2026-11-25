@@ -12,6 +12,8 @@ export interface CloudBackupState {
   fingerprint: string;
   mnemonicCount: number;
   privateKeyCount: number;
+  // Written on this device but not confirmed uploaded yet (iCloud uploads in the background).
+  uploading?: boolean;
 }
 
 export interface CloudBackupStateRepository {

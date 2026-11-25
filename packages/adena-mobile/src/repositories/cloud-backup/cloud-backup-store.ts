@@ -5,6 +5,14 @@ export const CloudBackupProvider = {
 
 export type CloudBackupProvider = (typeof CloudBackupProvider)[keyof typeof CloudBackupProvider];
 
+export const UploadState = {
+  UPLOADED: 'uploaded',
+  // Stored on this device and still being uploaded (iCloud uploads in the background).
+  UPLOADING: 'uploading',
+} as const;
+
+export type UploadState = (typeof UploadState)[keyof typeof UploadState];
+
 export interface CloudBackupFile {
   name: string;
   // Epoch milliseconds as reported by the provider.
@@ -24,6 +32,8 @@ export interface CloudBackupStore {
   write(name: string, contents: string): Promise<void>;
   // Succeeds when the file is already gone.
   remove(name: string): Promise<void>;
+  // Whether a written file reached the cloud; rejects with the upload error (e.g. CLOUD_BACKUP_QUOTA).
+  uploadStatus(name: string): Promise<UploadState>;
 }
 
 // `adena-backup-<id>.json` (single file, older apps) or `adena-backup-<id>.<revision>-<nonce>.json`: one immutable

@@ -93,4 +93,15 @@ static void AdenaCloudBackupReject(RCTPromiseRejectBlock reject, NSError *error)
   }];
 }
 
+- (void)uploadStatus:(NSString *)name resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
+{
+  [_store uploadStatusName:name completion:^(NSString *state, NSError *error) {
+    if (error) {
+      AdenaCloudBackupReject(reject, error);
+    } else {
+      resolve(state);
+    }
+  }];
+}
+
 @end

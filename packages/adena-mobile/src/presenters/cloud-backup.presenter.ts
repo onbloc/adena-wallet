@@ -66,3 +66,8 @@ export const describeRemoteChange = (change: RemoteChange, provider: CloudBackup
       return { title: 'Backup can\'t be read', description: `The backup in ${name} is damaged. Back up again to replace it.` };
   }
 };
+
+export const describeUploadError = (error: unknown, provider: CloudBackupProvider): BackupNoticeView => ({
+  title: `Couldn't upload to ${cloudProviderName(provider)} yet`,
+  description: `${describeBackupError(error, provider).description} The upload continues on its own once this is fixed.`,
+});

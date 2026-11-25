@@ -14,6 +14,8 @@ export interface Spec extends TurboModule {
   write(name: string, contents: string): Promise<void>;
   // Resolves when the file is already gone.
   remove(name: string): Promise<void>;
+  // 'uploaded' or 'uploading' (iOS uploads a written file in the background); rejects with the upload error.
+  uploadStatus(name: string): Promise<string>;
 }
 
 export const CLOUD_BACKUP_ERROR = {

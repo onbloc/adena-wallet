@@ -178,6 +178,32 @@ public final class AdenaCloudBackupStore: NSObject {
     }
   }
 
+  // iCloud uploads a written file in the background, so a local copy alone is not a backup yet.
+  // A file present only as a placeholder came from iCloud and counts as uploaded.
+  @objc(uploadStatusName:completion:)
+  public func uploadStatus(_ name: String, completion: @escaping (String?, NSError?) -> Void) {
+    queue.async {
+      do {
+        var url = try self.fileURL(name)
+        guard self.exists(url) else {
+          throw Self.failure("E_NOT_FOUND", "The backup file does not exist")
+        }
+        guard self.fileManager.fileExists(atPath: url.path) else {
+          completion("uploaded", nil)
+          return
+        }
+        url.removeAllCachedResourceValues()
+        let values = try url.resourceValues(forKeys: [
+          .ubiquitousItemIsUploadedKey, .ubiquitousItemIsUploadingKey, .ubiquitousItemUploadingErrorKey,
+        ])
+        if let uploadError = values.ubiquitousItemUploadingError { throw uploadError }
+        completion(values.ubiquitousItemIsUploaded == true ? "uploaded" : "uploading", nil)
+      } catch {
+        completion(nil, Self.wrap(error))
+      }
+    }
+  }
+
   @objc(removeName:completion:)
   public func remove(_ name: String, completion: @escaping (NSError?) -> Void) {
     queue.async {

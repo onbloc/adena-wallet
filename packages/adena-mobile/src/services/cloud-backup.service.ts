@@ -5,7 +5,7 @@ import { AppError, AppErrorCode, isAppError } from '../core/errors';
 import { KeyringRecord, KeyringType } from '../crypto/keyring';
 import { Account, isAvatarColor } from '../domain/account';
 import { CloudBackupState, CloudBackupStateRepository } from '../repositories/cloud-backup/backup-state.repository';
-import { backupFileName, backupVersionFileName, CloudBackupFile, CloudBackupProvider, CloudBackupStore, parseBackupFileName } from '../repositories/cloud-backup/cloud-backup-store';
+import { backupFileName, backupVersionFileName, CloudBackupFile, CloudBackupProvider, CloudBackupStore, parseBackupFileName, UploadState } from '../repositories/cloud-backup/cloud-backup-store';
 import { BACKUP_VERSION, BackupAccount, BackupCodec, BackupContent, BackupHeader, BackupKeyring, headerOf, PLACEHOLDER_ACCOUNT_VERSION } from '../security/backup-codec';
 import { BACKUP_PASSWORD_ISSUE_MESSAGE, findBackupPasswordIssue } from '../security/password-policy';
 import { createId, randomBytes } from '../utils/id';
@@ -38,6 +38,8 @@ export type CloudBackupStatus
       privateKeyCount: number;
       // Only set by getStatus, which reads the cloud copy.
       remoteChange?: RemoteChange;
+      // Saved on this device and not uploaded yet; `error` is why the last upload check failed.
+      uploading?: { error?: unknown };
     };
 
 export interface RestorableBackup {
@@ -118,6 +120,7 @@ export class CloudBackupService {
       outdated: state.fingerprint !== fingerprintOf(this.accountService.getAccounts()),
       mnemonicCount: state.mnemonicCount,
       privateKeyCount: state.privateKeyCount,
+      ...(state.uploading && { uploading: {} }),
     };
   }
 
@@ -151,8 +154,9 @@ export class CloudBackupService {
     }
 
     const remoteChange = compareVersions(state, versions);
+    const uploadError = state.uploading ? await this.checkUpload(state) : undefined;
 
-    return { ...this.getLocalStatus(), ...(remoteChange && { remoteChange }) };
+    return withUploadError({ ...this.getLocalStatus(), ...(remoteChange && { remoteChange }) }, uploadError);
   }
 
   // Same attempt limit as every other wallet password prompt.
@@ -207,11 +211,17 @@ export class CloudBackupService {
 
       this.stateRepository.savePendingWrite(next);
       await this.store.write(fileName, encoded);
-      this.stateRepository.save(next);
+      // Recorded as uploading until the provider confirms the upload; a local copy alone is no backup.
+      this.stateRepository.save({ ...next, uploading: true });
       this.stateRepository.clearPendingWrite();
-      await this.pruneVersions(next, versions, newestStored);
+      const uploadError = await this.checkUpload(next);
 
-      return this.getLocalStatus();
+      // Older versions stay until this one is uploaded.
+      if (!this.stateRepository.get()?.uploading) {
+        await this.pruneVersions(next, versions, newestStored);
+      }
+
+      return withUploadError(this.getLocalStatus(), uploadError);
     });
   }
 
@@ -336,9 +346,33 @@ export class CloudBackupService {
       return null;
     }
 
-    this.stateRepository.save(pending);
+    // Its upload is checked like any other write of this device.
+    const adopted = { ...pending, uploading: true };
+
+    this.stateRepository.save(adopted);
     this.stateRepository.clearPendingWrite();
-    return pending;
+    return adopted;
+  }
+
+  // Marks the recorded write uploaded once the provider confirms it; returns the error of a failed check.
+  private async checkUpload(written: CloudBackupState): Promise<unknown> {
+    let upload: UploadState;
+
+    try {
+      upload = await this.store.uploadStatus(written.fileName);
+    }
+    catch (error) {
+      return error;
+    }
+
+    const current = this.stateRepository.get();
+
+    // A backup written meanwhile replaced the record; its own check decides it.
+    if (upload === UploadState.UPLOADED && current?.fileName === written.fileName && current.uploading) {
+      this.stateRepository.save({ ...current, uploading: false });
+    }
+
+    return undefined;
   }
 
   // Every stored version of a backup; files gone between listing and reading are skipped.
@@ -457,6 +491,9 @@ export class CloudBackupService {
     });
   }
 }
+
+const withUploadError = (status: CloudBackupStatus, error: unknown): CloudBackupStatus =>
+  status.kind === 'backedUp' && status.uploading && error !== undefined ? { ...status, uploading: { error } } : status;
 
 // Whether a cloud version is exactly the one this device last wrote or restored.
 const matches = (state: CloudBackupState, header: BackupHeader | RemoteChange): boolean =>

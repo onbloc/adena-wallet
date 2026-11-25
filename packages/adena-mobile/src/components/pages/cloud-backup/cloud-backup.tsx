@@ -10,7 +10,15 @@ export type CloudBackupPageState
   = | { kind: 'loading' }
     | { kind: 'error'; title: string; description: string }
     | { kind: 'none' }
-    | { kind: 'backedUp'; backedUpAt: string; outdated: boolean; items: string[]; remoteChange?: { title: string; description: string } };
+    | {
+      kind: 'backedUp';
+      backedUpAt: string;
+      outdated: boolean;
+      items: string[];
+      remoteChange?: { title: string; description: string };
+      // Saved on this device and still uploading; `error` is why the upload has not finished.
+      upload?: { error?: { title: string; description: string } };
+    };
 
 // Every Adena backup in this cloud account, including ones from other wallets.
 export interface CloudBackupListItem {
@@ -193,13 +201,22 @@ const BackedUpContent = ({ providerName, state }: { providerName: string; state:
   const styles = useStyles();
   const colors = useThemeColors();
 
+  const status = state.upload ? 'Uploading' : state.outdated ? 'Out of date' : 'Backed up';
+
   return (
     <>
       <Header
-        title={state.remoteChange ? state.remoteChange.title : state.outdated ? 'Your backup is out of date' : 'Your backup is ready'}
+        title={state.upload
+          ? `Uploading to ${providerName}…`
+          : state.remoteChange ? state.remoteChange.title : state.outdated ? 'Your backup is out of date' : 'Your backup is ready'}
         providerName={providerName}
       />
-      <Text variant='body' color='secondary'>{`Restore your wallet using your ${providerName} account and backup password.`}</Text>
+      <Text variant='body' color='secondary'>
+        {state.upload
+          ? `Your backup is saved on this device and is not in ${providerName} yet. Keep Adena installed until the upload finishes.`
+          : `Restore your wallet using your ${providerName} account and backup password.`}
+      </Text>
+      {state.upload?.error && <InlineAlert tone='error' title={state.upload.error.title} description={state.upload.error.description} />}
       {state.remoteChange && <InlineAlert tone='warning' title={state.remoteChange.title} description={state.remoteChange.description} />}
       {state.outdated && (
         <InlineAlert
@@ -210,10 +227,10 @@ const BackedUpContent = ({ providerName, state }: { providerName: string; state:
       )}
       <View style={styles.items}>
         {state.items.map(item => (
-          <View key={item} style={styles.item} accessible accessibilityLabel={`${item}, ${state.outdated ? 'Out of date' : 'Backed up'}`}>
+          <View key={item} style={styles.item} accessible accessibilityLabel={`${item}, ${status}`}>
             <Text variant='row' style={styles.itemLabel}>{item}</Text>
-            {state.outdated
-              ? <Text variant='meta' color='warning'>Out of date</Text>
+            {state.upload || state.outdated
+              ? <Text variant='meta' color='warning'>{status}</Text>
               : (
                   <>
                     <Text variant='meta' color='success'>Backed up</Text>
@@ -266,6 +283,7 @@ const Footer = ({ props }: { props: CloudBackupPageProps }): ReactElement | null
     case 'backedUp':
       return (
         <View style={styles.footer}>
+          {state.upload && <Button label='Check again' tone='secondary' onPress={props.onRetry} testID='cloud-backup-check-upload' />}
           {(state.outdated || state.remoteChange) && <Button label='Back up again' onPress={props.onBackUp} testID='cloud-backup-update' />}
           <Button label='Delete backup' tone='destructiveOutline' onPress={props.onDelete} testID='cloud-backup-delete' />
         </View>

@@ -1,5 +1,5 @@
 import { AppError, AppErrorCode } from '../../core/errors';
-import { CloudBackupFile, CloudBackupProvider, CloudBackupStore } from './cloud-backup-store';
+import { CloudBackupFile, CloudBackupProvider, CloudBackupStore, UploadState } from './cloud-backup-store';
 
 export interface MemoryCloudBackupStoreOptions {
   provider?: CloudBackupProvider;
@@ -9,12 +9,17 @@ export interface MemoryCloudBackupStoreOptions {
   now?: () => number;
   // Shares one cloud between several stores, like two devices on the same account.
   files?: Map<string, { contents: string; modifiedAt: number }>;
+  // iCloud style: a written file stays uploading until finishUpload() or failUpload().
+  backgroundUploads?: boolean;
 }
 
 // In-memory store for tests and previews. `failNext` makes the next call reject with the given error.
+// Files without an entry in `uploads` count as uploaded.
 export class MemoryCloudBackupStore implements CloudBackupStore {
   readonly provider: CloudBackupProvider;
   readonly files: Map<string, { contents: string; modifiedAt: number }>;
+  readonly uploads = new Map<string, UploadState | AppError>();
+  backgroundUploads: boolean;
   available: boolean;
   signedIn: boolean;
   signInCalls = 0;
@@ -27,6 +32,15 @@ export class MemoryCloudBackupStore implements CloudBackupStore {
     this.signedIn = !options.requiresSignIn;
     this.now = options.now ?? Date.now;
     this.files = options.files ?? new Map();
+    this.backgroundUploads = options.backgroundUploads ?? false;
+  }
+
+  finishUpload(name: string): void {
+    this.uploads.delete(name);
+  }
+
+  failUpload(name: string, error: AppError): void {
+    this.uploads.set(name, error);
   }
 
   failNext(error: AppError): void {
@@ -67,11 +81,31 @@ export class MemoryCloudBackupStore implements CloudBackupStore {
     }
 
     this.files.set(name, { contents, modifiedAt: this.now() });
+
+    if (this.backgroundUploads) {
+      this.uploads.set(name, UploadState.UPLOADING);
+    }
   }
 
   async remove(name: string): Promise<void> {
     this.check();
     this.files.delete(name);
+    this.uploads.delete(name);
+  }
+
+  async uploadStatus(name: string): Promise<UploadState> {
+    this.check();
+    const upload = this.uploads.get(name);
+
+    if (!this.files.has(name)) {
+      throw new AppError(AppErrorCode.BACKUP_NOT_FOUND, 'The backup was not found.');
+    }
+
+    if (upload instanceof AppError) {
+      throw upload;
+    }
+
+    return upload ?? UploadState.UPLOADED;
   }
 
   private check(requireSignIn = true): void {

@@ -176,7 +176,7 @@ export const SettingsScreen = ({ navigation }: NativeStackScreenProps<MainStackP
       onOpenAddressBook={handleOpenAddressBook}
       onOpenReset={handleOpenReset}
       cloudBackupLabel={cloudBackupAvailable ? `${cloudProviderName(cloudBackupService.provider)} backup` : undefined}
-      cloudBackupValue={backupStatus?.kind === 'backedUp' && backupStatus.outdated ? 'Out of date' : undefined}
+      cloudBackupValue={backupStatus?.kind === 'backedUp' ? (backupStatus.uploading ? 'Uploading' : backupStatus.outdated ? 'Out of date' : undefined) : undefined}
       onOpenCloudBackup={handleOpenCloudBackup}
       onBack={navigation.goBack}
     />

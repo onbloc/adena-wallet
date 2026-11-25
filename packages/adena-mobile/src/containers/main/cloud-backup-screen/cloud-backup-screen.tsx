@@ -15,6 +15,7 @@ import {
   cloudProviderName,
   describeBackupError,
   describeRemoteChange,
+  describeUploadError,
   formatBackupTime,
 } from '../../../presenters/cloud-backup.presenter';
 import { useCloudBackupStatusQuery, useRestorableBackupsQuery } from '../../../queries/cloud-backup.queries';
@@ -32,6 +33,8 @@ interface BackupForm {
 }
 
 const EMPTY_FORM: BackupForm = { password: '', confirmPassword: '' };
+
+const UPLOAD_CHECK_INTERVAL_MS = 10_000;
 
 const STRENGTH_VIEW: Record<BackupPasswordStrength, { label: string; color: StrengthColor; level: number }> = {
   weak: { label: 'Too weak', color: 'error', level: 1 },
@@ -58,6 +61,45 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
   // Held only between the two steps of one backup; cleared on success, cancel, blur and background.
   const walletPasswordRef = useRef<string | null>(null);
   const submittingRef = useRef(false);
+  const status = statusQuery.data;
+  const uploading = status?.kind === 'backedUp' && status.uploading !== undefined;
+  const wasUploadingRef = useRef(false);
+  const { refetch: refetchStatus } = statusQuery;
+
+  // The upload is checked again on focus, on return to the foreground and periodically while it runs.
+  useEffect(() => {
+    const unsubscribeFocus = navigation.addListener('focus', () => {
+      void refetchStatus({ cancelRefetch: false });
+    });
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void refetchStatus({ cancelRefetch: false });
+      }
+    });
+
+    return (): void => {
+      unsubscribeFocus();
+      appState.remove();
+    };
+  }, [navigation, refetchStatus]);
+
+  useEffect(() => {
+    if (!uploading) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => void refetchStatus({ cancelRefetch: false }), UPLOAD_CHECK_INTERVAL_MS);
+
+    return (): void => clearInterval(timer);
+  }, [uploading, refetchStatus]);
+
+  useEffect(() => {
+    if (wasUploadingRef.current && !uploading && status?.kind === 'backedUp') {
+      showToast(`Backed up to ${providerName}`, 'success');
+    }
+
+    wasUploadingRef.current = uploading;
+  }, [uploading, status, providerName, showToast]);
 
   useEffect(() => {
     const discard = (): void => {
@@ -157,9 +199,16 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
     setSubmitting(true);
 
     try {
-      setStatus(await cloudBackupService.createBackup({ walletPassword, backupPassword: form.password, confirmPassword: form.confirmPassword, overwrite }));
+      const created = await cloudBackupService.createBackup({ walletPassword, backupPassword: form.password, confirmPassword: form.confirmPassword, overwrite });
+
+      // An upload still running shows on the page; the success toast waits for it.
+      wasUploadingRef.current = created.kind === 'backedUp' && created.uploading !== undefined;
+      setStatus(created);
       discardForm();
-      showToast(`Backed up to ${providerName}`, 'success');
+
+      if (!wasUploadingRef.current) {
+        showToast(`Backed up to ${providerName}`, 'success');
+      }
     }
     catch (error) {
       if (isAppError(error, AppErrorCode.WEAK_PASSWORD)) {
@@ -238,7 +287,6 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
   };
 
   const strength = form?.password ? STRENGTH_VIEW[evaluateBackupPassword(form.password).strength] : undefined;
-  const status = statusQuery.data;
   const ownFileName = status?.kind === 'backedUp' ? status.fileName : undefined;
 
   const state: CloudBackupPageState = status
@@ -250,6 +298,9 @@ export const CloudBackupScreen = ({ navigation }: NativeStackScreenProps<MainSta
           outdated: status.outdated,
           items: backedUpItemLabels(status),
           ...(status.remoteChange && { remoteChange: describeRemoteChange(status.remoteChange, provider) }),
+          ...(status.uploading && {
+            upload: status.uploading.error === undefined ? {} : { error: describeUploadError(status.uploading.error, provider) },
+          }),
         }
     : statusQuery.error && !statusQuery.isFetching
       ? { kind: 'error', ...describeBackupError(statusQuery.error, provider) }

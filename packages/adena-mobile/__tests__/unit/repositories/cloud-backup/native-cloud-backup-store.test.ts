@@ -20,6 +20,7 @@ const createNative = (): jest.Mocked<Spec> => {
     remove: jest.fn(async (name: string) => {
       files.delete(name);
     }),
+    uploadStatus: jest.fn(async () => 'uploaded'),
     getConstants: jest.fn(),
   } as unknown as jest.Mocked<Spec>;
 };
@@ -122,5 +123,19 @@ describe('NativeCloudBackupStore', () => {
 
     expect(isAppError(error, appCode)).toBe(true);
     expect((error as Error).message).toMatch(/iCloud/);
+  });
+
+  it('reports the upload state of a written file and maps an upload error', async () => {
+    const native = createNative();
+    const store = new NativeCloudBackupStore(native, CloudBackupProvider.ICLOUD);
+
+    expect(await store.uploadStatus(NAME)).toBe('uploaded');
+    native.uploadStatus.mockResolvedValueOnce('uploading');
+    expect(await store.uploadStatus(NAME)).toBe('uploading');
+    native.uploadStatus.mockRejectedValueOnce({ code: CLOUD_BACKUP_ERROR.QUOTA });
+    expect(await codeOf(() => store.uploadStatus(NAME))).toBe(AppErrorCode.CLOUD_BACKUP_QUOTA);
+    native.uploadStatus.mockResolvedValueOnce('later');
+    expect(await codeOf(() => store.uploadStatus(NAME))).toBe(AppErrorCode.STORAGE_ERROR);
+    expect(await codeOf(() => store.uploadStatus('../x.json'))).toBe(AppErrorCode.INVALID_REQUEST);
   });
 });

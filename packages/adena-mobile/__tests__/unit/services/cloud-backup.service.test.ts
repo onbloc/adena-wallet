@@ -859,3 +859,50 @@ describe('CloudBackupService restore rollback', () => {
     expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
   });
 });
+
+// iCloud uploads a written file in the background; only an uploaded copy counts as backed up.
+describe('CloudBackupService upload in the background', () => {
+  it('keeps a write pending until the provider uploaded it, and only then prunes', async () => {
+    const { backup, cloudBackupStore, keyValueStore, tick } = await setup({ cloudBackup: { backgroundUploads: true } });
+
+    const first = await create(backup);
+    const firstName = first.kind === 'backedUp' ? first.fileName : '';
+
+    expect(first).toMatchObject({ kind: 'backedUp', uploading: {} });
+    expect(JSON.parse(keyValueStore.getString(StorageKey.CLOUD_BACKUP)!)).toMatchObject({ fileName: firstName, uploading: true });
+    expect(await backup.getStatus()).toMatchObject({ uploading: {} });
+
+    cloudBackupStore.finishUpload(firstName);
+    expect(await backup.getStatus()).not.toHaveProperty('uploading');
+    expect(backup.getLocalStatus()).not.toHaveProperty('uploading');
+
+    // Versions older than the newest one replaced stay until the new write is uploaded.
+    tick();
+    await create(backup);
+    tick();
+    const third = await create(backup);
+
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 2, 3]);
+    cloudBackupStore.finishUpload([...cloudBackupStore.files.keys()].find(name => parseBackupFileName(name)?.revision === 2)!);
+    cloudBackupStore.finishUpload(third.kind === 'backedUp' ? third.fileName : '');
+    expect(await backup.getStatus()).not.toHaveProperty('uploading');
+    tick();
+    cloudBackupStore.backgroundUploads = false;
+    await create(backup);
+    expect(revisionsIn(cloudBackupStore)).toEqual([3, 4]);
+  });
+
+  it('reports an upload error and keeps the write pending', async () => {
+    const { backup, cloudBackupStore } = await setup({ cloudBackup: { backgroundUploads: true } });
+    const created = await create(backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const quota = new AppError(AppErrorCode.CLOUD_BACKUP_QUOTA, 'iCloud storage is full');
+
+    cloudBackupStore.failUpload(fileName, quota);
+    expect(await backup.getStatus()).toMatchObject({ kind: 'backedUp', uploading: { error: quota } });
+    expect(backup.getLocalStatus()).toMatchObject({ uploading: {} });
+
+    cloudBackupStore.finishUpload(fileName);
+    expect(await backup.getStatus()).not.toHaveProperty('uploading');
+  });
+});
