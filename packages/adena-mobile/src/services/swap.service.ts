@@ -6,6 +6,7 @@ import {
   effectiveSlippage,
   encodeRoutes,
   estimatePriceImpact,
+  exactOutTarget,
   hopCount,
   isRawAmount,
   slippageToBps,
@@ -270,7 +271,7 @@ export class SwapService {
       outputPath: quote.outputPath,
       exactType: quote.exactType,
       amountIn: prepared.maxAmountIn,
-      amountOut: quote.exactType === SwapType.EXACT_OUT ? quote.amountOut : undefined,
+      amountOut: quote.exactType === SwapType.EXACT_OUT ? exactOutTarget(quote) : undefined,
       minAmountOut: prepared.minAmountOut,
       routeArr: quote.routeArr,
       quoteArr: quote.quoteArr,
@@ -387,14 +388,14 @@ export class SwapService {
       inputPath: quote.inputPath,
       outputPath: quote.outputPath,
       exactType: quote.exactType,
-      amount: exactOut ? quote.amountOut : quote.amountIn,
+      amount: exactOut ? exactOutTarget(quote) : quote.amountIn,
       routeArr: quote.routeArr,
       quoteArr: quote.quoteArr,
     }).catch((error: unknown) => {
       throw new AppError(AppErrorCode.SWAP_PRICE_MOVED, 'The route can no longer fill this swap. Review a new quote.', { cause: error });
     });
     const moved = exactOut
-      ? !this.fills(quote.exactType, quote.amountOut, dry, hopCount(quote.routes)) || BigInt(dry.amountIn) > BigInt(prepared.maxAmountIn)
+      ? !this.fills(quote.exactType, exactOutTarget(quote), dry, hopCount(quote.routes)) || BigInt(dry.amountIn) > BigInt(prepared.maxAmountIn)
       : dry.amountIn !== quote.amountIn || BigInt(dry.amountOut) < BigInt(prepared.minAmountOut);
 
     if (moved) {

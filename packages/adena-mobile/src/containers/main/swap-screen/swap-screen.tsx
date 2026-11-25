@@ -11,6 +11,7 @@ import { HapticKind } from '../../../domain/haptics';
 import {
   AUTO_SLIPPAGE_PERCENT,
   effectiveSlippage,
+  exactOutTarget,
   HIGH_SLIPPAGE_PERCENT,
   isValidDeadline,
   isValidSlippage,
@@ -572,7 +573,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     const { input: paid, output: received, quote: signed } = prepared;
     const exactOut = signed.exactType === SwapType.EXACT_OUT;
     // Signed amounts and limits at full precision; only the estimated output is compact.
-    const outLabel = `${exactOut ? formatTokenAmount(signed.amountOut, received.decimals) : formatSwapAmount(displayAmount(signed.amountOut, received.decimals))} ${received.symbol}`;
+    const outRaw = exactOut ? exactOutTarget(signed) : signed.amountOut;
+    const outLabel = `${exactOut ? formatTokenAmount(outRaw, received.decimals) : formatSwapAmount(displayAmount(outRaw, received.decimals))} ${received.symbol}`;
     const minLabel = `${formatTokenAmount(prepared.minAmountOut, received.decimals)} ${received.symbol}`;
     const maxLabel = `${formatTokenAmount(prepared.maxAmountIn, paid.decimals)} ${paid.symbol}`;
     // The prepared tokens carry the on-chain symbols, so they win over the API list for the swapped pair.
@@ -584,7 +586,7 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
       pay: exactOut
         ? { caption: 'You pay (max)', token: toView(paid), amountLabel: maxLabel, fiatLabel: fiatOf(prepared.maxAmountIn, paid) }
         : { caption: 'You pay', token: toView(paid), amountLabel: `${formatTokenAmount(signed.amountIn, paid.decimals)} ${paid.symbol}`, fiatLabel: fiatOf(signed.amountIn, paid) },
-      receive: { caption: exactOut ? 'You receive (exact)' : 'You receive (estimated)', token: toView(received), amountLabel: outLabel, fiatLabel: fiatOf(signed.amountOut, received) },
+      receive: { caption: exactOut ? 'You receive (exact)' : 'You receive (estimated)', token: toView(received), amountLabel: outLabel, fiatLabel: fiatOf(outRaw, received) },
       rows: [
         exactOut ? { label: 'Max. sent', value: maxLabel, emphasis: true } : { label: 'Min. received', value: minLabel, emphasis: true },
         { label: 'Rate', value: formatSwapRate(signed, paid, received) ?? '—' },

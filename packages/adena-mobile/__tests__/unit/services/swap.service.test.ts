@@ -364,6 +364,22 @@ describe('SwapService', () => {
       ]);
     });
 
+    it('dry-runs and signs the requested output, not a dry-run output rounded below it', async () => {
+      const { service, network, account, gnot, gns, env, dryExpressions } = await setup({ drySwap: '("962929" string)\n("3999999" string)\n(undefined)' });
+      const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_OUT', amount: '4000000' });
+      const prepared = await service.prepare({ account, network, input: gnot, output: gns, quote, settings: DEFAULT_SWAP_SETTINGS });
+
+      expect(quote.amountOut).toBe('3999999');
+      expect(prepared.minAmountOut).toBe('3999997');
+      await service.submit(prepared, { gasWanted: '5000000', gasFee: '5000ugnot' });
+      // The confirmation dry run targets the request too.
+      expect(dryExpressions).toHaveLength(2);
+      expect(dryExpressions[1]).toMatch(/^DrySwapRoute\("[^"]+", "[^"]+", "4000000", "EXACT_OUT"/);
+      const calls = Tx.decode(fromBase64(env.gno.state.broadcasts[0])).messages.map(message => MsgCall.decode(message.value));
+
+      expect(calls.find(call => call.func === 'ExactOutSwapRoute')!.args[2]).toBe('4000000');
+    });
+
     it('refuses to sign when the fresh dry run needs more than amountInMax', async () => {
       const inputs = ['962929', '970000'];
       const { service, network, account, gnot, gns, env } = await setup({ drySwap: () => `("${inputs.shift() ?? '970000'}" string)\n("4000000" string)\n(undefined)` });

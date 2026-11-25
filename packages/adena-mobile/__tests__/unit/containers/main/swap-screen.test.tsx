@@ -666,6 +666,19 @@ describe('SwapScreen review', () => {
       expect(screen.queryByText('Storage deposit')).toBeNull();
     }
   });
+
+  it('reviews the requested exact output when the dry run rounds one unit below it', async () => {
+    await setup({ drySwap: '("962929" string)\n("4123455" string)\n(undefined)' });
+
+    await pickGns();
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy amount' }));
+    await typeAmount('4.123456');
+    await within(screen.getByTestId('swap-sell')).findByText('0.962929', undefined, LOOKUP);
+    await press('Review swap');
+    await screen.findByText('Confirm swap', undefined, LOOKUP);
+    expect(screen.getByText('4.123456 GNS')).toBeTruthy();
+    expect(screen.queryByText('4.123455 GNS')).toBeNull();
+  });
 });
 
 describe('swap screen helpers', () => {

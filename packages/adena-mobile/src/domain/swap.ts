@@ -275,8 +275,11 @@ export interface SwapLimits {
   minAmountOut: string;
 }
 
-// Slippage applies to the estimated side only; the exact side is taken as quoted.
-export const swapLimits = (quote: Pick<SwapQuote, 'exactType' | 'amountIn' | 'amountOut' | 'routes'>, slippageBps: number): SwapLimits =>
+// The output EXACT_OUT signs and dry-runs: the request, never the rounded dry-run output, so rounding is not applied twice.
+export const exactOutTarget = (quote: Pick<SwapQuote, 'requestedAmount'>): string => quote.requestedAmount;
+
+// Slippage applies to the estimated side only; the exact side is taken as requested.
+export const swapLimits = (quote: Pick<SwapQuote, 'exactType' | 'requestedAmount' | 'amountIn' | 'amountOut' | 'routes'>, slippageBps: number): SwapLimits =>
   quote.exactType === SwapType.EXACT_OUT
-    ? { maxAmountIn: maxAmountIn(quote.amountIn, slippageBps), minAmountOut: exactOutMinimum(quote.amountOut, quote.routes) }
+    ? { maxAmountIn: maxAmountIn(quote.amountIn, slippageBps), minAmountOut: exactOutMinimum(exactOutTarget(quote), quote.routes) }
     : { maxAmountIn: quote.amountIn, minAmountOut: minAmountOut(quote.amountOut, slippageBps) };

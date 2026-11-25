@@ -63,8 +63,10 @@ describe('swap math', () => {
 
   it('derives the exact-out guaranteed output and both limits per side', () => {
     expect(exactOutMinimum('4000000', SPLIT)).toBe('3999997');
-    expect(swapLimits({ exactType: 'EXACT_OUT', amountIn: '962929', amountOut: '4000000', routes: SPLIT }, 50)).toEqual({ maxAmountIn: '967744', minAmountOut: '3999997' });
-    expect(swapLimits({ exactType: 'EXACT_IN', amountIn: '1000000', amountOut: '4151365', routes: SPLIT }, 50)).toEqual({ maxAmountIn: '1000000', minAmountOut: '4130608' });
+    expect(swapLimits({ exactType: 'EXACT_OUT', requestedAmount: '4000000', amountIn: '962929', amountOut: '4000000', routes: SPLIT }, 50)).toEqual({ maxAmountIn: '967744', minAmountOut: '3999997' });
+    // The minimum is derived from the request, not a dry-run output already rounded down.
+    expect(swapLimits({ exactType: 'EXACT_OUT', requestedAmount: '4000000', amountIn: '962929', amountOut: '3999999', routes: SPLIT }, 50).minAmountOut).toBe('3999997');
+    expect(swapLimits({ exactType: 'EXACT_IN', requestedAmount: '1000000', amountIn: '1000000', amountOut: '4151365', routes: SPLIT }, 50)).toEqual({ maxAmountIn: '1000000', minAmountOut: '4130608' });
   });
 
   it('builds the deadline in unix seconds from minutes', () => {
