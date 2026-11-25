@@ -184,6 +184,31 @@ describe('useSensitiveClipboard', () => {
   });
 
   describe('native sensitive copy', () => {
+    it('keeps the native expiry armed when the clip cannot be read at the deadline', async () => {
+      mockNative.current = createNative();
+      const { result } = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      // Android 10+ reads '' while input focus is gone (e.g. the notification drawer), with AppState still active.
+      jest.mocked(Clipboard.getString).mockResolvedValue('');
+      await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+      expect(mockNative.current.cancelExpiry).not.toHaveBeenCalled();
+    });
+
+    it('cancels the native expiry once the clip is verified as replaced', async () => {
+      mockNative.current = createNative();
+      const { result } = await renderHook(() => useSensitiveClipboard());
+
+      await act(async () => result.current.copy(SECRET, 'Copied'));
+      jest.mocked(Clipboard.getString).mockResolvedValue('something else');
+      await act(async () => jest.advanceTimersByTime(SENSITIVE_CLIPBOARD_TTL_MS));
+
+      expect(Clipboard.setString).not.toHaveBeenCalled();
+      expect(mockNative.current.cancelExpiry).toHaveBeenCalledTimes(1);
+    });
+
     it('marks the secret sensitive through the native module', async () => {
       mockNative.current = createNative();
       const { result } = await renderHook(() => useSensitiveClipboard());

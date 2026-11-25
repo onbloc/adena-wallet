@@ -57,14 +57,22 @@ const cancelNativeExpiry = (): void => {
   }
 };
 
-const wipeIfStillCopied = async (value: string): Promise<void> => {
+// `unknown`: the clip could not be read (Android 10+ without input focus reads ''), so ownership is open.
+type WipeOutcome = 'wiped' | 'replaced' | 'unknown';
+
+const wipeIfStillCopied = async (value: string): Promise<WipeOutcome> => {
   try {
-    if (await Clipboard.getString() === value) {
+    const current = await Clipboard.getString();
+
+    if (current === value) {
       Clipboard.setString('');
+      return 'wiped';
     }
+
+    return current ? 'replaced' : 'unknown';
   }
   catch {
-    // Nothing more to do when the clipboard cannot be read.
+    return 'unknown';
   }
 };
 
@@ -82,6 +90,25 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
     copiedRef.current = undefined;
     cancelNativeExpiry();
   }, []);
+
+  // An unverified wipe keeps a retry: the native expiry rechecks on focus, the JS copy on the next `active`.
+  const settle = useCallback((copied: CopiedSecret, outcome: WipeOutcome): void => {
+    if (copiedRef.current !== copied) {
+      return;
+    }
+
+    if (outcome !== 'unknown') {
+      forget();
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = undefined;
+
+    if (copied.expiresNatively) {
+      copiedRef.current = undefined;
+    }
+  }, [forget]);
 
   const clear = useCallback(async (): Promise<void> => {
     const copied = copiedRef.current;
@@ -104,12 +131,13 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       return;
     }
 
-    if (!wiped) {
-      await wipeIfStillCopied(copied.value);
+    if (wiped) {
+      forget();
+      return;
     }
 
-    forget();
-  }, [forget]);
+    settle(copied, await wipeIfStillCopied(copied.value));
+  }, [forget, settle]);
 
   const expire = useCallback(async (): Promise<void> => {
     const copied = copiedRef.current;
@@ -125,9 +153,8 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       return;
     }
 
-    await wipeIfStillCopied(copied.value);
-    forget();
-  }, [forget]);
+    settle(copied, await wipeIfStillCopied(copied.value));
+  }, [settle]);
 
   const copy = useCallback((value: string, message: string): void => {
     const expiresNatively = writeSecret(value, ttlMs);
@@ -153,16 +180,12 @@ export const useSensitiveClipboard = (ttlMs = SENSITIVE_CLIPBOARD_TTL_MS): Sensi
       }
 
       if (state === 'active' && copied !== undefined && timerRef.current === undefined) {
-        wipeIfStillCopied(copied.value).then(() => {
-          if (copiedRef.current === copied) {
-            forget();
-          }
-        });
+        wipeIfStillCopied(copied.value).then(outcome => settle(copied, outcome));
       }
     });
 
     return (): void => subscription.remove();
-  }, [forget]);
+  }, [forget, settle]);
 
   // Unmount only (no deps), so effect re-runs never wipe a secret the user is still pasting.
   useEffect(() => (): void => {
