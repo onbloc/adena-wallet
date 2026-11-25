@@ -43,6 +43,29 @@ const maxDiscoveryPages = 4;
 const maxDiscoveredTools = 32;
 const maxCatalogChars = 32_000;
 
+// Only these reviewed paginated reads have a known top-level `items` collection.
+const paginatedReads: Readonly<Record<string, true>> = {
+  list_account_transactions: true,
+  list_native_transfers: true,
+  list_token_transfers: true,
+};
+
+function limitItems(remote: RemoteTool): RemoteTool {
+  return {
+    ...remote,
+    async execute(input) {
+      const result = await remote.execute(input);
+      if (result.kind !== 'result' || !input || typeof input !== 'object' || !('limit' in input) ||
+        !Number.isSafeInteger(input.limit) || typeof input.limit !== 'number' || input.limit <= 0 ||
+        !result.value || typeof result.value !== 'object' || !('untrustedData' in result.value)) return result;
+      const data = result.value.untrustedData;
+      if (!data || typeof data !== 'object' || !('items' in data) || !Array.isArray(data.items) ||
+        data.items.length <= input.limit) return result;
+      return { kind: 'result', value: { ...result.value, untrustedData: { ...data, items: data.items.slice(0, input.limit) } } };
+    },
+  };
+}
+
 export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly }: OnblocMcpConfig) {
   const url = parseOnblocEndpoint(endpoint, allowLoopbackHttp);
 
@@ -93,7 +116,7 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trust
                     'address' in item && item.address !== address)))));
             },
           });
-          if (remote) tools.set(name, remote);
+          if (remote) tools.set(name, Object.hasOwn(paginatedReads, name) ? limitItems(remote) : remote);
         }
         cursor = page.nextCursor;
         if (cursor !== undefined) {
