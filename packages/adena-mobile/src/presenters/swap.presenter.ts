@@ -150,7 +150,7 @@ export interface SwapRouteView {
   steps: { symbol: string; fee?: string }[];
 }
 
-// Symbols for known paths; unknown intermediates show a short package name.
+// Symbols for known paths, earlier tokens first; unknown intermediates show a short package name.
 export const buildRouteViews = (quote: SwapQuote, tokens: SwapToken[]): SwapRouteView[] => {
   const symbolOf = (path: string): string =>
     tokens.find(token => token.swapPath === path && !token.isNative)?.symbol

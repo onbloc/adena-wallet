@@ -558,7 +558,8 @@ export const SwapScreen = ({ navigation, route }: NativeStackScreenProps<MainSta
     const outLabel = `${exactOut ? formatTokenAmount(signed.amountOut, received.decimals) : formatSwapAmount(displayAmount(signed.amountOut, received.decimals))} ${received.symbol}`;
     const minLabel = `${formatTokenAmount(prepared.minAmountOut, received.decimals)} ${received.symbol}`;
     const maxLabel = `${formatTokenAmount(prepared.maxAmountIn, paid.decimals)} ${paid.symbol}`;
-    const routeLabel = buildRouteViews(signed, tokens)
+    // The prepared tokens carry the on-chain symbols, so they win over the API list for the swapped pair.
+    const routeLabel = buildRouteViews(signed, [paid, received, ...tokens])
       .map(view => `${view.share} ${view.steps.map(step => (step.fee ? `› ${step.symbol} (${step.fee})` : step.symbol)).join(' ')}`)
       .join('\n');
     const warnings = [

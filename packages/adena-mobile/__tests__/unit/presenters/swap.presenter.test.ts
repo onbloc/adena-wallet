@@ -77,4 +77,11 @@ describe('swap formatting', () => {
       ['50%', [{ symbol: 'wugnot' }, { symbol: 'GNS', fee: '0.3%' }]],
     ]);
   });
+
+  it('labels a path with the first listed token, so the prepared on-chain symbol wins over the API list', () => {
+    const fromApi = { ...GNS_TOKEN, symbol: 'USDC' };
+    const views = buildRouteViews(quote, [GNS_TOKEN, GNOT, token(WUGNOT, 'wugnot'), fromApi]);
+
+    expect(views[1].steps.map(step => step.symbol)).toEqual(['wugnot', 'GNS']);
+  });
 });
