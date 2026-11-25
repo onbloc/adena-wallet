@@ -122,6 +122,8 @@ export class CloudBackupService {
   }
 
   // Confirms the recorded backup still exists in the cloud and is the copy this device knows.
+  // The record is forgotten only when no version is listed and its known files read as not found;
+  // a failed listing or read is thrown and keeps it.
   async getStatus(options: { interactive?: boolean } = {}): Promise<CloudBackupStatus> {
     let state = this.stateRepository.get();
     const pending = this.pendingWriteFor(state);
@@ -135,7 +137,7 @@ export class CloudBackupService {
       await this.store.signIn();
     }
 
-    const versions = await this.readVersions(known.backupId);
+    const versions = await this.readVersions(known.backupId, [state, pending]);
 
     if (versions.length === 0) {
       this.stateRepository.clear();
@@ -183,7 +185,7 @@ export class CloudBackupService {
       const pending = this.pendingWriteFor(saved);
       // A first backup whose write was never confirmed keeps its backupId, so a retry leaves no orphan file.
       const backupId = saved?.backupId ?? pending?.backupId ?? createId();
-      const versions = saved || pending ? await this.readVersions(backupId) : [];
+      const versions = saved || pending ? await this.readVersions(backupId, [saved, pending]) : [];
       const previous = this.adoptPendingWrite(pending, versions) ?? saved;
       const reference = previous ?? pending;
 
@@ -340,8 +342,17 @@ export class CloudBackupService {
   }
 
   // Every stored version of a backup; files gone between listing and reading are skipped.
-  private async readVersions(backupId: string): Promise<RemoteVersion[]> {
-    return this.readVersionsOf(versionFilesOf(await this.store.list(), backupId), backupId);
+  // Files this device wrote or restored are read even when unlisted, since an iCloud listing can lag behind.
+  private async readVersions(backupId: string, known: (CloudBackupState | null)[] = []): Promise<RemoteVersion[]> {
+    const files = versionFilesOf(await this.store.list(), backupId);
+
+    for (const state of known) {
+      if (state?.backupId === backupId && !files.some(file => file.name === state.fileName)) {
+        files.push({ name: state.fileName, modifiedAt: state.backedUpAt });
+      }
+    }
+
+    return this.readVersionsOf(files, backupId);
   }
 
   private async readVersionsOf(files: CloudBackupFile[], backupId: string): Promise<RemoteVersion[]> {

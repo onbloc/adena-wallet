@@ -180,6 +180,29 @@ describe('CloudBackupService', () => {
     expect(backup.getLocalStatus()).toEqual({ kind: 'none' });
   });
 
+  it('keeps the backup record when a listing misses its file or fails', async () => {
+    const { backup, cloudBackupStore, tick } = await setup();
+    const created = await create(backup);
+
+    // An iCloud listing that only saw the directory (e.g. evicted container) returns nothing.
+    jest.spyOn(cloudBackupStore, 'list').mockResolvedValueOnce([]);
+    expect(await backup.getStatus()).toEqual(created);
+    jest.spyOn(cloudBackupStore, 'list').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR));
+    expect(await codeOf(() => backup.getStatus())).toBe(AppErrorCode.NETWORK_ERROR);
+    jest.spyOn(cloudBackupStore, 'list').mockResolvedValueOnce([]);
+    jest.spyOn(cloudBackupStore, 'read').mockRejectedValueOnce(new AppError(AppErrorCode.NETWORK_ERROR));
+    expect(await codeOf(() => backup.getStatus())).toBe(AppErrorCode.NETWORK_ERROR);
+    expect(backup.getLocalStatus()).toEqual(created);
+    jest.restoreAllMocks();
+
+    // The next backup stays a version of the same backup.
+    tick();
+    jest.spyOn(cloudBackupStore, 'list').mockResolvedValueOnce([]);
+    await create(backup);
+    expect(new Set([...cloudBackupStore.files.keys()].map(name => parseBackupFileName(name)?.backupId)).size).toBe(1);
+    expect(revisionsIn(cloudBackupStore)).toEqual([1, 2]);
+  });
+
   it('surfaces cloud errors without recording a backup', async () => {
     const { backup, cloudBackupStore } = await setup();
 

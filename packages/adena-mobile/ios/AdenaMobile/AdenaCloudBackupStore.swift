@@ -26,13 +26,17 @@ public final class AdenaCloudBackupStore: NSObject {
   }
 
   // A fresh install may not have the container's metadata yet, so the directory alone can look empty:
-  // the iCloud metadata index is queried too (bounded by a timeout) and placeholders start downloading.
+  // the iCloud metadata index is queried too and placeholders start downloading. An index that does not
+  // answer in time fails the listing, since the directory alone could hide a backup that exists.
   @objc public func list(_ completion: @escaping ([[String: Any]]?, NSError?) -> Void) {
     queue.async {
       do {
         let documents = try self.documentsURL()
         var files = self.listDirectory(documents)
-        for (name, entry) in self.queryMetadata(timeout: Self.metadataTimeout) {
+        guard let metadata = self.queryMetadata(timeout: Self.metadataTimeout) else {
+          throw Self.failure("E_NETWORK", "iCloud did not finish listing the backups")
+        }
+        for (name, entry) in metadata {
           files[name] = max(files[name] ?? 0, entry.modifiedAt)
           if !entry.downloaded {
             try? self.fileManager.startDownloadingUbiquitousItem(at: entry.url)
@@ -61,8 +65,8 @@ public final class AdenaCloudBackupStore: NSObject {
   }
 
   // NSMetadataQuery needs a run loop, so it runs on the main queue while this (background) thread waits.
-  // Returns what was gathered, or nothing when the index does not answer in time.
-  private func queryMetadata(timeout: TimeInterval) -> [String: MetadataEntry] {
+  // Returns what was gathered, or nil when the query cannot start or does not answer in time.
+  private func queryMetadata(timeout: TimeInterval) -> [String: MetadataEntry]? {
     let done = DispatchSemaphore(value: 0)
     let box = MetadataBox()
     DispatchQueue.main.async {
@@ -97,7 +101,7 @@ public final class AdenaCloudBackupStore: NSObject {
     }
     if done.wait(timeout: .now() + timeout) == .timedOut {
       DispatchQueue.main.async { box.finish() }
-      return [:]
+      return nil
     }
     return box.entries
   }
@@ -287,7 +291,8 @@ private struct MetadataEntry {
 private final class MetadataBox: @unchecked Sendable {
   var query: NSMetadataQuery?
   var observer: NSObjectProtocol?
-  var entries: [String: MetadataEntry] = [:]
+  // Stays nil when the query could not start.
+  var entries: [String: MetadataEntry]?
 
   func finish() {
     query?.stop()
