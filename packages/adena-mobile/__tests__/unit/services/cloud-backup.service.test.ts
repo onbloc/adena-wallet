@@ -802,3 +802,60 @@ describe('CloudBackupService write that times out but lands', () => {
     expect(await backup.getStatus()).not.toHaveProperty('remoteChange');
   });
 });
+
+// The backup status a restore saved belongs to the restored wallet and goes with it.
+describe('CloudBackupService restore rollback', () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it('rolls back the backup status a restore saved when it stopped before clearing its marker', async () => {
+    const source = await setup();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const original = source.cloudBackupStore.files.get(fileName);
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+    const content = await target.container.cloudBackupService.openBackup(fileName, BACKUP_PASSWORD);
+    const remove = target.keyValueStore.remove.bind(target.keyValueStore);
+
+    // The process stops right after the status was saved: the marker is never cleared.
+    jest.spyOn(target.keyValueStore, 'remove').mockImplementation(key => key !== StorageKey.RESTORE_PENDING && remove(key));
+    await target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD);
+    expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP)).toBeDefined();
+    jest.restoreAllMocks();
+
+    const relaunched = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files }, relaunch: target });
+
+    expect(await relaunched.container.walletService.getStatus()).toBe('empty');
+    expect(relaunched.keyValueStore.getString(StorageKey.CLOUD_BACKUP)).toBeUndefined();
+    expect(relaunched.container.cloudBackupService.getLocalStatus()).toEqual({ kind: 'none' });
+
+    // A different wallet backs up as a new backup and leaves the previous wallet's file alone.
+    const walletService = relaunched.container.walletService;
+
+    await walletService.createWallet({ mnemonic: walletService.generateMnemonic(), password: NEW_WALLET_PASSWORD });
+    const next = await createOn(relaunched.container.cloudBackupService, NEW_WALLET_PASSWORD);
+    const nextName = next.kind === 'backedUp' ? next.fileName : '';
+
+    expect(parseBackupFileName(nextName)?.backupId).not.toBe(parseBackupFileName(fileName)?.backupId);
+    expect(source.cloudBackupStore.files.get(fileName)).toEqual(original);
+    expect(source.cloudBackupStore.files.size).toBe(2);
+  });
+
+  it('drops a previous wallet\'s backup status before a restore starts', async () => {
+    const source = await setup();
+    const created = await create(source.backup);
+    const fileName = created.kind === 'backedUp' ? created.fileName : '';
+    const content = await source.backup.openBackup(fileName, BACKUP_PASSWORD);
+    // General storage survived without its vault (e.g. a device restore without the keychain).
+    const target = createTestContainer({ cloudBackup: { files: source.cloudBackupStore.files } });
+
+    const stale = JSON.stringify({ ...JSON.parse(source.keyValueStore.getString(StorageKey.CLOUD_BACKUP)!), backupId: 'f'.repeat(32) });
+
+    target.keyValueStore.setString(StorageKey.CLOUD_BACKUP, stale);
+    target.keyValueStore.setString(StorageKey.CLOUD_BACKUP_PENDING_WRITE, stale);
+    jest.spyOn(target.container.accountService, 'appendAccount').mockRejectedValueOnce(new Error('disk full'));
+    expect(await catchError(() => target.container.cloudBackupService.restoreWallet(content, NEW_WALLET_PASSWORD))).toEqual(new Error('disk full'));
+    jest.restoreAllMocks();
+    expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP)).toBeUndefined();
+    expect(target.keyValueStore.getString(StorageKey.CLOUD_BACKUP_PENDING_WRITE)).toBeUndefined();
+  });
+});

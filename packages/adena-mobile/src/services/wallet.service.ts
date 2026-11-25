@@ -67,6 +67,12 @@ export interface RestoreWalletInput {
   onRestored?: () => void;
 }
 
+// Local records a restore writes besides the vault and accounts, such as the cloud backup status.
+export interface RestoreScopedData {
+  // Null drops the records of every backup.
+  forgetBackup(backupId: string | null): void;
+}
+
 // Wallet lifecycle: create/import, lock/unlock, biometrics and keyring management.
 // Keyring and account changes run on AccountService's mutation queue, so duplicate checks,
 // index allocation and keyring removal see each other.
@@ -82,6 +88,7 @@ export class WalletService {
     private readonly preferenceRepository: PreferenceRepository,
     private readonly resetMarker?: ResetMarker,
     private readonly restoreMarker?: RestoreMarker,
+    private readonly restoreScopedData?: RestoreScopedData,
   ) {}
 
   async getStatus(): Promise<WalletStatus> {
@@ -156,6 +163,8 @@ export class WalletService {
         throw new AppError(AppErrorCode.WALLET_ALREADY_EXISTS, 'A wallet already exists on this device');
       }
 
+      // Whatever a previous wallet left behind is dropped, so a rollback only removes what this restore wrote.
+      this.restoreScopedData?.forgetBackup(null);
       this.restoreMarker?.markPending(backupId ?? null);
       let content: VaultContent;
 
@@ -216,12 +225,13 @@ export class WalletService {
     });
   }
 
-  // Removes a restore's vault (both slots) and partial accounts; the marker is cleared only once that worked.
+  // Removes a restore's vault (both slots), partial accounts and backup status; the marker is cleared only once that worked.
   private async undoRestore(): Promise<void> {
     this.createdWith = null;
     this.keyringSession.close();
     this.accountService.clear();
     await this.vaultService.destroy();
+    this.restoreScopedData?.forgetBackup(this.restoreMarker?.getBackupId() ?? null);
     this.restoreMarker?.clear();
   }
 

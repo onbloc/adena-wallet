@@ -155,12 +155,13 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     ?? new NftService(chainRegistry, accountService, new StorageNftPreferenceRepository(keyValueStore));
   const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
+  const cloudBackupStateRepository = new StorageCloudBackupStateRepository(keyValueStore);
   const walletService = overrides.walletService
-    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore));
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository);
   const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
     infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
     infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),
-    new StorageCloudBackupStateRepository(keyValueStore),
+    cloudBackupStateRepository,
     vaultService,
     accountService,
     walletService,

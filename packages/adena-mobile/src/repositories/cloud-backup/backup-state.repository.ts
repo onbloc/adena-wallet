@@ -23,6 +23,8 @@ export interface CloudBackupStateRepository {
   getPendingWrite(): CloudBackupState | null;
   savePendingWrite(state: CloudBackupState): void;
   clearPendingWrite(): void;
+  // Drops the record and pending write of this backup, or of any backup when null.
+  forgetBackup(backupId: string | null): void;
 }
 
 const isState = (value: unknown): value is Omit<CloudBackupState, 'revision'> & { revision?: number } => {
@@ -61,6 +63,16 @@ export class StorageCloudBackupStateRepository implements CloudBackupStateReposi
 
   clearPendingWrite(): void {
     this.store.remove(StorageKey.CLOUD_BACKUP_PENDING_WRITE);
+  }
+
+  forgetBackup(backupId: string | null): void {
+    if (backupId === null || this.get()?.backupId === backupId) {
+      this.clear();
+    }
+
+    if (backupId === null || this.getPendingWrite()?.backupId === backupId) {
+      this.clearPendingWrite();
+    }
   }
 
   private read(key: StorageKey): CloudBackupState | null {
