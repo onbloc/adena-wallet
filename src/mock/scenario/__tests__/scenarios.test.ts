@@ -108,4 +108,16 @@ describe('scenarios', () => {
       expect(scenario.before).toBeUndefined();
     }
   });
+
+  it('runs a scenario without an account in both languages, and expects an error only there', () => {
+    const all = [...SCENARIOS, ...EXTRA_SCENARIOS];
+    const without = all.filter((scenario) => scenario.noAccount);
+
+    expect(without.length).toBeGreaterThan(0);
+    expect(without.filter(({ name }) => name.startsWith('ko: '))).toHaveLength(without.length / 2);
+    expect(all.filter(({ expected }) => expected.kind === 'error').every(({ noAccount }) => noAccount === true)).toBe(true);
+    // Both an answer that needs no wallet and a wallet action that does.
+    expect(without.some(({ expected }) => expected.kind === 'answer')).toBe(true);
+    expect(without.some(({ expected }) => expected.kind === 'error')).toBe(true);
+  });
 });

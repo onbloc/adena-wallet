@@ -166,7 +166,8 @@ export async function runBenchmark({
       const record: RunRecord = { ms: 0 };
       try {
         // A follow-up replays its earlier turns first; the verdict is on the last turn, the time on all.
-        const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], signal) : [await runner.ask(prompt, signal)];
+        const runOptions = { signal, account: !scenario?.noAccount };
+        const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], runOptions) : [await runner.ask(prompt, runOptions)];
         if (signal?.aborted) { aborted = true; break rounds; }
         const result = turns[turns.length - 1];
         const summaries = result.prepared.map((prepared) => prepared.summary);
@@ -181,8 +182,14 @@ export async function runBenchmark({
       } catch (error) {
         if (signal?.aborted) { aborted = true; break rounds; }
         const { code, text } = describeError(error);
-        record.error = text.startsWith(code) ? text : `${code}: ${text}`;
-        bump(errors, code);
+        const expectedError = scenario?.expected.kind === 'error' ? scenario.expected : undefined;
+        if (expectedError) {
+          // Raising exactly this error is the outcome the scenario expects.
+          record.verdict = code === expectedError.code ? { ok: true } : { ok: false, reason: `raised ${code}, expected ${expectedError.code}` };
+        } else {
+          record.error = text.startsWith(code) ? text : `${code}: ${text}`;
+          bump(errors, code);
+        }
       }
       record.ms = now() - runStarted;
       records.push(record);

@@ -17,11 +17,18 @@ export type ScenarioRun = {
   stages: Stage[];
 };
 
+/** How one request runs. */
+export type ScenarioOptions = {
+  signal?: AbortSignal;
+  /** False: no wallet is linked, so the agent has no account. Defaults to true. */
+  account?: boolean;
+};
+
 export type ScenarioRunner = {
   /** One request in a fresh conversation. */
-  ask(prompt: string, signal?: AbortSignal): Promise<ScenarioRun>;
+  ask(prompt: string, options?: ScenarioOptions): Promise<ScenarioRun>;
   /** A sequence that keeps one conversation. */
-  chat(prompts: readonly string[], signal?: AbortSignal): Promise<ScenarioRun[]>;
+  chat(prompts: readonly string[], options?: ScenarioOptions): Promise<ScenarioRun[]>;
 };
 
 /** Generation settings of every turn. */
@@ -36,12 +43,13 @@ async function collectTurn(
   timing: TimingLLM,
   prompt: string,
   settings: ScenarioSettings,
-  signal?: AbortSignal
+  { signal, account = true }: ScenarioOptions
 ) {
   const start = transactions.length;
   const run: ScenarioRun = { prepared: [], calls: [], results: [], text: '', stages: [] };
   timing.take();
-  for await (const event of agent.run({ prompt, ...settings }, { account: ACCOUNT, allowTransactionPreparation: true, signal })) {
+  const runOptions = { account: account ? ACCOUNT : undefined, allowTransactionPreparation: true, signal };
+  for await (const event of agent.run({ prompt, ...settings }, runOptions)) {
     if (event.type === GenerateEventType.ToolCall) {
       run.calls.push({ name: event.name, input: event.input, invalid: Boolean(event.invalid) });
     } else if (event.type === GenerateEventType.ToolResult) {
@@ -84,14 +92,14 @@ export function createScenarioRunner({
   }
 
   return {
-    async ask(prompt, signal) {
+    async ask(prompt, options = {}) {
       const { agent, prepared } = startConversation();
-      return collectTurn(agent, prepared, timing, prompt, settings, signal);
+      return collectTurn(agent, prepared, timing, prompt, settings, options);
     },
-    async chat(prompts, signal) {
+    async chat(prompts, options = {}) {
       const { agent, prepared } = startConversation();
       const turns: ScenarioRun[] = [];
-      for (const prompt of prompts) turns.push(await collectTurn(agent, prepared, timing, prompt, settings, signal));
+      for (const prompt of prompts) turns.push(await collectTurn(agent, prepared, timing, prompt, settings, options));
       return turns;
     },
   };

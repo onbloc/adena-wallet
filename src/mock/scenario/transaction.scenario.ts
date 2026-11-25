@@ -50,8 +50,13 @@ describe('plain-language requests become transactions', () => {
     }
   });
 
-  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [] }) => {
-    const turns = await runner.chat([...before, prompt]);
+  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [], noAccount }) => {
+    const options = { account: !noAccount };
+    if (expected.kind === 'error') {
+      await expect(runner.chat([...before, prompt], options)).rejects.toThrow(expected.code);
+      return;
+    }
+    const turns = await runner.chat([...before, prompt], options);
     const run = turns[turns.length - 1];
     const context = `prompts: ${JSON.stringify([...before, prompt])}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
 

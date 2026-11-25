@@ -24,11 +24,13 @@ function fakeRunner(answers: (ScenarioRun | Error)[], { ms = 1000, onAsk }: { ms
   clock = { t: 0 };
   const prompts: string[] = [];
   const signals: (AbortSignal | undefined)[] = [];
+  const accounts: (boolean | undefined)[] = [];
   const runner: ScenarioRunner = {
-    async ask(prompt, signal) {
+    async ask(prompt, options) {
       const call = prompts.length;
       prompts.push(prompt);
-      signals.push(signal);
+      signals.push(options?.signal);
+      accounts.push(options?.account);
       clock.t += Array.isArray(ms) ? ms[call] : ms;
       onAsk?.(call);
       const answer = answers[Math.min(call, answers.length - 1)];
@@ -37,7 +39,7 @@ function fakeRunner(answers: (ScenarioRun | Error)[], { ms = 1000, onAsk }: { ms
     },
     chat: async () => [],
   };
-  return { runner, prompts, signals, clock };
+  return { runner, prompts, signals, accounts, clock };
 }
 
 const collect = () => {
@@ -293,5 +295,40 @@ describe('runBenchmark follow-ups and answers', () => {
     const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [explain] }, runs: 2, onLog });
 
     expect(report.items[0]).toMatchObject({ runs: 2, passed: 1, reasons: [{ text: 'called get_balance({}), expected no tool call', count: 1 }] });
+  });
+});
+
+describe('runBenchmark without an account and with an expected error', () => {
+  const linkWallet: Scenario = {
+    name: 'balance without a wallet', prompt: 'my balance?', noAccount: true, expected: { kind: 'error', code: 'ADENA_ACCOUNT_REQUIRED' },
+  };
+  const raised = (code: string) => new Error(`${code}: Link a wallet to read wallet data or prepare transactions.`);
+  const target = { kind: 'scenarios', scenarios: [linkWallet] } as const;
+
+  it('runs a scenario that has no linked wallet without an account, and the others with one', async () => {
+    const { runner, accounts } = fakeRunner([raised('ADENA_ACCOUNT_REQUIRED'), run()]);
+    const { onLog } = collect();
+
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [linkWallet, ask] }, runs: 1, onLog });
+
+    expect(accounts).toEqual([false, true]);
+  });
+
+  it('passes when the agent raises exactly the expected error, which is not counted as an error', async () => {
+    const { runner } = fakeRunner([raised('ADENA_ACCOUNT_REQUIRED')]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target, runs: 1, onLog });
+
+    expect(report).toMatchObject({ passed: 1, errored: 0 });
+    expect(lines).toContain('[1/1] PASS balance without a wallet  1.0s');
+  });
+
+  it('fails, saying what happened, when another error is raised or none', async () => {
+    const other = await bench({ runner: fakeRunner([raised('ADENA_INTENT_INVALID')]).runner, target, runs: 1, onLog: collect().onLog });
+    const none = await bench({ runner: fakeRunner([run()]).runner, target, runs: 1, onLog: collect().onLog });
+
+    expect(other.items[0]).toMatchObject({ passed: 0, reasons: [{ text: 'raised ADENA_INTENT_INVALID, expected ADENA_ACCOUNT_REQUIRED', count: 1 }] });
+    expect(none.items[0]).toMatchObject({ passed: 0, reasons: [{ text: 'raised no error, expected ADENA_ACCOUNT_REQUIRED', count: 1 }] });
   });
 });

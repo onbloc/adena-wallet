@@ -25,7 +25,7 @@ const fail = (reason: string): Verdict => ({ ok: false, reason });
  * transaction. The transaction builder is deterministic, so the same summary gives the same
  * transaction.
  */
-export function checkSummaries(prepared: readonly PreparedSummary[], expected: Exclude<Expected, { kind: 'answer' }>): Verdict {
+export function checkSummaries(prepared: readonly PreparedSummary[], expected: Exclude<Expected, { kind: 'answer' | 'error' }>): Verdict {
   if (expected.kind === 'none') {
     return prepared.length === 0 ? { ok: true } : fail(`prepared ${describeSummaries(prepared)}, expected nothing`);
   }
@@ -75,9 +75,11 @@ export type JudgedRun = {
 /**
  * Whether a run is what the scenario expects. A transaction is judged on its summary; an `answer`
  * on what the model called (nothing outside `reads` and `allow`, each read with its exact input)
- * and on the text of the answer.
+ * and on the text of the answer. A run that returned is never the `error` a scenario expects: the
+ * engine judges that one where it is raised.
  */
 export function checkRun(run: JudgedRun, expected: Expected): Verdict {
+  if (expected.kind === 'error') return fail(`raised no error, expected ${expected.code}`);
   if (expected.kind !== 'answer') return checkSummaries(run.prepared, expected);
   if (run.prepared.length > 0) return fail(`prepared ${describeSummaries(run.prepared)}, expected nothing`);
 
