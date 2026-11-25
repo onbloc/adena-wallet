@@ -591,24 +591,54 @@ describe('TransactionService', () => {
           expect(recordsOf(env)).toEqual([]);
         });
 
-        it('refuses a pinned replacement while two records exist and allows it once one replaceable record is left', async () => {
+        it('offers a pinned replacement for several records pinned to the current sequence and settles them all', async () => {
           const env = await setup();
           const draft = await signedDraft(env);
           const sign = jest.spyOn(env.service, 'sign');
           const repository = repositoryOf(env);
 
+          env.gno.state.sequence = '3';
           repository.add({ hashes: ['A'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 1, sequence: '3', accountNumber: '7' });
           repository.add({ hashes: ['B'], accountId: env.account.id, chainId: env.network.chainId, createdAt: 2, sequence: '3', accountNumber: '7' });
-          // Both are still current, yet neither is offered for replacement.
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3', settled: [] });
+
+          // All three txs share sequence 3, so at most one of them can ever commit.
+          await expect(env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true })).resolves.toMatchObject({ committed: true });
+          expect(sign).toHaveBeenLastCalledWith(draft, env.account, env.network, { sequence: '3', accountNumber: '7' });
+          expect(env.gno.state.broadcasts).toHaveLength(1);
+          expect(recordsOf(env)).toEqual([]);
+        });
+
+        it('recovers two legacy records that were never sent, without unblocking a normal send', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+          const custom = `custom:${env.network.chainId}:http://localhost:26657`;
+
+          env.gno.state.sequence = '3';
+          writeJson(env.keyValueStore, StorageKey.PENDING_BROADCASTS, {
+            [`${env.account.id}:${env.network.id}`]: { hash: 'DEFAULT', accountId: env.account.id, networkId: env.network.id, createdAt: 1 },
+            [`${env.account.id}:${custom}`]: { hash: 'CUSTOM', accountId: env.account.id, networkId: custom, createdAt: 2 },
+          });
+
+          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3', settled: [] });
+          expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network))).toBe('PREVIOUS_TRANSACTION_PENDING');
+          expect(env.gno.state.broadcasts).toEqual([]);
+
+          await expect(env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true })).resolves.toMatchObject({ committed: true });
+          expect(env.gno.state.broadcasts).toHaveLength(1);
+          expect(recordsOf(env)).toEqual([]);
+        });
+
+        it('refuses a pinned replacement while the records hold different sequences', async () => {
+          const env = await setup();
+          const draft = await signedDraft(env);
+          const sign = jest.spyOn(env.service, 'sign');
+
+          env.gno.state.sequence = '3';
+          twoSequences(env);
           await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'pending', settled: [] });
           expect(await codeOf(() => env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true }))).toBe('PREVIOUS_TRANSACTION_PENDING');
           expect(sign).not.toHaveBeenCalled();
-
-          repository.discardHash(env.account.id, env.network.chainId, 'A');
-          await expect(env.service.reconcilePending(env.account, env.network)).resolves.toEqual({ status: 'replaceable', sequence: '3', settled: [] });
-          await expect(env.service.signAndBroadcast(draft, env.account, env.network, { replacePending: true })).resolves.toMatchObject({ committed: true });
-          expect(sign).toHaveBeenLastCalledWith(draft, env.account, env.network, { sequence: '3', accountNumber: '7' });
-          expect(recordsOf(env)).toEqual([]);
         });
 
         it('refuses a pinned replacement when another record appears while signing', async () => {
