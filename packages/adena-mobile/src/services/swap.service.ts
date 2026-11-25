@@ -153,7 +153,7 @@ export class SwapService {
     }
 
     const request = { inputPath: input.swapPath, outputPath: output.swapPath, exactType, amount };
-    const [candidates, feeBps] = await Promise.all([
+    const [{ candidates, exhaustive }, feeBps] = await Promise.all([
       repository.findRouteCandidates(network, config, request),
       repository.getRouterFeeBps(network, config).catch(() => null),
     ]);
@@ -193,8 +193,8 @@ export class SwapService {
     const best = results.reduce<(typeof results)[number]>((current, next) => (next && (!current || better(next, current)) ? next : current), null);
 
     if (!best) {
-      // No liquidity only when every candidate was refused; any unanswered one leaves a retry.
-      throw transportFailed
+      // No liquidity only when every candidate of a full search was refused; any unanswered one leaves a retry.
+      throw transportFailed || !exhaustive
         ? new AppError(AppErrorCode.SWAP_QUOTE_FAILED, 'Couldn’t get a quote. Check your connection and try again.')
         : new AppError(AppErrorCode.SWAP_NO_ROUTE, 'Not enough liquidity for this swap');
     }

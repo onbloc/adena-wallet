@@ -8,10 +8,12 @@ import { ChainFamily } from '../../../src/domain/network';
 import { DEFAULT_SWAP_SETTINGS, SwapToken } from '../../../src/domain/swap';
 import { TokenType } from '../../../src/domain/token';
 import { TransactionDraft } from '../../../src/domain/transaction';
+import { MAX_POOL_PAGES } from '../../../src/repositories/chain/gno/gno-swap.repository';
 import { GnoTokenResourceRepository } from '../../../src/repositories/chain/gno/gno-token-resource.repository';
 import { BUILT_IN_NETWORKS } from '../../../src/resources';
 import { SWAP_QUOTE_TTL_MS, SWAP_REVIEW_TTL_MS } from '../../../src/services/swap.service';
-import { GNS, installGnoswapFakes, qeval, ROUTER, ROUTER_ADDRESS, WUGNOT } from '../../helpers/gnoswap-fakes';
+import routeDevNone from '../../fixtures/gnoswap/route-dev-none.json';
+import { GNS, installGnoswapFakes, poolsDev, qeval, ROUTER, ROUTER_ADDRESS, WUGNOT } from '../../helpers/gnoswap-fakes';
 import { setupWallet } from '../../helpers/render-screen';
 import { createTestContainer } from '../../helpers/test-container';
 
@@ -84,8 +86,32 @@ describe('SwapService', () => {
     expect(quote.quoteArr).toBe('100');
   });
 
+  it('searches the pools when the route API answers an empty list', async () => {
+    const { service, network, gnot, gns, dryExpressions } = await setup({ route: routeDevNone });
+    const quote = await service.getQuote({ network, input: gnot, output: gns, exactType: 'EXACT_IN', amount: '1000000' });
+
+    expect(quote.source).toBe('pools');
+    expect(dryExpressions.length).toBeGreaterThan(0);
+  });
+
+  it('reads every pool page before ruling out a route', async () => {
+    const [direct, ...others] = poolsDev.data.filter(pool => [pool.tokenA.path, pool.tokenB.path].sort().join() === [WUGNOT, GNS].sort().join());
+    const unrelated = poolsDev.data.filter(pool => !others.includes(pool) && pool !== direct);
+    const paged = await setup({ route: routeDevNone, poolPages: [unrelated, [direct]] });
+
+    expect((await paged.service.getQuote({ network: paged.network, input: paged.gnot, output: paged.gns, exactType: 'EXACT_IN', amount: '1000000' })).routes[0].hops).toHaveLength(1);
+
+    // Every page holds new pools without reaching the end, so finding none is not reported as no liquidity.
+    const bounded = await setup({
+      route: routeDevNone,
+      poolPages: Array.from({ length: MAX_POOL_PAGES }, (_, page) => [{ ...unrelated[0], fee: 3000, tokenA: { path: `gno.land/r/demo/t${page}.T` } }]),
+    });
+
+    await expectCode(bounded.service.getQuote({ network: bounded.network, input: bounded.gnot, output: bounded.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_QUOTE_FAILED);
+  });
+
   it('reports no route for an empty answer, failing dry runs or a partial fill', async () => {
-    const empty = await setup({ route: { estimatedRoutes: [] } });
+    const empty = await setup({ route: { estimatedRoutes: [] }, pools: [] });
 
     await expectCode(empty.service.getQuote({ network: empty.network, input: empty.gnot, output: empty.gns, exactType: 'EXACT_IN', amount: '1000000' }), AppErrorCode.SWAP_NO_ROUTE);
 

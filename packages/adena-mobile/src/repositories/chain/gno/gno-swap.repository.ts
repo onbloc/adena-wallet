@@ -6,16 +6,19 @@ import { MAX_INT64, SwapApproveRoute, SwapQuoteSource, SwapToken, SwapType } fro
 import { Token, TokenType } from '../../../domain/token';
 import { GnoswapApiClient } from '../../../infrastructure/http/gnoswap-api.client';
 import { DexApiConfig, DexSwapConfig, getGrc20RegistryConfig } from '../../../resources';
-import { DrySwapRequest, SwapMessagesRequest, SwapRepository, SwapRouteCandidate, SwapRouteRequest } from '../swap-repository';
+import { DrySwapRequest, SwapMessagesRequest, SwapRepository, SwapRouteCandidates, SwapRouteRequest } from '../swap-repository';
 import { GnoMessage } from './gno-messages';
 import { GnoProviderFactory } from './gno-provider';
 import { gnoLiteral } from './gno-qeval';
 import { buildSwapMessages, swapMessageTargets } from './gno-swap-messages';
-import { buildPoolCandidates, parseDrySwapResult, parsePools, parseRouteResponse, parseSwapFee, parseSwapPrices, parseSwapTokens, SwapDataError } from './gno-swap-parsers';
+import { buildPoolCandidates, parseDrySwapResult, parsePools, parseRouteResponse, parseSwapFee, parseSwapPrices, parseSwapTokens, SwapDataError, SwapPool } from './gno-swap-parsers';
 import { GnoTokenResourceRepository } from './gno-token-resource.repository';
 
 const TOKENS_TTL_MS = 5 * 60_000;
 const FEE_TTL_MS = 10 * 60_000;
+
+export const POOL_PAGE_SIZE = 100;
+export const MAX_POOL_PAGES = 10;
 
 const swapConfigOf = (config: DexApiConfig): DexSwapConfig => {
   if (!config.swap) {
@@ -55,27 +58,48 @@ export class GnoSwapRepository implements SwapRepository<GnoMessage> {
     return value;
   }
 
-  async findRouteCandidates(_network: Network, config: DexApiConfig, request: SwapRouteRequest): Promise<SwapRouteCandidate[]> {
+  async findRouteCandidates(_network: Network, config: DexApiConfig, request: SwapRouteRequest): Promise<SwapRouteCandidates> {
     const swap = swapConfigOf(config);
     const { inputPath, outputPath, exactType, amount } = request;
     const fromApi = await this.api.getRoute(config.apiUrl, { inputTokenPath: inputPath, outputTokenPath: outputPath, exactType, amount })
       .then(raw => parseRouteResponse(raw, inputPath, outputPath, swap.feeTiers))
       .catch(() => null);
-    const candidates: SwapRouteCandidate[] = fromApi?.length ? [{ routes: fromApi, source: SwapQuoteSource.ROUTER_API }] : [];
 
-    // An answered "no route" is trusted; only an unavailable or malformed API falls back to the pool list.
-    if (fromApi === null) {
-      const pools = await this.api.getPools(config.apiUrl).then(raw => parsePools(raw, swap.feeTiers)).catch(() => null);
-
-      // Neither source answered, so this is an outage rather than a missing route.
-      if (pools === null) {
-        throw new AppError(AppErrorCode.SWAP_QUOTE_FAILED, 'Couldn’t get a quote. Check your connection and try again.');
-      }
-
-      candidates.push(...buildPoolCandidates(pools, inputPath, outputPath).map(route => ({ routes: [route], source: SwapQuoteSource.POOLS })));
+    if (fromApi?.length) {
+      return { candidates: [{ routes: fromApi, source: SwapQuoteSource.ROUTER_API }], exhaustive: true };
     }
 
-    return candidates;
+    // The API's empty answer does not tell no liquidity from an unavailable quote, so the pools are searched too.
+    const listed = await this.listPools(config.apiUrl, swap.feeTiers).catch(() => null);
+
+    // Neither source answered, so this is an outage rather than a missing route.
+    if (listed === null) {
+      throw new AppError(AppErrorCode.SWAP_QUOTE_FAILED, 'Couldn’t get a quote. Check your connection and try again.');
+    }
+
+    return {
+      candidates: buildPoolCandidates(listed.pools, inputPath, outputPath).map(route => ({ routes: [route], source: SwapQuoteSource.POOLS })),
+      exhaustive: listed.complete,
+    };
+  }
+
+  // Every page up to the bound; ends at an empty page, or one that only repeats pools (an API ignoring `page`).
+  private async listPools(apiUrl: string, feeTiers: number[]): Promise<{ pools: SwapPool[]; complete: boolean }> {
+    const pools = new Map<string, SwapPool>();
+
+    for (let page = 1; page <= MAX_POOL_PAGES; page += 1) {
+      const raw = await this.api.getPools(apiUrl, page, POOL_PAGE_SIZE);
+      const parsed = parsePools(raw, feeTiers);
+      const fresh = parsed.filter(pool => !pools.has(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`));
+
+      if ((raw as unknown[]).length === 0 || (parsed.length > 0 && fresh.length === 0)) {
+        return { pools: [...pools.values()], complete: true };
+      }
+
+      fresh.forEach(pool => pools.set(`${pool.tokenA}:${pool.tokenB}:${pool.fee}`, pool));
+    }
+
+    return { pools: [...pools.values()], complete: false };
   }
 
   async drySwap(network: Network, config: DexApiConfig, request: DrySwapRequest): Promise<{ amountIn: string; amountOut: string }> {

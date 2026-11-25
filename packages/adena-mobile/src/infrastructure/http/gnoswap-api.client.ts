@@ -89,8 +89,9 @@ export class GnoswapApiClient {
     return (await this.http.request<Envelope<unknown>>(`${apiUrl}/token-metas`))?.data;
   }
 
-  async getPools(apiUrl: string): Promise<unknown> {
-    return (await this.http.request<Envelope<unknown>>(`${apiUrl}/pools`))?.data;
+  // Paginated by `page` (1-based) and `limit`; a page past the end answers an empty list.
+  async getPools(apiUrl: string, page: number, limit: number): Promise<unknown> {
+    return (await this.http.request<Envelope<unknown>>(`${apiUrl}/pools?page=${page}&limit=${limit}`))?.data;
   }
 
   async getTokenPriceList(apiUrl: string): Promise<unknown> {

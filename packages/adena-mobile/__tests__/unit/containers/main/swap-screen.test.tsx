@@ -283,7 +283,7 @@ describe('SwapScreen', () => {
   });
 
   it('shows insufficient liquidity when no route exists', async () => {
-    await setup({ route: { estimatedRoutes: [] } });
+    await setup({ route: { estimatedRoutes: [] }, pools: [] });
 
     await pickGns();
     await typeAmount('1');

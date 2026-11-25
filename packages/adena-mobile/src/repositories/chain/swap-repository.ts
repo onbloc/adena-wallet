@@ -8,6 +8,12 @@ export interface SwapRouteCandidate {
   source: SwapQuoteSource;
 }
 
+export interface SwapRouteCandidates {
+  candidates: SwapRouteCandidate[];
+  // False when the search could not cover the whole market, so finding nothing is not "no liquidity".
+  exhaustive: boolean;
+}
+
 export interface SwapRouteRequest {
   inputPath: string;
   outputPath: string;
@@ -46,7 +52,7 @@ export interface SwapMessagesRequest {
 export interface SwapRepository<TMessage = unknown> {
   getTokens(network: Network, config: DexApiConfig): Promise<SwapToken[]>;
   // Candidates in preference order: the route API first, pool-derived paths as a fallback.
-  findRouteCandidates(network: Network, config: DexApiConfig, request: SwapRouteRequest): Promise<SwapRouteCandidate[]>;
+  findRouteCandidates(network: Network, config: DexApiConfig, request: SwapRouteRequest): Promise<SwapRouteCandidates>;
   // Executes DrySwapRoute on the router; rejects with the router's message when the route fails.
   drySwap(network: Network, config: DexApiConfig, request: DrySwapRequest): Promise<{ amountIn: string; amountOut: string }>;
   getRouterFeeBps(network: Network, config: DexApiConfig): Promise<number>;

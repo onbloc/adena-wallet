@@ -1,4 +1,5 @@
 import { HttpRequest } from '../../src/infrastructure/http/http-client';
+import { MAX_POOL_PAGES, POOL_PAGE_SIZE } from '../../src/repositories/chain/gno/gno-swap.repository';
 import poolsDev from '../fixtures/gnoswap/pools.gnoswap.json';
 import prices from '../fixtures/gnoswap/prices.gnoland-1.json';
 import qeval from '../fixtures/gnoswap/qeval.json';
@@ -25,8 +26,10 @@ export interface GnoswapFakeOptions {
   grc20Balances?: Record<string, string>;
   // On-chain decimals per token path (defaults to 6).
   decimals?: Record<string, number>;
-  // Raw `/pools` data; `null` makes the pools API fail.
+  // Raw `/pools` data served as page 1 (later pages are empty); `null` makes the pools API fail.
   pools?: unknown | null;
+  // Raw `/pools` data per page, overriding `pools`; pages past the list are empty.
+  poolPages?: unknown[];
 }
 
 const keysOf = (expression: string): string[] => [...expression.matchAll(/Get\("([^"]+)"\)/g)].map(match => match[1]);
@@ -40,7 +43,11 @@ export const installGnoswapFakes = (env: TestEnv, options: GnoswapFakeOptions = 
   env.http.on(`${GNOSWAP_API}/tokens/prices`, prices);
 
   if (options.pools !== null) {
-    env.http.on(`${GNOSWAP_API}/pools`, { data: options.pools ?? poolsDev.data });
+    const pages = options.poolPages ?? [options.pools ?? poolsDev.data];
+
+    for (let page = 1; page <= MAX_POOL_PAGES + 1; page += 1) {
+      env.http.on(`${GNOSWAP_API}/pools?page=${page}&limit=${POOL_PAGE_SIZE}`, { data: page <= pages.length ? pages[page - 1] : [] });
+    }
   }
 
   if (options.route !== null) {
