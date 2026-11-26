@@ -1,6 +1,6 @@
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
-import UnknownLogo from '@assets/common-unknown-logo.svg';
+import UnknownLogo from '@assets/common-unknown-token.svg';
 import IconFailed from '@assets/connect-fail-permission.svg';
 import { TransactionErrorDetail as TransactionErrorDetailType } from '@common/utils/transaction-error-detail';
 import { Button, Text } from '@components/atoms';
@@ -25,7 +25,7 @@ import {
 export interface ApproveTransactionProps {
   loading: boolean;
   title: string;
-  logo: string;
+  logo: string | null;
   domain: string;
   contracts: {
     type: string;

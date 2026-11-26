@@ -1,3 +1,5 @@
+import { sleep } from 'adena-module';
+
 export const SESSION_CREATION_GRACE_MS = 120_000;
 export const SESSION_MISSING_RECHECK_DELAY_MS = 1_500;
 
@@ -6,9 +8,7 @@ export interface SessionCreationMetadata {
 }
 
 export const waitForSessionRecheck = (ms = SESSION_MISSING_RECHECK_DELAY_MS): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+  sleep(ms);
 
 export const isSessionInCreationGrace = (
   metadata: SessionCreationMetadata | null | undefined,

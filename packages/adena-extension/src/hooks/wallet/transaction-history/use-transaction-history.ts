@@ -5,11 +5,12 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
 import { useAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
+import { deriveHistoryData, deriveHistoryStatus } from './derive-history-status';
 import { dedupeAndSortTransactions } from './session-history-source';
+import type { TransactionHistoryResult } from './types';
 
 // Indexer-backed (block-index paged) transaction history, used only when the
 // network has no API URL. Session accounts always run on API-backed networks,
@@ -19,22 +20,7 @@ export const useTransactionHistory = ({
   enabled,
 }: {
   enabled: boolean;
-}): {
-  data:
-    | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
-} => {
+}): TransactionHistoryResult => {
   const { currentNetwork } = useNetwork();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
@@ -43,7 +29,11 @@ export const useTransactionHistory = ({
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const { data: fetchedTransactions, refetch } = useQuery({
+  const {
+    data: fetchedTransactions,
+    refetch,
+    status: fetchStatus,
+  } = useQuery({
     queryKey: ['history/common/all', currentNetwork.networkId, currentAddress],
 
     queryFn: async () => {
@@ -88,8 +78,9 @@ export const useTransactionHistory = ({
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `history/common/all/${currentNetwork.chainId}/${firstTransactionHash}`,
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
+    `history/common/all/${currentNetwork.networkId}/${currentAddress}`,
+    `${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
 
@@ -109,13 +100,19 @@ export const useTransactionHistory = ({
     [refetch],
   );
 
+  const hasFetchData = !!fetchedTransactions;
+  const status = deriveHistoryStatus(
+    transactionHistoryService.supported,
+    enabled,
+    fetchStatus,
+    processingStatus,
+    hasFetchData,
+  );
+
   return {
-    data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
+    data: deriveHistoryData(data, status, hasFetchData),
     status,
-    isLoading,
-    isFetching,
+    isFetching: isProcessing,
     hasNextPage: transactions ? transactions.length !== blockIndex : false,
     fetchNextPage,
     refetch: refetchTransactions,

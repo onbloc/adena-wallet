@@ -1,6 +1,6 @@
 import { View } from '@components/atoms';
 import mixins from '@styles/mixins';
-import { fonts, getTheme } from '@styles/theme';
+import theme, { fonts, getTheme } from '@styles/theme';
 import styled from 'styled-components';
 
 export const ApproveTransactionMessageWrapper = styled(View)<{ $hasError?: boolean }>`
@@ -9,7 +9,7 @@ export const ApproveTransactionMessageWrapper = styled(View)<{ $hasError?: boole
   border-radius: 18px;
   margin-bottom: ${({ $hasError }): string => ($hasError ? '0' : '8px')};
   background-color: ${getTheme('neutral', '_9')};
-  border: 1px solid ${({ $hasError }): string => ($hasError ? '#EF2D21' : 'transparent')};
+  border: 1px solid ${({ $hasError }): string => ($hasError ? theme.red._5 : 'transparent')};
 
   .message-row {
     ${mixins.flex({ direction: 'row' })};
@@ -118,7 +118,7 @@ export const MessageErrorText = styled.p`
   font-weight: 500;
   font-size: 13px;
   line-height: 18px;
-  color: #ef2d21;
+  color: ${getTheme('red', '_5')};
 `;
 
 export const RealmPathInfoWrapper = styled.span`

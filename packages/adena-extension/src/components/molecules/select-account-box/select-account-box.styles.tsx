@@ -46,7 +46,7 @@ export const StyledActionButton = styled.button<{ $width: number }>`
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background-color: #181b1f;
+    background-color: ${getTheme('webInput', '_100')};
   }
 
   &:disabled {

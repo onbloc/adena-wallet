@@ -78,7 +78,7 @@ export const BottomFixedButtonGroup = ({
   );
 };
 
-const ButtonWrap = styled.div<{ $filled?: boolean }>`
+export const ButtonWrap = styled.div<{ $filled?: boolean }>`
   ${mixins.flex({ direction: 'row', align: 'flex-start' })};
   position: fixed;
   left: 0px;

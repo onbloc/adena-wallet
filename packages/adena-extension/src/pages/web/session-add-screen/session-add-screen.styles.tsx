@@ -1,6 +1,7 @@
 // Presentational styled-components and inline SVG icons for the session-add
 // screen. Extracted from index.tsx to keep the screen logic readable.
 import { Row, View } from '@components/atoms';
+import theme, { getTheme } from '@styles/theme';
 import { ReactElement } from 'react';
 import styled from 'styled-components';
 
@@ -30,7 +31,7 @@ export const TabButton = styled.button<{ $active: boolean; disabled?: boolean }>
     $active ? '0 2px 8px 0 rgba(0, 0, 0, 0.16)' : 'none'};
   color: ${({ $active, disabled }): string => {
     if (disabled) return 'rgba(255, 255, 255, 0.35)';
-    return $active ? '#FAFCFF' : '#878D99';
+    return $active ? theme.webNeutral._100 : theme.webNeutral._500;
   }};
   cursor: ${({ disabled }): string => (disabled ? 'not-allowed' : 'pointer')};
   font-family: 'Inter', sans-serif;
@@ -49,7 +50,7 @@ export const TabButton = styled.button<{ $active: boolean; disabled?: boolean }>
       return $active ? 'rgba(0, 89, 255, 0.24)' : 'rgba(255, 255, 255, 0.04)';
     }};
     color: ${({ disabled }): string =>
-      disabled ? 'rgba(255, 255, 255, 0.35)' : '#FAFCFF'};
+      disabled ? 'rgba(255, 255, 255, 0.35)' : theme.webNeutral._100};
   }
 `;
 
@@ -90,8 +91,8 @@ export const SelectField = styled.div<{ $hasError?: boolean }>`
   width: 100%;
   height: 40px;
   border-radius: 10px;
-  border: 1px solid ${({ $hasError }): string => ($hasError ? '#5C2125' : '#1F2329')};
-  background: ${({ $hasError }): string => ($hasError ? '#1A1112' : '#101214')};
+  border: 1px solid ${({ $hasError }): string => ($hasError ? theme.webError._200 : '#1F2329')};
+  background: ${({ $hasError }): string => ($hasError ? theme.webError._300 : theme.webNeutral._900)};
   box-shadow: ${({ $hasError }): string =>
     $hasError
       ? '0px 1px 2px 0px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 0px 0px 3px rgba(235, 84, 94, 0.12)'
@@ -109,11 +110,11 @@ export const MasterLabelCell = styled.div`
   width: 135px;
   height: 40px;
   padding: 0 16px;
-  background: #181b1f;
+  background: ${getTheme('webInput', '_100')};
   border-right: 1px solid #1f2329;
   border-top-left-radius: 9px;
   border-bottom-left-radius: 9px;
-  color: #878d99;
+  color: ${getTheme('webNeutral', '_500')};
   font-size: 14px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -138,7 +139,7 @@ export const SelectTrigger = styled.button`
   border: none;
   outline: none;
   cursor: pointer;
-  color: #fafcff;
+  color: ${getTheme('webNeutral', '_100')};
   font-size: 14px;
 
   &:disabled {
@@ -157,7 +158,7 @@ export const SelectMenu = styled.div`
   z-index: 50;
   border-radius: 12px;
   border: 1px solid #1f2329;
-  background: #101214;
+  background: ${getTheme('webNeutral', '_900')};
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
 `;
 
@@ -169,17 +170,17 @@ export const SelectOption = styled.button<{ $active?: boolean; $align?: 'between
   justify-content: ${({ $align }): string =>
     $align === 'start' ? 'flex-start' : 'space-between'};
   padding: 0 16px;
-  background: ${({ $active }): string => ($active ? '#181B1F' : '#101214')};
+  background: ${({ $active }): string => ($active ? theme.webInput._100 : theme.webNeutral._900)};
   border: none;
   border-bottom: 1px solid #1f2329;
   cursor: pointer;
   font-size: 14px;
-  color: #fafcff;
+  color: ${getTheme('webNeutral', '_100')};
   text-align: left;
   transition: background 0.15s ease;
 
   &:hover {
-    background: #181B1F;
+    background: ${getTheme('webInput', '_100')};
   }
 
   &:last-child {
@@ -192,8 +193,8 @@ export const SpendPeriodInputWrapper = styled.div<{ $hasError?: boolean }>`
   height: 40px;
   padding: 0 12px;
   border-radius: 10px;
-  border: 1px solid ${({ $hasError }): string => ($hasError ? '#5C2125' : '#1F2329')};
-  background: ${({ $hasError }): string => ($hasError ? '#1A1112' : '#101214')};
+  border: 1px solid ${({ $hasError }): string => ($hasError ? theme.webError._200 : '#1F2329')};
+  background: ${({ $hasError }): string => ($hasError ? theme.webError._300 : theme.webNeutral._900)};
   box-shadow: ${({ $hasError }): string =>
     $hasError
       ? '0px 1px 2px 0px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 0px 0px 3px rgba(235, 84, 94, 0.12)'
@@ -210,11 +211,11 @@ export const SpendPeriodInput = styled.input`
   background: transparent;
   border: none;
   outline: none;
-  color: #fafcff;
+  color: ${getTheme('webNeutral', '_100')};
   font-size: 14px;
 
   &::placeholder {
-    color: #51555c;
+    color: ${getTheme('webNeutral', '_700')};
   }
 `;
 
@@ -224,7 +225,7 @@ export const AmountInputWrapper = styled.div`
   padding: 0 12px;
   border-radius: 10px;
   border: 1px solid #1f2329;
-  background: #101214;
+  background: ${getTheme('webNeutral', '_900')};
   display: flex;
   align-items: center;
   column-gap: 8px;
@@ -236,11 +237,11 @@ export const AmountInput = styled.input`
   background: transparent;
   border: none;
   outline: none;
-  color: #fafcff;
+  color: ${getTheme('webNeutral', '_100')};
   font-size: 14px;
 
   &::placeholder {
-    color: #51555c;
+    color: ${getTheme('webNeutral', '_700')};
   }
 `;
 
@@ -254,7 +255,7 @@ export const UnitToggle = styled.button`
   border: none;
   outline: none;
   cursor: pointer;
-  color: #51555c;
+  color: ${getTheme('webNeutral', '_700')};
   font-size: 14px;
   line-height: 20px;
   white-space: nowrap;
@@ -267,7 +268,7 @@ export const UnitToggle = styled.button`
   }
 
   &:hover {
-    color: #fafcff;
+    color: ${getTheme('webNeutral', '_100')};
   }
 `;
 
@@ -275,8 +276,8 @@ export const RealmInputBox = styled.div<{ $hasError?: boolean }>`
   flex: 1;
   height: 40px;
   border-radius: 10px;
-  border: 1px solid ${({ $hasError }): string => ($hasError ? '#5C2125' : '#1F2329')};
-  background: ${({ $hasError }): string => ($hasError ? '#1A1112' : '#101214')};
+  border: 1px solid ${({ $hasError }): string => ($hasError ? theme.webError._200 : '#1F2329')};
+  background: ${({ $hasError }): string => ($hasError ? theme.webError._300 : theme.webNeutral._900)};
   box-shadow: ${({ $hasError }): string =>
     $hasError
       ? '0px 1px 2px 0px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 0px 0px 3px rgba(235, 84, 94, 0.12)'
@@ -292,11 +293,11 @@ export const RealmInputInner = styled.input`
   background: transparent;
   border: none;
   outline: none;
-  color: #fafcff;
+  color: ${getTheme('webNeutral', '_100')};
   font-size: 14px;
 
   &::placeholder {
-    color: #51555c;
+    color: ${getTheme('webNeutral', '_700')};
   }
 `;
 
@@ -308,10 +309,10 @@ export const IconButton = styled.button`
   justify-content: center;
   border-radius: 12px;
   border: 1px solid #1f2329;
-  background: #101214;
+  background: ${getTheme('webNeutral', '_900')};
   cursor: pointer;
   flex-shrink: 0;
-  color: #878d99;
+  color: ${getTheme('webNeutral', '_500')};
 
   &:disabled {
     cursor: not-allowed;
@@ -334,8 +335,8 @@ export const TooltipBox = styled.div`
   width: max-content;
   padding: 10px;
   border-radius: 8px;
-  background: #191920;
-  color: #ffffff;
+  background: ${getTheme('neutral', '_9')};
+  color: ${getTheme('webNeutral', '_0')};
   font-size: 12px;
   line-height: normal;
   z-index: 100;
@@ -384,7 +385,7 @@ export const DropdownChevronIcon = (): ReactElement => (
   >
     <path
       d='M4 6L8 10L12 6'
-      stroke='#777777'
+      stroke={theme.neutral.a}
       strokeWidth='1.5'
       strokeLinecap='round'
       strokeLinejoin='round'
@@ -423,7 +424,7 @@ export const PlusIcon = (): ReactElement => (
       fillRule='evenodd'
       clipRule='evenodd'
       d='M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z'
-      fill='#FAFCFF'
+      fill={theme.webNeutral._100}
     />
   </svg>
 );
@@ -438,7 +439,7 @@ export const MinusIcon = (): ReactElement => (
     aria-hidden='true'
     focusable='false'
   >
-    <path d='M19 13H5V11H19V13Z' fill='#FAFCFF' />
+    <path d='M19 13H5V11H19V13Z' fill={theme.webNeutral._100} />
   </svg>
 );
 
@@ -447,7 +448,7 @@ export const Spinner = styled.span`
   height: 16px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.32);
-  border-top-color: #ffffff;
+  border-top-color: ${getTheme('webNeutral', '_0')};
   animation: spin 0.8s linear infinite;
 
   @keyframes spin {
@@ -476,8 +477,8 @@ export const MasterInputRow = styled(Row)<{ $hasError?: boolean }>`
   width: 100%;
   height: 40px;
   border-radius: 10px;
-  border: 1px solid ${({ $hasError }): string => ($hasError ? '#5C2125' : '#1F2329')};
-  background: ${({ $hasError }): string => ($hasError ? '#1A1112' : '#101214')};
+  border: 1px solid ${({ $hasError }): string => ($hasError ? theme.webError._200 : '#1F2329')};
+  background: ${({ $hasError }): string => ($hasError ? theme.webError._300 : theme.webNeutral._900)};
   box-shadow: ${({ $hasError }): string =>
     $hasError
       ? '0px 1px 2px 0px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.1), 0px 0px 0px 3px rgba(235, 84, 94, 0.12)'
@@ -490,13 +491,13 @@ export const MasterLabelArea = styled(Row)<{ $hasError?: boolean }>`
   width: 135px;
   height: 100%;
   padding: 0 16px;
-  background: ${({ $hasError }): string => ($hasError ? '#271518' : '#181b1f')};
-  border-right: 1px solid ${({ $hasError }): string => ($hasError ? '#5C2125' : '#1f2329')};
+  background: ${({ $hasError }): string => ($hasError ? '#271518' : theme.webInput._100)};
+  border-right: 1px solid ${({ $hasError }): string => ($hasError ? theme.webError._200 : '#1f2329')};
   align-items: center;
   justify-content: center;
   column-gap: 4px;
   white-space: nowrap;
-  color: ${({ $hasError }): string => ($hasError ? '#EB545E' : '#878d99')};
+  color: ${({ $hasError }): string => ($hasError ? theme.webError._100 : theme.webNeutral._500)};
   font-size: 14px;
   flex-shrink: 0;
 `;
@@ -536,8 +537,8 @@ export const MasterTooltipBox = styled.div<{ $placement?: 'top' | 'bottom' }>`
   width: max-content;
   padding: 10px;
   border-radius: 8px;
-  background: #191920;
-  color: #ffffff;
+  background: ${getTheme('neutral', '_9')};
+  color: ${getTheme('webNeutral', '_0')};
   font-size: 12px;
   line-height: normal;
   z-index: 100;
@@ -571,7 +572,7 @@ export const SessionCardBody = styled(View)`
 export const ImportSessionAddress = styled.span`
   min-width: 0;
   overflow: hidden;
-  color: #6C717A;
+  color: ${getTheme('webNeutral', '_600')};
   text-align: center;
   leading-trim: both;
   text-edge: cap;

@@ -1,4 +1,4 @@
-import UnknownLogo from '@assets/common-unknown-logo.svg';
+import UnknownLogo from '@assets/common-unknown-token.svg';
 import React from 'react';
 
 import { ApproveChangingNetworkItemWrapper } from './approve-changing-network-item.styles';

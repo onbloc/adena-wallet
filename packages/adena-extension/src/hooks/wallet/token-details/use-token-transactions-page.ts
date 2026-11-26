@@ -4,29 +4,17 @@ import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-t
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { TransactionWithPageInfo } from '@types';
 import { useMemo } from 'react';
+
+import { deriveHistoryData, deriveHistoryStatus } from '../transaction-history/derive-history-status';
+import type { TransactionHistoryResult } from '../transaction-history/types';
 
 export const useTokenTransactionsPage = (
   isNative: boolean | undefined,
   tokenPath: string,
   { enabled }: { enabled: boolean },
-): {
-  data:
-    | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
-} => {
+): TransactionHistoryResult => {
   const { currentNetwork } = useNetwork();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
@@ -34,6 +22,8 @@ export const useTokenTransactionsPage = (
 
   const {
     data: allTransactions,
+    status: fetchStatus,
+    isFetchingNextPage,
     refetch,
     hasNextPage,
     fetchNextPage,
@@ -86,8 +76,9 @@ export const useTokenTransactionsPage = (
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `token-details/page/history/${currentNetwork.chainId}/${firstTransactionHash}/${tokenPath}`,
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
+    `token-details/page/history/${currentNetwork.networkId}/${isNative}/${currentAddress}/${tokenPath}`,
+    `${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
 
@@ -95,13 +86,19 @@ export const useTokenTransactionsPage = (
     refetch(options);
   };
 
+  const hasFetchData = !!allTransactions?.pages.length;
+  const status = deriveHistoryStatus(
+    transactionHistoryService.supported,
+    enabled,
+    fetchStatus,
+    processingStatus,
+    hasFetchData,
+  );
+
   return {
-    data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
+    data: deriveHistoryData(data, status, hasFetchData),
     status,
-    isLoading,
-    isFetching,
+    isFetching: isFetchingNextPage || isProcessing,
     fetchNextPage: () =>
       fetchNextPage()
         .then(() => true)

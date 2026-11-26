@@ -96,3 +96,17 @@ export const closeCurrentSurface = (): void => {
     });
   }, 100);
 };
+
+export function makeApprovalPopupUrl(
+  popupPath: string,
+  message: { key?: string; hostname?: string; protocol?: string },
+  encodedData: string,
+): string {
+  return chrome.runtime.getURL(
+    `popup.html#${popupPath}`
+    + `?key=${message.key}`
+    + `&hostname=${message.hostname}`
+    + `&protocol=${message.protocol}`
+    + `&data=${encodedData}`,
+  );
+}

@@ -1,11 +1,10 @@
 import { Button, Text } from '@components/atoms';
 import { IconButtonLoading } from '@components/atoms/icon/icon-assets';
-import mixins from '@styles/mixins';
-import { getTheme } from '@styles/theme';
 import React, { ReactElement, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 
 import { ApproveHoldButton } from '../approve-hold-button/approve-hold-button';
+import { ButtonWrap as FixedButtonWrap } from '../bottom-fixed-button-group';
 
 interface ButtonProps {
   primary?: boolean;
@@ -106,48 +105,6 @@ const LoadingButton: React.FC<LoadingButtonProps> = ({
   );
 };
 
-const ButtonWrap = styled.div<{ $filled?: boolean }>`
-  ${mixins.flex({ direction: 'row', align: 'flex-start' })};
-  position: fixed;
-  left: 0px;
-  width: 100%;
-  padding: 0 20px;
-  height: ${({ $filled }): '48px' | '96px' => ($filled ? '96px' : '48px')};
-  bottom: ${({ $filled }): '0' | '24px' => ($filled ? '0' : '24px')};
-  ${({ $filled }): false | 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);' | undefined =>
-    $filled && 'box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.4);'}
-  ${({ $filled }): false | 'align-items: center;' | undefined => $filled && 'align-items: center;'}
-  background-color: ${({ $filled, theme }): string => ($filled ? theme.neutral._8 : 'transparent')};
+const ButtonWrap = styled(FixedButtonWrap)`
   z-index: 9;
-
-  & > button {
-    margin-right: 10px;
-    background-color: ${getTheme('neutral', '_5')};
-
-    &:last-child {
-      margin-right: 0;
-    }
-
-    &:hover:not(.disabled) {
-      background-color: ${getTheme('neutral', '_6')};
-    }
-
-    &.primary {
-      background-color: ${getTheme('primary', '_6')};
-
-      &:hover:not(.disabled) {
-        background-color: ${getTheme('primary', '_7')};
-      }
-    }
-  }
-
-  & > button.disabled {
-    cursor: default;
-    color: ${getTheme('neutral', '_5')};
-    background-color: ${getTheme('neutral', '_7')};
-
-    &.primary {
-      background-color: ${getTheme('primary', '_9')};
-    }
-  }
 `;

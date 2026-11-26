@@ -90,7 +90,7 @@ export const SideMenuAccountItemWrapper = styled.div`
         height: 16px;
         padding: 3px 10px;
         border-radius: 3px;
-        background: #191920;
+        background: ${getTheme('neutral', '_9')};
         justify-content: center;
         align-items: center;
         flex-shrink: 0;

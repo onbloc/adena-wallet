@@ -1,10 +1,13 @@
 import IconError from '@assets/web/error.svg';
 import { GNO_ADDRESS_PREFIX as GNO_PREFIX } from '@common/constants/chain.constant';
 import { ADENA_DOCS_PAGE } from '@common/constants/resource.constant';
+import { SECONDS_PER_DAY } from '@common/constants/time.constant';
 import { GNOT_TOKEN } from '@common/constants/token.constant';
 import { isSessionMasterAccount, isSessionSupportedChainId } from '@common/utils/account-session';
+import { makeApprovalPopupUrl } from '@common/utils/browser-utils';
 import { encodeParameter } from '@common/utils/client-utils';
 import { stringToBase64 } from '@common/utils/encoding-util';
+import { generateRandomHex } from '@common/utils/rand-utils';
 import { resolveSessionAdminGasInfo } from '@common/utils/session-admin-gas';
 import {
   OfflineBanner,
@@ -48,6 +51,7 @@ import {
   SessionAccount,
   type SessionConfig,
   SessionKeyring,
+  sleep,
   validateAddress,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
@@ -114,7 +118,6 @@ const EXPIRES_DAY_OPTIONS: number[] = Array.from({ length: MAX_EXPIRES_DAYS }, (
 const DEFAULT_EXPIRES_DAYS = 30;
 const DEFAULT_SPEND_LIMIT_GNOT = '100';
 const MAX_SPEND_PERIOD_SECONDS = MAX_EXPIRES_DAYS * 24 * 60 * 60;
-const SECONDS_PER_DAY = 24 * 60 * 60;
 const SECONDS_PER_HOUR = 60 * 60;
 const ALLOW_PATHS_WILDCARD = '*';
 const VM_EXEC_ALLOW_PATH_PREFIX = 'vm/exec:';
@@ -167,14 +170,6 @@ const formatExpiryLabel = (days: number): string => {
 };
 
 type Tab = 'create' | 'import';
-
-const generateSessionPrivateKeyHex = (): string => {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-};
 
 const SessionAddScreen = (): ReactElement => {
   const { navigate, params } = useAppNavigate<RoutePath.WebSessionAdd>();
@@ -412,11 +407,6 @@ const SESSION_ADD_TOP_SPACING = 220;
 const SESSION_ADD_TOP_SPACING_RESPONSIVE = 120;
 const SESSION_ADD_FORM_MIN_TOP_PADDING = 80;
 
-const wait = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
 const waitForCreatedSessionOnChain = async (
   gnoProvider:
     | {
@@ -433,7 +423,7 @@ const waitForCreatedSessionOnChain = async (
 
   for (const delayMs of SESSION_CREATE_CONFIRMATION_DELAYS_MS) {
     if (delayMs > 0) {
-      await wait(delayMs);
+      await sleep(delayMs);
     }
 
     const session = await gnoProvider.getSession(masterAddr, sessionAddr).catch(() => {
@@ -507,10 +497,7 @@ const approveSessionViaPopup = (
   }
 
   const popupPath = '/approve/wallet/transaction';
-  const url = chrome.runtime.getURL(
-    `popup.html#${popupPath}?key=${requestKey}`
-    + `&hostname=adena-wallet&protocol=extension&data=${encoded}`,
-  );
+  const url = makeApprovalPopupUrl(popupPath, injectionMessage, encoded);
 
   return new Promise((resolve) => {
     let resolved = false;
@@ -609,7 +596,7 @@ const CreateTab = ({
   const { wallet, updateWallet, gnoProvider } = useWalletContext();
   const { changeCurrentAccount } = useCurrentAccount();
   const { currentNetwork } = useNetwork();
-  const [sessionPrivKey] = useState<string>(generateSessionPrivateKeyHex);
+  const [sessionPrivKey] = useState<string>(generateRandomHex);
   const [blurSessionKey, setBlurSessionKey] = useState(true);
   const [selectedMasterId, setSelectedMasterId] = useState<string>(masterCandidates[0]?.id ?? '');
   const [masterMenuOpen, setMasterMenuOpen] = useState(false);

@@ -15,7 +15,10 @@ const StyledDescriptionWrapper = styled(View)`
   align-items: center;
 `;
 
-const BroadcastTransactionLoading: React.FC = () => {
+export const TransactionProgressLoading: React.FC<{ title: string; description: string }> = ({
+  title,
+  description,
+}) => {
   const theme = useTheme();
 
   return (
@@ -24,15 +27,22 @@ const BroadcastTransactionLoading: React.FC = () => {
         <Spinner />
         <StyledDescriptionWrapper>
           <Text type='header4' textAlign='center'>
-            Broadcasting...
+            {title}
           </Text>
           <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
-            Your transaction is being broadcasted.
+            {description}
           </Text>
         </StyledDescriptionWrapper>
       </StyledLoadingWrapper>
     </CommonFullContentLayout>
   );
 };
+
+const BroadcastTransactionLoading: React.FC = () => (
+  <TransactionProgressLoading
+    title='Broadcasting...'
+    description='Your transaction is being broadcasted.'
+  />
+);
 
 export default BroadcastTransactionLoading;

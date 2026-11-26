@@ -4,7 +4,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import useIndicatorStep, {
   UseIndicatorStepReturn,
 } from '@hooks/wallet/broadcast-transaction/use-indicator-step';
-import { fromBech32, MultisigConfig, validateAddress } from 'adena-module';
+import { MultisigConfig, validateAddress, validateCosmosAddress } from 'adena-module';
 import React from 'react';
 
 export type UseSetupMultisigScreenReturn = {
@@ -157,14 +157,7 @@ const useSetupMultisigScreen = (): UseSetupMultisigScreenReturn => {
     }
 
     for (const signer of validSigners) {
-      try {
-        const { prefix } = fromBech32(signer);
-        if (prefix !== chain.bech32Prefix) {
-          setMultisigConfigError('Invalid address format.');
-          return false;
-        }
-      }
-      catch (e) {
+      if (!validateCosmosAddress(signer, chain.bech32Prefix)) {
         setMultisigConfigError('Invalid address format.');
         return false;
       }

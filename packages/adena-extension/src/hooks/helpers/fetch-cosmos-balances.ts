@@ -25,13 +25,7 @@ export async function fetchCosmosTokenBalances(
   tokenRegistry: TokenRegistry,
   currentAtomoneNetworkId: string | null,
 ): Promise<CosmosFetchResult[]> {
-  const cosmosChains = chainRegistry.list().filter((profile) => {
-    if (profile.chainType !== 'cosmos') return false;
-    if (profile.chainGroup === 'atomone' && currentAtomoneNetworkId) {
-      return profile.id === currentAtomoneNetworkId;
-    }
-    return true;
-  });
+  const cosmosChains = getActiveCosmosProfiles(chainRegistry, currentAtomoneNetworkId);
 
   return Promise.all(
     cosmosChains.map(async (profile) => {
@@ -67,4 +61,17 @@ export async function fetchCosmosTokenBalances(
       }
     }),
   );
+}
+
+export function getActiveCosmosProfiles(
+  chainRegistry: ChainRegistry,
+  currentAtomoneNetworkId: string | null,
+): ReturnType<ChainRegistry['list']> {
+  return chainRegistry.list().filter((profile) => {
+    if (profile.chainType !== 'cosmos') return false;
+    if (profile.chainGroup === 'atomone' && currentAtomoneNetworkId) {
+      return profile.id === currentAtomoneNetworkId;
+    }
+    return true;
+  });
 }

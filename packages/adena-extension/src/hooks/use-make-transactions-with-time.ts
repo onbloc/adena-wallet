@@ -1,5 +1,5 @@
 import { TransactionHistoryMapper } from '@repositories/transaction/mapper/transaction-history-mapper';
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TransactionInfo } from '@types';
 
 import { useGetAllGRC721Collections } from './nft/use-get-all-grc721-collections';
@@ -16,7 +16,13 @@ export interface UseMakeTransactionsWithTimeReturn {
   data: { title: string; transactions: TransactionInfo[] }[] | null | undefined;
 }
 
+/**
+ * @param scope - Network and account the history belongs to, plus the token for
+ * token history. Processed rows are reused as placeholder data only within the
+ * same scope.
+ */
 export const useMakeTransactionsWithTime = (
+  scope: string,
   key: string,
   transactions: TransactionInfo[] | null | undefined,
 ): UseMakeTransactionsWithTimeReturn => {
@@ -32,6 +38,7 @@ export const useMakeTransactionsWithTime = (
   const { status, isPending: isLoading, isFetched, isFetching, data } = useQuery({
     queryKey: [
       'useMakeTransactionsWithTime',
+      scope,
       currentNetwork.chainId,
       Object.values(tokenLogoMap).length,
       transactions?.length,
@@ -108,7 +115,8 @@ export const useMakeTransactionsWithTime = (
       && !!allTokenMetainfos
       && tokenLogoMap !== null,
 
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[1] === scope ? previousData : undefined,
   });
 
   // react-query v5 renamed `loading` to `pending`; callers keep the old name.

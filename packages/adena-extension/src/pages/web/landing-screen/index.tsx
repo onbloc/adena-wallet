@@ -3,6 +3,7 @@ import IconStandardWallet from '@assets/icon-standard-wallet';
 import IconUsb from '@assets/icon-usb';
 import AnimationAddAccount from '@assets/web/lottie/add-account.json';
 import welcomeJson from '@assets/web/lottie/welcome.json';
+import { makeWalletExistsQueryKey } from '@common/constants/query-key.constant';
 import { isLedgerSupportedBrowser } from '@common/utils/browser-utils';
 import { View, WebMain } from '@components/atoms';
 import Lottie from '@components/atoms/lottie';
@@ -36,7 +37,7 @@ const LandingScreen = (): ReactElement => {
   // networkMode 'always': this reads chrome.storage, never the network. The
   // default 'online' pauses offline, leaving isLoading true for the session.
   const { data: existWallet, isPending: isLoading } = useQuery({
-    queryKey: ['existWallet', walletService.id],
+    queryKey: makeWalletExistsQueryKey(walletService.id),
     queryFn: async () => walletService.existsWallet(),
     networkMode: 'always',
   });

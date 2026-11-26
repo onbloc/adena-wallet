@@ -1,38 +1,12 @@
-import { CommonFullContentLayout, Spinner, Text, View } from '@components/atoms';
 import React from 'react';
-import styled, { useTheme } from 'styled-components';
 
-const SignTransactionLoading: React.FC = () => {
-  const theme = useTheme();
+import { TransactionProgressLoading } from '../broadcast-transaction-screen/loading';
 
-  return (
-    <CommonFullContentLayout>
-      <StyledLoadingWrapper>
-        <Spinner />
-        <StyledDescriptionWrapper>
-          <Text type='header4' textAlign='center'>
-            Signing...
-          </Text>
-          <Text type='body1Reg' color={theme.neutral.a} textAlign='center'>
-            {'Your transaction is being signed.\nPlease wait a moment.'}
-          </Text>
-        </StyledDescriptionWrapper>
-      </StyledLoadingWrapper>
-    </CommonFullContentLayout>
-  );
-};
+const SignTransactionLoading: React.FC = () => (
+  <TransactionProgressLoading
+    title='Signing...'
+    description={'Your transaction is being signed.\nPlease wait a moment.'}
+  />
+);
 
 export default SignTransactionLoading;
-
-const StyledLoadingWrapper = styled(View)`
-  margin-top: 56px;
-  gap: 23px;
-  justify-content: center;
-  align-items: center;
-`;
-
-const StyledDescriptionWrapper = styled(View)`
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-`;

@@ -27,6 +27,7 @@ import { useGRC20Routes } from '@hooks/use-grc20-routes';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
+import { SESSIONS_QUERY_KEY } from '@hooks/use-sessions';
 import { getCosmosOriginDenom } from '@hooks/use-token-metainfo';
 import { useTransferInfo } from '@hooks/use-transfer-info';
 import { useCosmosNetworkFee } from '@hooks/wallet/use-cosmos-network-fee';
@@ -49,6 +50,7 @@ import {
   isLedgerAccount,
   isSessionAccount,
   MSG_SEND_AMINO_TYPE,
+  sleep,
 } from 'adena-module';
 import BigNumber from 'bignumber.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -575,7 +577,7 @@ const TransferSummaryContainer: React.FC = () => {
 
   const refreshCurrentSessionMetadataAfterTransfer = useCallback(async (): Promise<void> => {
     queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });
-    queryClient.invalidateQueries({ queryKey: ['sessions/all'] });
+    queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
 
     if (!currentAccount || !isSessionAccount(currentAccount) || !currentNetwork || !gnoProvider) {
       return;
@@ -593,7 +595,7 @@ const TransferSummaryContainer: React.FC = () => {
 
     for (const delayMs of [0, 1_500, 4_000]) {
       if (delayMs > 0) {
-        await wait(delayMs);
+        await sleep(delayMs);
       }
 
       let record;
@@ -612,7 +614,7 @@ const TransferSummaryContainer: React.FC = () => {
         if (revoked) {
           await sessionRepository.setStatus(sessionAddr, 'REVOKED').catch(() => undefined);
           queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });
-          queryClient.invalidateQueries({ queryKey: ['sessions/all'] });
+          queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
         }
         break;
       }
@@ -633,7 +635,7 @@ const TransferSummaryContainer: React.FC = () => {
       });
 
       queryClient.invalidateQueries({ queryKey: ['sessionMetadataForBalanceInput'] });
-      queryClient.invalidateQueries({ queryKey: ['sessions/all'] });
+      queryClient.invalidateQueries({ queryKey: [SESSIONS_QUERY_KEY] });
 
       if ((spendUsed ?? '') !== previousSpendUsed) {
         break;
@@ -925,9 +927,5 @@ const TransferSummaryContainer: React.FC = () => {
     </TransferSummaryLayout>
   );
 };
-
-function wait(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 export default TransferSummaryContainer;

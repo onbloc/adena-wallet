@@ -1,5 +1,5 @@
-import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
-import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+import ArrowDownIcon from '@assets/arrowS-down-gray.svg';
+import ArrowUpIcon from '@assets/arrowS-up-gray.svg';
 import IconLink from '@assets/icon-link';
 import { formatAddress } from '@common/utils/client-utils';
 import { isBech32Address, reverseString } from '@common/utils/string-utils';

@@ -21,6 +21,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
 import styled from 'styled-components';
 
+import { StyledCopyIconButton } from '../copy-icon-button.styles';
+
 const COSMOS_APPROVE_PATHS: string[] = [
   RoutePath.ApproveEstablishCosmos,
   RoutePath.ApproveSignCosmos,
@@ -63,31 +65,6 @@ const StyledRightSideWrapper = styled.div`
   ${mixins.flex({ direction: 'row', align: 'center', justify: 'flex-start' })};
   gap: 12px;
   height: 100%;
-`;
-
-const StyledCopyIconButton = styled.button.withConfig({
-  shouldForwardProp: prop => prop !== 'isActive',
-})<{ isActive?: boolean }>`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${({ isActive, theme }): string => (isActive ? theme.neutral._1 : theme.neutral.a)};
-  flex-shrink: 0;
-
-  &:hover {
-    color: ${getTheme('neutral', '_1')};
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
 `;
 
 const ApproveMenu = (): JSX.Element => {

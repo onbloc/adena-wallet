@@ -1,4 +1,4 @@
-import { fromBech32 } from 'adena-module';
+import { validateAddress } from 'adena-module';
 
 import { formatAddress } from './client-utils';
 
@@ -34,15 +34,7 @@ export const makeDisplayPackagePath = (packagePath: string): string => {
   return items.map(item => (isBech32Address(item) ? formatAddress(item, 4) : item)).join('/');
 };
 
-export const isBech32Address = (str: string): boolean => {
-  try {
-    const { prefix } = fromBech32(str);
-    return !!prefix;
-  }
-  catch {
-    return false;
-  }
-};
+export const isBech32Address = (str: string): boolean => validateAddress(str);
 
 export function calculateByteSize(str: string): number {
   const encoder = new TextEncoder();

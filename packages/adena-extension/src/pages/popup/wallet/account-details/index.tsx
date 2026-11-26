@@ -4,7 +4,7 @@ import {
   WALLET_EXPORT_TYPE_STORAGE_KEY,
 } from '@common/constants/storage.constant';
 import { AdenaStorage } from '@common/storage';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { CommonFullContentLayout } from '@components/atoms';
 import AccountDetails from '@components/pages/account-details/account-details';
 import { useAccountName } from '@hooks/use-account-name';
@@ -97,9 +97,7 @@ const AccountDetailsContainer: React.FC = () => {
 
   const moveGnoscan = useCallback(() => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    const openLinkUrl = scannerParameters
-      ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${address}`;
+    const openLinkUrl = makeScannerUrl(scannerUrl, `/account/${address}`, scannerParameters ?? {});
     openLink(openLinkUrl);
   }, [address]);
 

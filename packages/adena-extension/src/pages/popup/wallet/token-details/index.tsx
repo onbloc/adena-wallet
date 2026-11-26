@@ -1,7 +1,7 @@
 import etc from '@assets/etc.svg';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { toRegistryKey } from '@common/utils/grc20-token-path';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
 import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
 import { DoubleButton, TransactionHistory } from '@components/molecules';
@@ -16,6 +16,7 @@ import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
 import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
+import { canFetchNextHistoryPage } from '@hooks/wallet/transaction-history/derive-history-status';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
@@ -133,7 +134,7 @@ export const TokenDetails = (): JSX.Element => {
     enabled: !isUsedApi && !isCosmosNative,
   });
 
-  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
+  const { status, isFetching, data, hasNextPage, fetchNextPage } = useMemo(() => {
     if (isUsedApi) {
       return pageTransactionHistoryQuery;
     }
@@ -141,10 +142,10 @@ export const TokenDetails = (): JSX.Element => {
   }, [isUsedApi, pageTransactionHistoryQuery, commonTransactionHistoryQuery]);
 
   useEffect(() => {
-    if (loadingNextFetch && !isLoading && !isFetching) {
+    if (canFetchNextHistoryPage(loadingNextFetch, status, isFetching, hasNextPage)) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }
-  }, [loadingNextFetch, isLoading, isFetching]);
+  }, [loadingNextFetch, status, isFetching, hasNextPage]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
@@ -211,9 +212,7 @@ export const TokenDetails = (): JSX.Element => {
 
   const getAccountDetailUri = (): string => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    return scannerParameters
-      ? `${scannerUrl}/account/${currentFundingAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${currentFundingAddress}`;
+    return makeScannerUrl(scannerUrl, `/account/${currentFundingAddress}`, scannerParameters ?? {});
   };
 
   const getTokenUri = (): string => {
@@ -223,9 +222,7 @@ export const TokenDetails = (): JSX.Element => {
       // `{packagePath}.{symbol}` — the same token key the wallet uses. Fall back
       // to the bare pkgPath for a legacy value with no symbol.
       const tokenPath = toRegistryKey(tokenBalance.tokenId) ?? tokenBalance.pkgPath;
-      return scannerParameters
-        ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/tokens/${tokenPath}`;
+      return makeScannerUrl(scannerUrl, `/tokens/${tokenPath}`, scannerParameters ?? {});
     }
     return '';
   };
@@ -289,15 +286,15 @@ export const TokenDetails = (): JSX.Element => {
               Transaction history is not supported yet
             </Text>
           )
-        : isLoading && isSupported
+        : status === 'loading'
           ? (
               <LoadingTokenDetails />
             )
           : transactions.length > 0
             ? (
                 <TransactionHistory
-                  status={status}
-                  transactionInfoLists={isSupported ? transactions : []}
+                  status={status === 'unsupported' ? 'error' : status}
+                  transactionInfoLists={status !== 'unsupported' ? transactions : []}
                   onClickItem={onClickItem}
                 />
               )

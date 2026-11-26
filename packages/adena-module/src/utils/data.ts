@@ -1,5 +1,7 @@
+import { toHex } from '../encoding';
+
 export function arrayToHex(data: Uint8Array) {
-  return Buffer.from(data).toString('hex');
+  return toHex(data);
 }
 
 export function hexToArray(hex: string) {

@@ -6,6 +6,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetworkProfile } from '@hooks/use-network-profile';
 import useScrollHistory from '@hooks/use-scroll-history';
+import { canFetchNextHistoryPage } from '@hooks/wallet/transaction-history/derive-history-status';
 import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
 import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use-transaction-history-page';
 import mixins from '@styles/mixins';
@@ -55,7 +56,7 @@ const HistoryContainer: React.FC = () => {
     return commonTransactionHistoryQuery;
   }, [isUsedApi, commonTransactionHistoryQuery, pageTransactionHistoryQuery]);
 
-  const { isSupported, isFetching, isLoading, status, data, hasNextPage, fetchNextPage, refetch }
+  const { isFetching, status, data, hasNextPage, fetchNextPage, refetch }
     = transactionHistoryQuery;
 
   useEffect(() => {
@@ -63,10 +64,10 @@ const HistoryContainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (loadingNextFetch && !isLoading && !isFetching && hasNextPage) {
+    if (canFetchNextHistoryPage(loadingNextFetch, status, isFetching, hasNextPage)) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }
-  }, [loadingNextFetch, isLoading, isFetching, hasNextPage]);
+  }, [loadingNextFetch, status, isFetching, hasNextPage]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body') && document.getElementsByTagName('body').length > 0) {
@@ -118,7 +119,7 @@ const HistoryContainer: React.FC = () => {
         <StyledTitle>History</StyledTitle>
       </StyledTitleWrapper>
       <TransactionHistory
-        status={isSupported ? status : 'error'}
+        status={status === 'unsupported' ? 'error' : status}
         transactionInfoLists={data || []}
         queryGRC721TokenUri={useGetGRC721TokenUri}
         onClickItem={onClickItem}

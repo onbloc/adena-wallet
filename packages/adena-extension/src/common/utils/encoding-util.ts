@@ -1,5 +1,7 @@
+import { toBase64 } from 'adena-module';
+
 export function bytesToBase64(bytes: number[]): string {
-  return Buffer.from(bytes).toString('base64');
+  return toBase64(Uint8Array.from(bytes));
 }
 
 export function base64ToBytes(base64: string): number[] {

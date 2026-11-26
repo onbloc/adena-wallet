@@ -1,6 +1,7 @@
 import IconCircleExclamation from '@assets/icon-circle-exclamation';
 import IconClock from '@assets/icon-clock';
 import IconShare from '@assets/icon-share';
+import { SECONDS_PER_DAY } from '@common/constants/time.constant';
 import { formatAddress } from '@common/utils/client-utils';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
@@ -25,8 +26,6 @@ import {
 // rest of the wallet wherever it appears.
 const GNOT_LOGO_URL
   = 'https://raw.githubusercontent.com/onbloc/gno-token-resource/main/gno-native/images/ugnot.svg';
-
-const SECONDS_PER_DAY = 86_400;
 
 const stripUgnotSuffix = (raw: string): string => raw.replace(/u?gnot$/i, '').trim();
 

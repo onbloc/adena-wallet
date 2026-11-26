@@ -59,7 +59,7 @@ export const Chip = styled.span<{ $variant: 'info' | 'danger' }>`
   padding: 0 10px;
   border-radius: 11px;
   gap: 4px;
-  color: ${({ $variant, theme }): string => ($variant === 'danger' ? '#EB545E' : theme.primary._4)};
+  color: ${({ $variant, theme }): string => ($variant === 'danger' ? theme.webError._100 : theme.primary._4)};
   background: ${({ $variant }): string =>
     $variant === 'danger' ? 'rgba(239, 45, 33, 0.18)' : 'rgba(55, 125, 255, 0.18)'};
   flex-shrink: 0;
@@ -80,11 +80,11 @@ export const LinkButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  color: #777777;
+  color: ${getTheme('neutral', 'a')};
   flex-shrink: 0;
 
   &:hover {
-    color: #ffffff;
+    color: ${getTheme('neutral', '_1')};
   }
 
   svg {

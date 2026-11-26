@@ -3,11 +3,13 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { InfiniteData, keepPreviousData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { InfiniteData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { TransactionWithPageInfo } from '@types';
 import { useCallback, useMemo } from 'react';
 
+import { deriveHistoryData, deriveHistoryStatus } from './derive-history-status';
 import { dedupeAndSortTransactions } from './session-history-source';
+import type { TransactionHistoryResult } from './types';
 
 // API-backed (cursor paginated) transaction history. `currentAddress` already
 // resolves to the SESSION address for SessionAccount, and the API attributes
@@ -18,22 +20,7 @@ export const useTransactionHistoryPage = ({
   enabled,
 }: {
   enabled: boolean;
-}): {
-  data:
-    | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
-} => {
+}): TransactionHistoryResult => {
   const { currentNetwork } = useNetwork();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();
@@ -41,6 +28,8 @@ export const useTransactionHistoryPage = ({
 
   const {
     data: allTransactions,
+    status: fetchStatus,
+    isFetchingNextPage,
     hasNextPage,
     refetch,
     fetchNextPage,
@@ -72,7 +61,6 @@ export const useTransactionHistoryPage = ({
         && tokenMetainfos.length > 0
         && transactionHistoryService.supported
         && enabled,
-      placeholderData: keepPreviousData,
       // No refetchInterval here: the history screen owns the single poll timer.
     },
   );
@@ -96,8 +84,9 @@ export const useTransactionHistoryPage = ({
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
-    `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
+    `history/page/all/${currentNetwork.networkId}/${currentAddress}`,
+    `${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
 
@@ -114,13 +103,19 @@ export const useTransactionHistoryPage = ({
     [refetch],
   );
 
+  const hasFetchData = !!allTransactions?.pages.length;
+  const status = deriveHistoryStatus(
+    transactionHistoryService.supported,
+    enabled,
+    fetchStatus,
+    processingStatus,
+    hasFetchData,
+  );
+
   return {
-    data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
+    data: deriveHistoryData(data, status, hasFetchData),
     status,
-    isLoading,
-    isFetching,
+    isFetching: isFetchingNextPage || isProcessing,
     hasNextPage: hasNextPage !== false,
     fetchNextPage: (): Promise<boolean> => {
       return fetchNextPage()
