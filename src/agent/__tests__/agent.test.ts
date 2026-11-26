@@ -59,14 +59,53 @@ describe('integrated request execution', () => {
   it('renders normalized exact units for the bound account with no arithmetic model step', async () => {
     const { agent, model, mcp } = setup([]);
     const events = await collect(agent.run({ prompt: 'My GNOT balance?' }, { account: ACCOUNT }));
-    expect(textOf(events)).toBe('42 GNOT');
+    expect(textOf(events)).toContain('42 GNOT');
+    expect(textOf(events)).toContain(ACCOUNT);
     expect(doneOf(events)?.verifiedAnswer).toBe(true);
     expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: ACCOUNT } }]);
     expect(model.doGenerateCalls).toHaveLength(1);
   });
   it('reads current data with an account and harness without requiring a wallet', async () => {
     const { agent } = setup([], { withWallet: false });
-    expect(textOf(await collect(agent.run({ prompt: 'My balance?' }, { account: ACCOUNT })))).toBe('42 GNOT');
+    const events = await collect(agent.run({ prompt: 'My balance?' }, { account: ACCOUNT }));
+    expect(textOf(events)).toContain('42 GNOT');
+    expect(textOf(events)).toContain(ACCOUNT);
+  });
+  it('reads an explicitly named public address rather than the active account and identifies it in the answer', async () => {
+    const { agent, mcp } = setup([], { classificationText: JSON.stringify({ route: 'lookup', requests: native.requests, account: RECIPIENT }), tools: [
+      { name: 'get_native_balance', output: { address: RECIPIENT, denom: 'ugnot', balance: '7000000' } },
+    ] });
+    const events = await collect(agent.run({ prompt: `What is the GNOT balance of ${RECIPIENT}?` }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: RECIPIENT } }]);
+    expect(textOf(events)).toContain('7 GNOT');
+    expect(textOf(events)).toContain(RECIPIENT);
+    expect(doneOf(events)?.verifiedAnswer).toBe(true);
+  });
+  it('reads a single explicitly referenced Korean address even if classification omits the account', async () => {
+    const address = 'g1nkjy6s86gfz937284zh0flpgcjqtpfqjmceffq';
+    const { agent, mcp } = setup([], { intent: native, tools: [
+      { name: 'get_native_balance', output: { address, denom: 'ugnot', balance: '7000000' } },
+    ] });
+    const events = await collect(agent.run({ prompt: `${address} 해당 주소의 잔고 보여줘` }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address } }]);
+    expect(textOf(events)).toContain(address);
+    expect(textOf(events)).toContain('7 GNOT');
+  });
+  it('reads an explicitly named public address without an active account', async () => {
+    const { agent, mcp } = setup([], { withWallet: false, classificationText: JSON.stringify({ route: 'lookup', requests: native.requests, account: RECIPIENT }), tools: [
+      { name: 'get_native_balance', output: { address: RECIPIENT, denom: 'ugnot', balance: '7000000' } },
+    ] });
+    const events = await collect(agent.run({ prompt: `What is the GNOT balance of ${RECIPIENT}?` }, {}));
+    expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: RECIPIENT } }]);
+    expect(textOf(events)).toContain(RECIPIENT);
+    expect(textOf(events)).toContain('7 GNOT');
+  });
+  it('asks which address to read instead of choosing between multiple public addresses', async () => {
+    const { agent, mcp } = setup([], { classificationText: JSON.stringify({ route: 'lookup', requests: native.requests, account: RECIPIENT }) });
+    const events = await collect(agent.run({ prompt: `What is the GNOT balance of ${RECIPIENT} and ${FRIEND.address}?` }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([]);
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(textOf(events)).toMatch(/which|clarif|specify/i);
   });
   it('keeps the structured getBalance API independent of classification and generation', async () => {
     const { agent, model } = setup([]);
@@ -133,6 +172,39 @@ describe('integrated request execution', () => {
     expect(doneOf(events)?.verifiedAnswer).toBe(true);
     expect(model.doGenerateCalls).toHaveLength(3);
   });
+  it('reads explicitly named account history instead of the active account', async () => {
+    const { agent, mcp } = setup([call('list_account_transactions', { limit: 5 })], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: `List recent transactions for ${RECIPIENT}.` }] },
+      classificationText: JSON.stringify({ route: 'lookup', requests: [{ target: 'other', query: `List recent transactions for ${RECIPIENT}.` }], account: RECIPIENT }),
+      selection: ['list_account_transactions'],
+      tools: [{ name: 'list_account_transactions', output: { address: RECIPIENT, items: [{ hash: 'other-tx' }] } }],
+    });
+    const events = await collect(agent.run({ prompt: `Recent transactions for ${RECIPIENT}.` }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([{ name: 'list_account_transactions', arguments: { address: RECIPIENT, limit: 5 } }]);
+    expect(textOf(events)).toContain('other-tx');
+    expect(textOf(events)).toContain(RECIPIENT);
+    expect(doneOf(events)?.verifiedAnswer).toBe(true);
+  });
+  it('uses the active account for history when no address is named', async () => {
+    const { agent, mcp } = setup([call('list_account_transactions', { limit: 5 })], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
+    });
+    const events = await collect(agent.run({ prompt: 'Recent transactions.' }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([{ name: 'list_account_transactions', arguments: { address: ACCOUNT, limit: 5 } }]);
+    expect(textOf(events)).toContain(ACCOUNT);
+    expect(textOf(events)).toContain('tx-123');
+  });
+  it('asks for clarification before reading history for multiple addresses', async () => {
+    const { agent, mcp } = setup([], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] },
+      classificationText: JSON.stringify({ route: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }], account: RECIPIENT }),
+      selection: ['list_account_transactions'],
+    });
+    const events = await collect(agent.run({ prompt: `Recent transactions for ${RECIPIENT} and ${FRIEND.address}.` }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([]);
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(textOf(events)).toMatch(/which|clarif|specify/i);
+  });
   it('does not commit the available part when another requested capability is unavailable', async () => {
     const { agent } = setup([], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNOT') }, { target: 'other', query: 'List sessions.' }] }, selection: [] });
     const events = await collect(agent.run({ prompt: 'Balance and sessions.' }, { account: ACCOUNT }));
@@ -159,7 +231,7 @@ describe('integrated request execution', () => {
   });
   it('cannot use host opt-in to turn a read request into preparation', async () => {
     const { agent, prepared } = setup([send]);
-    expect(textOf(await collect(agent.run({ prompt: 'My GNOT balance?' }, permission)))).toBe('42 GNOT');
+    expect(textOf(await collect(agent.run({ prompt: 'My GNOT balance?' }, permission)))).toContain('42 GNOT');
     expect(prepared).toEqual([]);
   });
   it('prepares once without external reads or a fallible post-preparation model call', async () => {
@@ -174,6 +246,19 @@ describe('integrated request execution', () => {
     expect(textOf(events)).toContain('Unsigned transaction prepared');
     expect(doneOf(events)?.messages).toEqual([]);
     expect(model.doGenerateCalls).toHaveLength(2);
+  });
+  it('keeps the active sender after looking up another public address', async () => {
+    const { agent, mcp, wallet, prepared } = setup([answer(intentReplyText(prepare)), send], {
+      classificationText: JSON.stringify({ route: 'lookup', requests: native.requests, account: FRIEND.address }),
+      tools: [{ name: 'get_native_balance', output: { address: FRIEND.address, denom: 'ugnot', balance: '7000000' } }],
+    });
+    const read = await collect(agent.run({ prompt: `What is the GNOT balance of ${FRIEND.address}?` }, { account: ACCOUNT }));
+    expect(textOf(read)).toContain(FRIEND.address);
+    expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: FRIEND.address } }]);
+    await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
+    expect(prepared).toHaveLength(1);
+    expect(prepared[0].summary).toMatchObject({ from: ACCOUNT, to: RECIPIENT });
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } }]);
   });
   it('preserves a completed handoff and reports auditing failure separately', async () => {
     const { agent, prepared, model } = setup([send], { intent: prepare, failAudit: true });

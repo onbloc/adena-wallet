@@ -12,7 +12,7 @@ import type { TransactionHandler, WalletSdk } from './wallet/port';
 import { fromBaseUnits } from './wallet/amount';
 import { createWalletTools } from './wallet/tools';
 import type { Decision, Harness, HarnessRun } from '../harness/core';
-import { GNO_MAINNET_CHAIN } from '../harness/mcp';
+import { GNO_MAINNET_CHAIN, gnoPublicAddress } from '../harness/mcp';
 import { onblocBalanceAdapter } from './onblocBalanceAdapter';
 import {
   applyToolEvent,
@@ -67,6 +67,41 @@ const ANSWER_INSTRUCTIONS = {
 function requireAccount(options: RunOptions): AccountRunOptions {
   if (!options.account) throw new Error('ADENA_ACCOUNT_REQUIRED: Link a wallet to read wallet data or prepare transactions.');
   return { ...options, account: options.account };
+}
+
+function userMessageText(message: ModelMessage): string {
+  return message.role !== 'user' ? '' : typeof message.content === 'string' ? message.content
+    : message.content.flatMap(part => part.type === 'text' ? [part.text] : []).join('\n');
+}
+
+// Only user-authored standalone address candidates can select a read target.
+function addressCandidates(text: string): string[] {
+  return Array.from(text.matchAll(/(?:^|[^a-zA-Z0-9_/])(g1[a-zA-Z0-9]*)/gi), match => match[1]);
+}
+
+function lookupAccount(intent: Extract<RequestIntent, { kind: 'lookup' }>, messages: ModelMessage[]): string | undefined | null {
+  const users = messages.filter(message => message.role === 'user').map(userMessageText);
+  const latest = users.at(-1) ?? '';
+  const candidates = addressCandidates(latest);
+  const reference = /\b(?:that|this|same|previous|above|the)\s+(?:wallet|account|address)\b|(?:그|해당|위|이전|같은)\s*(?:주소|계정|지갑)/i.test(latest);
+  const earlier = reference ? users.slice(0, -1).reverse().find(text => addressCandidates(text).length > 0) : undefined;
+  const relevant = candidates.length ? candidates : earlier ? addressCandidates(earlier) : [];
+  if (new Set(relevant.map(value => value.toLowerCase())).size > 1) return null;
+  const recipientOnly = candidates.length === 1
+    && (/\b(?:to|recipient|spender)\s*[:=]?\s*g1/i.test(latest) || /g1[a-z0-9]+(?:에게|한테|으로)/i.test(latest))
+    && (/\b(?:send|pay|transfer|spend)\b|보내|송금|지급/i.test(latest));
+  if (recipientOnly) return intent.account === undefined ? undefined : null;
+  if (intent.account !== undefined) {
+    if (!gnoPublicAddress.safeParse(intent.account).success || !relevant.includes(intent.account)) return null;
+    return intent.account;
+  }
+  if (relevant.length === 1 && gnoPublicAddress.safeParse(relevant[0]).success
+    && (/(?:주소|계정|지갑)|\b(?:address|account|wallet)\b/i.test(latest))
+    && (candidates.length > 0 || reference)) return relevant[0];
+  // An unclassified address must not silently fall back to the active account.
+  if (relevant.length || reference) return null;
+  if (/(?:address|주소)\s*(?:[:=]|\bis\b)\s*\S+/i.test(latest)) return null;
+  return undefined;
 }
 
 /** The assistant: an LLM, a harness and a wallet, with the conversation it keeps going. */
@@ -227,7 +262,14 @@ export class AIAgent {
         system: [settings.system ?? this.prompt(), ANSWER_INSTRUCTIONS[intent.kind]].join('\n\n'),
       }, options), () => true, intent);
     } else if (intent.kind === 'lookup') {
-      yield* this.answerLookups(intent, settings, requireAccount(options));
+      const target = lookupAccount(intent, settings.messages);
+      if (target === null) {
+        const question = 'Which single valid Gno public address should I look up?';
+        yield { type: 'text', delta: question };
+        yield { ...this.done(options.signal), messages: [{ role: 'assistant', content: question }] };
+        return;
+      }
+      yield* this.answerLookups(intent, settings, requireAccount({ ...options, account: target ?? options.account }), options.account);
     } else {
       const { account } = requireAccount(options);
       if (!options.allowTransactionPreparation || !this.wallet || !this.onTransaction) {
@@ -310,9 +352,9 @@ export class AIAgent {
     yield* guardAnswer(events, tool => tool !== name, { kind: 'prepare', action: name }, { auditFailed: () => run.auditFailed });
   }
 
-  private async *answerLookups(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: AccountRunOptions): AsyncGenerator<GenerateEvent> {
+  private async *answerLookups(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: AccountRunOptions, activeAccount?: string): AsyncGenerator<GenerateEvent> {
     const other = intent.requests.find(request => request.target === 'other');
-    const walletTools = this.wallet && this.onTransaction && other
+    const walletTools = this.wallet && this.onTransaction && other && options.account === activeAccount
       ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
     const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `lookup-${++this.runs}`,
       scope: 'read-only', purpose: 'mainnet-read', walletTools, signal: options.signal });
@@ -324,7 +366,7 @@ export class AIAgent {
       const requiredReads = selection && !selection.aborted ? selection.toolNames : [];
       const evidence = realmEvidence(this.userText(settings), run);
       yield* guardAnswer(this.lookupEvents(intent, settings, options, run, requiredReads, hidden, evidence, selection), () => true, intent,
-        { requiredReads, userText: this.userText(settings), evidence, auditFailed: () => run.auditFailed });
+        { requiredReads, userText: this.userText(settings), evidence, account: options.account, auditFailed: () => run.auditFailed });
     } finally { run.close(); }
   }
 

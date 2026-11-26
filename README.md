@@ -182,6 +182,12 @@ model. Compound lookup answers preserve every returned result, with conceptual m
 separate from deterministically rendered facts. Completion verifies the planned results, not
 the semantic correctness of the model's plan or explanation.
 
+For read-only balance and account-history requests, a public address explicitly supplied in the
+question is the lookup target; otherwise the active account is used. Results identify the address
+queried. If the request names multiple possible addresses, the agent asks which one to use rather
+than choosing one. Looking up another address does not change the active account: transfers and
+approvals are prepared only from that account and still require host permission and wallet review.
+
 The selected preparation stops at its result, including a refusal; there is no follow-up model
 call that can erase a completed handoff or substitute another amount. Audit failures pause new
 execution but preserve completed results and surface a separate warning.

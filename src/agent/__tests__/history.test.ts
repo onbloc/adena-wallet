@@ -196,7 +196,7 @@ describe('agent history', () => {
     native.balance = '2000000';
     const fresh = await collect(agent.run({ prompt: 'Look up that native balance again.' }, options));
 
-    expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: '2 GNOT' });
+    expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: expect.stringContaining('2 GNOT') });
     expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(correction);
     expect(mcp.calls.filter((call) => call.name === 'get_native_balance')).toHaveLength(2);
     expect(agent.turns).toHaveLength(3);

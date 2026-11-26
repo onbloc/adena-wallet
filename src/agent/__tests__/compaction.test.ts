@@ -33,7 +33,8 @@ describe('agent context compaction', () => {
     expect(prompt).not.toContain('old request');
     expect(prompt).toContain('send one to alice');
     expect(prompt).toContain('What is my GNOT balance now?');
-    expect(text).toBe('42 GNOT');
+    expect(text).toContain('42 GNOT');
+    expect(text).toContain(ACCOUNT);
     expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: ACCOUNT } }]);
     expect(wallet.calls).toEqual([]);
     expect(onTransaction).not.toHaveBeenCalled();

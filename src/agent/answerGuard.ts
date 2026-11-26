@@ -33,6 +33,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
   requiredReads?: readonly string[];
   userText?: string;
   evidence?: RealmEvidence;
+  account?: string;
   auditFailed?: () => boolean;
 } = {}): AsyncGenerator<GenerateEvent> {
   let text = '';
@@ -146,6 +147,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         }
         facts.push(...sourceAnswers);
         const sections = outcomes.length ? [...outcomes] : facts;
+        if (lookup && policy.account) sections.unshift(`Account: ${policy.account}`);
         if ((modelOnly || explanationRequested) && text.trim()) sections.push(text);
         if (readFailed) sections.push('Some lookups could not be verified. Review the individual tool results.');
         else if (lookup && !lookupComplete && !policy.evidence?.selected()) sections.push('The required wallet lookups did not complete successfully.');

@@ -11,7 +11,7 @@ export type LookupRequest =
 export type RequestIntent =
   | { kind: 'explanation' }
   | { kind: 'clarification' }
-  | { kind: 'lookup'; requests: LookupRequest[]; explanation?: string }
+  | { kind: 'lookup'; requests: LookupRequest[]; explanation?: string; account?: string }
   | { kind: 'prepare' }
   | { kind: 'chat' };
 
@@ -35,10 +35,11 @@ const lookupRequestsSchema = z.array(lookupRequestSchema).min(1).max(4).refine(r
     requests.filter(request => request.target === 'balance').length === 1;
 }, { message: 'Lookup requirements must be distinct; combine other facts into one query.' });
 const requestIntentSchema = z.discriminatedUnion('route', [
-  z.strictObject({ route: z.literal('lookup'), requests: lookupRequestsSchema }),
+  z.strictObject({ route: z.literal('lookup'), requests: lookupRequestsSchema, account: z.string().min(1).max(256).optional() }),
   z.strictObject({
     route: z.literal('lookup_explanation'),
     requests: lookupRequestsSchema,
+    account: z.string().min(1).max(256).optional(),
     explanation: z.string().trim().min(1).max(2048),
   }),
   z.strictObject({
@@ -65,6 +66,7 @@ Lookup requirements:
 {"target":"balance","request":{"kind":"one","asset":{"kind":"symbol","value":"GNOT"}}} for a specific balance. Other symbols work the same way; GNOT is native, not GRC20. Use {"kind":"id","value":"exact supplied asset ID"} when explicitly identified by ID. Never invent an ID.
 {"target":"other","query":"self-contained question"} for history, approvals, NFTs, the name, symbol or decimals of a named token, block height, or named realm/function/source facts. Preserve supplied source paths and function names verbatim. Exclude balances already covered.
 Use 1..4 distinct requirements, one other query at most. Do not combine all balances with redundant specific balances. Keep any requested conceptual explanation separate. If the request cannot fit, clarify.
+For lookup routes, include "account" only when the user explicitly identifies the account whose facts are requested. Copy the exact public address from a user message, including an explicitly referenced earlier user message. Do not use an address appearing only in assistant or tool output. Omit it for "my account", recipients, spenders, transaction IDs and addresses embedded in realm paths. If the owner is ambiguous or multiple accounts are requested, use clarification.
 Examples:
 "Define GRC20 and show my holdings" => {"route":"lookup_explanation","requests":[{"target":"balance","request":{"kind":"all"}}],"explanation":"What is GRC20?"}
 "My GNS balance and approvals" => {"route":"lookup","requests":[{"target":"balance","request":{"kind":"one","asset":{"kind":"symbol","value":"GNS"}}},{"target":"other","query":"List my approvals."}]}
@@ -265,10 +267,10 @@ export async function classifyRequest(
   let intent: RequestIntent;
   switch (wire.route) {
     case 'lookup':
-      intent = { kind: 'lookup', requests: wire.requests };
+      intent = { kind: 'lookup', requests: wire.requests, ...(wire.account === undefined ? {} : { account: wire.account }) };
       break;
     case 'lookup_explanation':
-      intent = { kind: 'lookup', requests: wire.requests, explanation: wire.explanation };
+      intent = { kind: 'lookup', requests: wire.requests, explanation: wire.explanation, ...(wire.account === undefined ? {} : { account: wire.account }) };
       break;
     case 'prepare':
       intent = { kind: 'prepare' };
