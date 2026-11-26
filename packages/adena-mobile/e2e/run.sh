@@ -36,10 +36,10 @@ done
 
 export MAESTRO_CLI_NO_ANALYTICS=1
 
-# The app id differs per platform (Android package app.adena, iOS bundle app.adena.Adena), so it must follow
-# the device Maestro targets. Order: E2E_PLATFORM, then a --platform/-p given to Maestro, then an explicit
-# --device/--udid (Android when adb lists it, otherwise iOS), then auto-detection, where a connected Android device
-# or emulator wins over the iOS simulator. Without an explicit device, Maestro gets --platform so it picks a matching one.
+# The app id differs per platform (Android package app.adena, iOS bundle app.adena.Adena), and one run has one app
+# id, so every platform input must agree: E2E_PLATFORM, a --platform/-p given to Maestro, and each id of an explicit
+# --device/--udid list (Android when adb lists it, otherwise iOS). Disagreeing inputs stop the run. Without any of
+# them, a connected Android device or emulator wins over the iOS simulator, and Maestro gets --platform to match.
 DEVICE=""
 ARG_PLATFORM=""
 expect=""
@@ -58,21 +58,70 @@ for arg in "$@"; do
   esac
 done
 
+fail() {
+  echo "e2e: $*" >&2
+  exit 1
+}
+
+lower() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
 android_devices() {
   command -v adb >/dev/null 2>&1 && adb devices | awk 'NR > 1 && $2 == "device" { print $1 }'
 }
 
-PLATFORM="${E2E_PLATFORM:-$ARG_PLATFORM}"
-PLATFORM="$(printf '%s' "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
+ENV_PLATFORM="$(lower "${E2E_PLATFORM:-}")"
+ARG_PLATFORM="$(lower "$ARG_PLATFORM")"
+
+for value in "$ENV_PLATFORM" "$ARG_PLATFORM"; do
+  case "$value" in
+    "" | android | ios) ;;
+    *) fail "platform must be android or ios, got '$value'" ;;
+  esac
+done
+
+DEVICE_PLATFORM=""
+
+if [ -n "$DEVICE" ]; then
+  ANDROID_IDS="$(android_devices || true)"
+  IFS=',' read -r -a DEVICE_IDS <<< "$DEVICE"
+
+  for id in "${DEVICE_IDS[@]}"; do
+    id="$(printf '%s' "$id" | tr -d '[:space:]')"
+    [ -z "$id" ] && continue
+
+    if printf '%s\n' "$ANDROID_IDS" | grep -qxF "$id"; then
+      current=android
+    else
+      current=ios
+    fi
+
+    if [ -n "$DEVICE_PLATFORM" ] && [ "$DEVICE_PLATFORM" != "$current" ]; then
+      fail "--device mixes Android and iOS devices ($DEVICE); run each platform separately"
+    fi
+
+    DEVICE_PLATFORM="$current"
+  done
+fi
+
+PLATFORM=""
+
+for pair in "E2E_PLATFORM:$ENV_PLATFORM" "--platform:$ARG_PLATFORM" "--device:$DEVICE_PLATFORM"; do
+  source="${pair%%:*}"
+  value="${pair#*:}"
+  [ -z "$value" ] && continue
+
+  if [ -n "$PLATFORM" ] && [ "$PLATFORM" != "$value" ]; then
+    fail "$source says $value but $PLATFORM_SOURCE says $PLATFORM; make them agree"
+  fi
+
+  PLATFORM="$value"
+  PLATFORM_SOURCE="$source"
+done
 
 if [ -z "$PLATFORM" ]; then
-  if [ -n "$DEVICE" ]; then
-    if android_devices | grep -qxF "$DEVICE"; then
-      PLATFORM=android
-    else
-      PLATFORM=ios
-    fi
-  elif android_devices | grep -q .; then
+  if android_devices | grep -q .; then
     PLATFORM=android
   else
     PLATFORM=ios
@@ -82,12 +131,11 @@ fi
 case "$PLATFORM" in
   android) APP_ID=app.adena ;;
   ios) APP_ID=app.adena.Adena ;;
-  *) echo "E2E_PLATFORM must be android or ios" >&2; exit 1 ;;
 esac
 
 PLATFORM_ARGS=()
 
-# An explicit device already fixes the platform; a platform the caller passed is forwarded as is.
+# An explicit device already fixes the platform; a platform the caller passed is forwarded as is and agrees.
 if [ -z "$DEVICE" ] && [ -z "$ARG_PLATFORM" ]; then
   PLATFORM_ARGS=(--platform "$PLATFORM")
 fi
