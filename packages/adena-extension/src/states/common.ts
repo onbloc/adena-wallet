@@ -12,10 +12,6 @@ export const historyPosition = atomWithReset<HistoryPosition>({
   position: 0,
 });
 
-export const tokenDetailPosition = atom<HistoryPosition>({
-  position: 0,
-});
-
 export const scrollPositions = atom<{ [key in string]: number }>({});
 
 export const historyState = atom<{ [key in string]: any }>({});

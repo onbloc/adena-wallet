@@ -5,7 +5,6 @@ export * from './button';
 export * from './common-full-content-layout';
 export * from './copy-button';
 export * from './copy-icon-button';
-export * from './copy-tooltip';
 export * from './custom-network-input';
 export * from './default-input';
 export * from './error-text';
