@@ -3,7 +3,7 @@ import {
   WalletResponseRejectType,
   WalletResponseType,
 } from '@adena-wallet/sdk';
-import UnknownLogo from '@assets/common-unknown-logo.svg';
+import UnknownLogo from '@assets/common-unknown-token.svg';
 import {
   createFaviconByHostname,
   decodeParameter,

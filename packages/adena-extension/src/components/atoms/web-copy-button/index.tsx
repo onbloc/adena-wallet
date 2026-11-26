@@ -101,10 +101,7 @@ export const WebCopyButton: React.FC<WebCopyButtonProps> = ({
   }, []);
 
   useEffect(() => {
-    console.log('clear start clipboard');
-
     const timeout = setTimeout(() => {
-      console.log('clear clipboard');
       navigator?.clipboard?.writeText('');
     }, clearClipboardTimeout);
 

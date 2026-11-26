@@ -1,5 +1,5 @@
-import ArrowDownIcon from '@assets/common-arrow-down-gray.svg';
-import ArrowUpIcon from '@assets/common-arrow-up-gray.svg';
+import ArrowDownIcon from '@assets/arrowS-down-gray.svg';
+import ArrowUpIcon from '@assets/arrowS-up-gray.svg';
 import { SearchInput } from '@components/atoms';
 import AdditionalTokenSearchList from '@components/pages/additional-token/additional-token-search-list/additional-token-search-list';
 import { AdditionalTokenSelectBoxProps } from '@types';

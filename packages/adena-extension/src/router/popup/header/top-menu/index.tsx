@@ -32,6 +32,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import styled from 'styled-components';
 
+import { StyledCopyIconButton } from '../copy-icon-button.styles';
 import { useHoverPopover } from './use-hover-popover';
 
 const Wrapper = styled.div`
@@ -70,31 +71,6 @@ const StyledSessionAccountButton = styled.button`
   border: none;
   cursor: pointer;
   color: ${getTheme('neutral', '_1')};
-`;
-
-const StyledCopyIconButton = styled.button.withConfig({
-  shouldForwardProp: prop => prop !== 'isActive',
-})<{ isActive?: boolean }>`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: ${({ isActive, theme }): string => (isActive ? theme.neutral._1 : theme.neutral.a)};
-  flex-shrink: 0;
-
-  &:hover {
-    color: ${getTheme('neutral', '_1')};
-  }
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
 `;
 
 const COPY_POPOVER_WIDTH = 220;

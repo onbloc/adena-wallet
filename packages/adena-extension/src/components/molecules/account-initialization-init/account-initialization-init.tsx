@@ -1,4 +1,4 @@
-import UnknownAccountImage from '@assets/common-unknown-logo.svg';
+import UnknownAccountImage from '@assets/common-unknown-token.svg';
 import { formatAddress } from '@common/utils/client-utils';
 import { SubHeader } from '@components/atoms';
 import { BottomFixedButtonGroup } from '@components/molecules';

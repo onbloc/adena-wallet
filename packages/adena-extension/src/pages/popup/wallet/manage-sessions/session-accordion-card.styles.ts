@@ -32,7 +32,7 @@ export const Header = styled.div<{ $expanded: boolean }>`
 
   .session-name {
     ${fonts.body2Bold};
-    color: #777777;
+    color: ${getTheme('neutral', 'a')};
   }
 
   .address-row {
@@ -42,7 +42,7 @@ export const Header = styled.div<{ $expanded: boolean }>`
 
   .address {
     ${fonts.body2Reg};
-    color: #ffffff;
+    color: ${getTheme('neutral', '_1')};
   }
 
   .chevron {
@@ -64,10 +64,10 @@ export const Header = styled.div<{ $expanded: boolean }>`
     background: none;
     border: none;
     cursor: pointer;
-    color: #777777;
+    color: ${getTheme('neutral', 'a')};
 
     &:hover {
-      color: #ffffff;
+      color: ${getTheme('neutral', '_1')};
     }
 
     svg {
@@ -94,7 +94,7 @@ export const RevokeRow = styled.button`
   gap: 6px;
   background: transparent;
   border: none;
-  color: #777777;
+  color: ${getTheme('neutral', 'a')};
   cursor: pointer;
   ${fonts.body2Reg};
 
@@ -104,7 +104,7 @@ export const RevokeRow = styled.button`
   }
 
   &:hover {
-    color: #ffffff;
+    color: ${getTheme('neutral', '_1')};
     background: transparent;
   }
 `;

@@ -1,6 +1,6 @@
 import IconArraowDown from '@assets/arrowS-down-gray.svg';
 import IconArraowUp from '@assets/arrowS-up-gray.svg';
-import UnknownLogo from '@assets/common-unknown-logo.svg';
+import UnknownLogo from '@assets/common-unknown-token.svg';
 import { createMultisigSignerInfoList, filterValidSignatures } from '@common/utils/multisig-utils';
 import { Button, Text } from '@components/atoms';
 import { BottomFixedLoadingButtonGroup } from '@components/molecules';

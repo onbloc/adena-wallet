@@ -1,3 +1,4 @@
+import { getLedgerDocumentData } from '@common/utils/ledger-document';
 import { Icon } from '@components/atoms';
 import { Datatable } from '@components/atoms/datatable';
 import { BottomFixedButton, TitleWithDesc } from '@components/molecules';
@@ -20,21 +21,7 @@ const TransferLedgerLoading: React.FC<TransferLedgerLoadingProps> = ({
   document,
   onClickCancel,
 }) => {
-  const documentData = useMemo(() => {
-    if (!document) {
-      return null;
-    }
-    const gasFee = document.fee.amount[0]
-      ? `${document.fee.amount[0]?.amount}${document.fee.amount[0]?.denom}`
-      : '';
-    return [
-      { key: 'Chain ID', value: document.chain_id },
-      { key: 'Account', value: document.account_number },
-      { key: 'Sequence', value: document.sequence },
-      { key: 'Gas Fee', value: gasFee },
-      { key: 'Gas Wanted', value: document.fee.gas },
-    ];
-  }, [document]);
+  const documentData = useMemo(() => getLedgerDocumentData(document), [document]);
 
   return (
     <TransferLedgerLoadingWrapper>
