@@ -13,7 +13,7 @@ const gnot = getNativeTokenFor(network);
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 
 describe('MarketDataService with the bundled DEX config', () => {
-  const API = 'https://gnoswap.io/api/v1';
+  const API = 'https://api.gnoswap.io/v1';
 
   it('loads the mainnet chart from GnoSwap through the wrapped native token', async () => {
     const now = Date.parse('2026-11-24T05:27:30Z');
@@ -29,7 +29,9 @@ describe('MarketDataService with the bundled DEX config', () => {
 
     expect(data.priceUsd).toBe(0.0525);
     expect(data.changePercent).toBeCloseTo(5);
-    expect(env.container.marketDataService.isSupported(BUILT_IN_NETWORKS.find(item => item.id === 'onyx-1')!)).toBe(false);
+    // Onyx and GnoSwap Dev serve OHLCV on their own GnoSwap hosts; AtomOne has no DEX.
+    expect(env.container.marketDataService.isSupported(BUILT_IN_NETWORKS.find(item => item.id === 'onyx-1')!)).toBe(true);
+    expect(env.container.marketDataService.isSupported(BUILT_IN_NETWORKS.find(item => item.id === 'atomone-1')!)).toBe(false);
   });
 });
 

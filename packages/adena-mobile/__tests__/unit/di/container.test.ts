@@ -9,8 +9,8 @@ import { FakeHttpClient } from '../../helpers/fake-http';
 
 const SERVICE_KEYS: (keyof Services)[] = [
   'walletService', 'accountService', 'accountPhotoService', 'hapticsService', 'networkService', 'balanceService', 'tokenService', 'priceService',
-  'marketDataService', 'nftService', 'activityService', 'addressBookService', 'exploreService', 'onrampService', 'appResetService',
-  'transactionService', 'dappService', 'connectedAppService', 'preferenceService', 'migrationService', 'cloudBackupService',
+  'marketDataService', 'nftService', 'activityService', 'addressBookService', 'onrampService', 'appResetService',
+  'transactionService', 'swapService', 'dappService', 'connectedAppService', 'preferenceService', 'migrationService', 'cloudBackupService',
 ];
 
 const network = (family: ChainFamily): Network => ({ family } as Network);

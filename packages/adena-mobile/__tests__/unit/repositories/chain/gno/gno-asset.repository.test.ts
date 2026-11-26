@@ -95,6 +95,15 @@ describe('GnoAssetRepository', () => {
       gno.state.evaluate = () => '("Chain Foo" string)\n("FOO" string)\n(18 int)';
       await expect(repository.findToken(FOO, network)).resolves.toEqual({ ...fooToken, name: 'Chain Foo', decimals: 18 });
     });
+
+    it('findChainToken returns the registry metadata without the curated overlay', async () => {
+      const { repository, gno, http } = setup();
+
+      gno.state.evaluate = () => '("Chain Foo" string)\n("FOO" string)\n(8 int)';
+      withCurated(http, [{ name: 'Curated Foo', symbol: 'FOO', decimals: 6, pkg_path: 'gno.land/r/demo/foo', image: '/foo.svg' }]);
+      await expect(repository.findChainToken(FOO, network)).resolves.toEqual({ ...fooToken, name: 'Chain Foo', decimals: 8 });
+      await expect(repository.findToken(FOO, network)).resolves.toMatchObject({ name: 'Curated Foo', decimals: 6 });
+    });
   });
 
   describe('searchRegistry', () => {

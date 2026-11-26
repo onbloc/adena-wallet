@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFloatingNavigationOffset, MainTabBar } from '../components/molecules';
 import { MainTab } from '../components/view-models';
 import { ActivityScreen } from '../containers/main/activity-screen';
-import { ExploreScreen } from '../containers/main/explore-screen';
 import { HomeScreen } from '../containers/main/home-screen';
 import { useContainer } from '../di/container-provider';
 import { useWalletSnapshot } from '../hooks/use-wallet-snapshot';
@@ -15,10 +14,10 @@ import { MainTabParamList } from './types';
 
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 
-const TAB_BY_ROUTE: Record<keyof MainTabParamList, MainTab> = { Wallet: MainTab.WALLET, Explore: MainTab.EXPLORE, Activity: MainTab.ACTIVITY };
-const ROUTE_BY_TAB: Record<MainTab, keyof MainTabParamList> = { wallet: 'Wallet', explore: 'Explore', activity: 'Activity' };
+const TAB_BY_ROUTE: Record<keyof MainTabParamList, MainTab> = { Wallet: MainTab.WALLET, Activity: MainTab.ACTIVITY };
+const ROUTE_BY_TAB: Record<MainTab, keyof MainTabParamList> = { wallet: 'Wallet', activity: 'Activity' };
 
-const TabBar = ({ state, navigation, showExplore }: BottomTabBarProps & { showExplore: boolean }): ReactElement => {
+const TabBar = ({ state, navigation, showSwap }: BottomTabBarProps & { showSwap: boolean }): ReactElement => {
   const insets = useSafeAreaInsets();
   const current = state.routes[state.index].name as keyof MainTabParamList;
 
@@ -27,13 +26,16 @@ const TabBar = ({ state, navigation, showExplore }: BottomTabBarProps & { showEx
   // Bubbles up to the main stack, which owns the Search page.
   const handleSearch = (): void => navigation.navigate('Search');
 
+  const handleSwap = (): void => navigation.navigate('Swap');
+
   return (
     <View pointerEvents='box-none' style={[styles.bar, { bottom: getFloatingNavigationOffset(insets.bottom) }]}>
       <MainTabBar
         selected={TAB_BY_ROUTE[current]}
-        showExplore={showExplore}
+        showSwap={showSwap}
         onNavigate={handleNavigate}
         onSearch={handleSearch}
+        onSwap={handleSwap}
       />
     </View>
   );
@@ -41,12 +43,12 @@ const TabBar = ({ state, navigation, showExplore }: BottomTabBarProps & { showEx
 
 export const MainTabs = (): ReactElement => {
   const colors = useThemeColors();
-  const { exploreService } = useContainer();
+  const { swapService } = useContainer();
   const { network } = useWalletSnapshot();
-  // Explore is curated per chain family (e.g. hidden on AtomOne).
-  const showExplore = exploreService.getApps(network).length > 0;
+  // Swap needs GnoSwap metadata for the network (none on AtomOne or custom networks).
+  const showSwap = swapService.isSupported(network);
 
-  const tabBarTabsNavigator = (props: BottomTabBarProps): React.JSX.Element => <TabBar {...props} showExplore={showExplore} />;
+  const tabBarTabsNavigator = (props: BottomTabBarProps): React.JSX.Element => <TabBar {...props} showSwap={showSwap} />;
 
   return (
     <Tabs.Navigator
@@ -54,7 +56,6 @@ export const MainTabs = (): ReactElement => {
       tabBar={tabBarTabsNavigator}
     >
       <Tabs.Screen name='Wallet' component={HomeScreen} />
-      {showExplore && <Tabs.Screen name='Explore' component={ExploreScreen} />}
       <Tabs.Screen name='Activity' component={ActivityScreen} />
     </Tabs.Navigator>
   );

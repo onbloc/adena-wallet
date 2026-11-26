@@ -3,6 +3,7 @@ import { AssetRepository } from './asset-repository';
 import { ChainRepository } from './chain-repository';
 import { HistoryRepository } from './history-repository';
 import { NftRepository } from './nft-repository';
+import { SwapRepository } from './swap-repository';
 
 // Everything a chain family contributes. Adding a family = adding one module.
 export interface ChainModule {
@@ -11,6 +12,8 @@ export interface ChainModule {
   assets: AssetRepository;
   nfts: NftRepository;
   history: HistoryRepository;
+  // Families without a DEX integration leave it out.
+  swap?: SwapRepository;
 }
 
 export class ChainRegistry {
@@ -44,6 +47,10 @@ export class ChainRegistry {
 
   history(network: Network): HistoryRepository {
     return this.module(network).history;
+  }
+
+  swap(network: Network): SwapRepository | undefined {
+    return this.modules.get(network.family)?.swap;
   }
 
   supports(family: ChainFamily): boolean {

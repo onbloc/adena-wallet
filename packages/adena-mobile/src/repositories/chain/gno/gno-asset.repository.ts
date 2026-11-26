@@ -48,6 +48,12 @@ export class GnoAssetRepository implements AssetRepository<GnoMessage> {
   }
 
   async findToken(tokenId: string, network: Network): Promise<Token | null> {
+    const onChain = await this.findChainToken(tokenId, network);
+
+    return onChain && onChain.type === TokenType.GRC20 ? overlay(onChain, await this.curatedOverlay(network)) : onChain;
+  }
+
+  async findChainToken(tokenId: string, network: Network): Promise<Token | null> {
     const native = getNativeTokenFor(network);
 
     if (tokenId === native.id) {
@@ -60,7 +66,7 @@ export class GnoAssetRepository implements AssetRepository<GnoMessage> {
 
     const [onChain] = await this.registry.getTokens(network, [tokenId]);
 
-    return onChain ? overlay(onChain, await this.curatedOverlay(network)) : null;
+    return onChain ?? null;
   }
 
   async searchRegistry(network: Network, offset: number, limit: number): Promise<RegistryPage> {

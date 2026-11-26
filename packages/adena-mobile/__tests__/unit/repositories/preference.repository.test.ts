@@ -15,8 +15,16 @@ describe('StoragePreferenceRepository', () => {
   it('returns defaults when empty', () => {
     expect(repository.get()).toEqual(DEFAULT_PREFERENCES);
     expect(DEFAULT_PREFERENCES).toEqual({
-      biometricUnlockEnabled: false, hapticsEnabled: true, currency: 'USD', language: 'en', theme: 'system', hideSmallBalances: true, hideUnknownTokens: true,
+      biometricUnlockEnabled: false, hapticsEnabled: true, currency: 'USD', language: 'en', theme: 'system', hideSmallBalances: true, hideUnknownTokens: true, swapSlippage: null, swapDeadlineMinutes: 10,
     });
+  });
+
+  it('persists swap settings and drops out-of-range values', () => {
+    expect(repository.update({ swapSlippage: 1.5, swapDeadlineMinutes: 30 })).toMatchObject({ swapSlippage: 1.5, swapDeadlineMinutes: 30 });
+    expect(new StoragePreferenceRepository(store).get()).toMatchObject({ swapSlippage: 1.5, swapDeadlineMinutes: 30 });
+    expect(repository.update({ swapSlippage: null })).toMatchObject({ swapSlippage: null });
+    store.setString(StorageKey.PREFERENCES, JSON.stringify({ swapSlippage: 90, swapDeadlineMinutes: 0.5 }));
+    expect(repository.get()).toMatchObject({ swapSlippage: null, swapDeadlineMinutes: 10 });
   });
 
   it('merges patches and persists the result', () => {

@@ -31,6 +31,7 @@ import { SendAmountScreen } from '../containers/main/send-amount-screen';
 import { SendNftScreen } from '../containers/main/send-nft-screen';
 import { SendRecipientScreen } from '../containers/main/send-recipient-screen';
 import { SettingsScreen } from '../containers/main/settings-screen';
+import { SwapScreen } from '../containers/main/swap-screen';
 import { TokenDetailsScreen } from '../containers/main/token-details-screen';
 import { BackupPhraseScreen } from '../containers/onboarding/backup-phrase-screen';
 import { CreatePasswordScreen } from '../containers/onboarding/create-password-screen';
@@ -122,6 +123,7 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='Search' component={SearchScreen} />
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
+      <MainStack.Screen name='Swap' component={SwapScreen} options={{ presentation: 'fullScreenModal' }} />
       <MainStack.Screen
         name='DappRequest'
         component={DappRequestScreen}

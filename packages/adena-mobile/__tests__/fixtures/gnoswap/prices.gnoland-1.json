@@ -1,0 +1,145 @@
+{
+  "data": [
+    {
+      "path": "ugnot",
+      "usd": "0.05236441118341376",
+      "marketCap": "69801760.10749054208",
+      "volumeUsd24h": "4146.4737113265513216496499999999999999999999999999999999999999999999999999998",
+      "change1d": "0.05168921392889801"
+    },
+    {
+      "path": "gno.land/r/gnoland/wugnot.wugnot",
+      "usd": "0.05236441118341376",
+      "marketCap": "379854.48150516321419889991",
+      "volumeUsd24h": "4146.4737113265513216496499999999999999999999999999999999999999999999999999998",
+      "change1d": "0.05168921392889801"
+    },
+    {
+      "path": "gno.land/r/gnoswap/gns.GNS",
+      "usd": "0.012770930304",
+      "marketCap": "1819494.270722440743209856",
+      "volumeUsd24h": "145.53512386890245802500000000000000000000000000000000000000000000000000000417",
+      "change1d": "0.01260658986"
+    },
+    {
+      "path": "gno.land/r/nym-thegnomic001/gnomic.GNOMIC",
+      "usd": "0.008912478538",
+      "marketCap": "187021.642014046544242642",
+      "volumeUsd24h": "0.79381509417297445199999999999999999999999999999999999999999999999999999999968",
+      "change1d": "0.009825148964"
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv2.TESST",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/demo/defi/grc20factory.PERUN",
+      "usd": "0.496524715561",
+      "marketCap": "496524.715561",
+      "volumeUsd24h": "24.412068119442770557",
+      "change1d": "0.487883056186"
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOMI",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GDOG",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GCAT",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GZILLA",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOPE",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GSPOT",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOMIO",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/demo/defi/grc20factory.MOULTEST",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.GNOVA",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.DABUTT",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1leu8d2vsplhehcfkjg50mwgdpxdkt8tztu95wr/wbubble.BUBBLE",
+      "usd": "0.009735559276",
+      "marketCap": "1601.91893985204417044",
+      "volumeUsd24h": "0.97711012735133055300000000000000000000000000000000000000000000000000000003484",
+      "change1d": "0.009606435813"
+    },
+    {
+      "path": "gno.land/r/g17mgsf396a9ysyj4z22ft0zc0xv8ka6dns4fx7f/tokenfactory.TSTGE",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/g1n4pl5uc4yt5r96m9w6fmdznx3x0jyg8l6arhmt/gnomi/padv3.PONZI",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    },
+    {
+      "path": "gno.land/r/samcrew/launchpad/tokens/v1.T1",
+      "usd": "",
+      "marketCap": "",
+      "volumeUsd24h": "0",
+      "change1d": ""
+    }
+  ],
+  "message": "Success"
+}

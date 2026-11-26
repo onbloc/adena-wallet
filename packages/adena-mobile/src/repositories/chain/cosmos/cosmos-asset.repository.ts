@@ -19,6 +19,11 @@ export class CosmosAssetRepository implements AssetRepository<CosmosMessage> {
     return getDefaultTokensFor(network).find(token => token.id === tokenId) ?? null;
   }
 
+  // Bank denoms carry no on-chain metadata, so the bundled coins are the chain's.
+  async findChainToken(tokenId: string, network: Network): Promise<Token | null> {
+    return this.findToken(tokenId, network);
+  }
+
   async searchRegistry(): Promise<RegistryPage> {
     return { tokens: [], total: 0 };
   }

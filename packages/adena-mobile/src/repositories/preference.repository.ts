@@ -1,4 +1,5 @@
 import { CurrencyCode, isCurrencyCode, isLanguageCode, isThemePreference, LanguageCode, ThemePreference } from '../domain/preferences';
+import { DEFAULT_SWAP_SETTINGS, isValidDeadline, isValidSlippage } from '../domain/swap';
 import { StorageKey } from '../migration/storage-keys';
 import { KeyValueStore, readJson, writeJson } from '../storage/key-value-store';
 
@@ -10,6 +11,9 @@ export interface Preferences {
   theme: ThemePreference;
   hideSmallBalances: boolean;
   hideUnknownTokens: boolean;
+  // Swap slippage in percent; null is Auto.
+  swapSlippage: number | null;
+  swapDeadlineMinutes: number;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -20,6 +24,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   theme: ThemePreference.SYSTEM,
   hideSmallBalances: true,
   hideUnknownTokens: true,
+  swapSlippage: DEFAULT_SWAP_SETTINGS.slippage,
+  swapDeadlineMinutes: DEFAULT_SWAP_SETTINGS.deadlineMinutes,
 };
 
 // Values no longer supported (or corrupt) fall back to the defaults.
@@ -31,6 +37,8 @@ const sanitize = (stored: Partial<Preferences> | null | undefined): Preferences 
     currency: isCurrencyCode(merged.currency) ? merged.currency : DEFAULT_PREFERENCES.currency,
     language: isLanguageCode(merged.language) ? merged.language : DEFAULT_PREFERENCES.language,
     theme: isThemePreference(merged.theme) ? merged.theme : DEFAULT_PREFERENCES.theme,
+    swapSlippage: merged.swapSlippage === null || isValidSlippage(merged.swapSlippage) ? merged.swapSlippage : DEFAULT_PREFERENCES.swapSlippage,
+    swapDeadlineMinutes: isValidDeadline(merged.swapDeadlineMinutes) ? merged.swapDeadlineMinutes : DEFAULT_PREFERENCES.swapDeadlineMinutes,
   };
 };
 

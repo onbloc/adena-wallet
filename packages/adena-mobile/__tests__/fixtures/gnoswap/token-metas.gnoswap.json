@@ -1,0 +1,518 @@
+{
+  "data": [
+    {
+      "description": "Gno.land is a platform to write smart co",
+      "displayPath": "gno.land/r/gnoland/wugnot.wugnot",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/gno-native/images/ugnot.svg",
+      "name": "Gno.land",
+      "path": "ugnot",
+      "priceID": "ugnot",
+      "createdAt": "2026-09-15T16:57:41Z",
+      "symbol": "GNOT",
+      "type": "Native",
+      "websiteURL": "https://gno.land/",
+      "twitterURL": "https://x.com/_gnoland",
+      "discordURL": "https://discord.gg/CMHMzbjNxv",
+      "docsURL": "https://docs.gno.land",
+      "wrappedPath": "gno.land/r/gnoland/wugnot.wugnot",
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoland/wugnot.wugnot",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/gno_land_r_demo_wugnot.svg",
+      "name": "wrapped GNOT",
+      "path": "gno.land/r/gnoland/wugnot.wugnot",
+      "priceID": "gno.land/r/gnoland/wugnot.wugnot",
+      "createdAt": "2026-09-15T17:11:09Z",
+      "symbol": "wugnot",
+      "type": "GRC20",
+      "websiteURL": "https://gno.land/r/gnoland/wugnot",
+      "twitterURL": "",
+      "discordURL": "",
+      "docsURL": "",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoland/wugnot",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/demo/defi/foo20.FOO",
+      "logoURI": "",
+      "name": "Foo",
+      "path": "gno.land/r/demo/defi/foo20.FOO",
+      "priceID": "gno.land/r/demo/defi/foo20.FOO",
+      "createdAt": "2026-09-15T17:11:10Z",
+      "symbol": "FOO",
+      "type": "GRC20",
+      "websiteURL": "https://gno.land/r/demo/defi/foo20",
+      "twitterURL": "",
+      "discordURL": "",
+      "docsURL": "",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/demo/defi/foo20",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 4,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_atom.ATOM",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_atom.svg",
+      "name": "Cosmos",
+      "path": "gno.land/r/gnoswap/test_token/test_atom.ATOM",
+      "priceID": "gno.land/r/gnoswap/test_token/test_atom.ATOM",
+      "createdAt": "2026-09-15T17:13:10Z",
+      "symbol": "ATOM",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_atom",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_atone.ATONE",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_atone.svg",
+      "name": "AtomOne",
+      "path": "gno.land/r/gnoswap/test_token/test_atone.ATONE",
+      "priceID": "gno.land/r/gnoswap/test_token/test_atone.ATONE",
+      "createdAt": "2026-09-15T17:13:10Z",
+      "symbol": "ATONE",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_atone",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_btc.BTC",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_btc.svg",
+      "name": "Bitcoin",
+      "path": "gno.land/r/gnoswap/test_token/test_btc.BTC",
+      "priceID": "gno.land/r/gnoswap/test_token/test_btc.BTC",
+      "createdAt": "2026-09-15T17:13:11Z",
+      "symbol": "BTC",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_btc",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 8,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_dai.DAI",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_dai.svg",
+      "name": "Dai",
+      "path": "gno.land/r/gnoswap/test_token/test_dai.DAI",
+      "priceID": "gno.land/r/gnoswap/test_token/test_dai.DAI",
+      "createdAt": "2026-09-15T17:13:12Z",
+      "symbol": "DAI",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_dai",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_photon.PHOTON",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_photon.svg",
+      "name": "Photon",
+      "path": "gno.land/r/gnoswap/test_token/test_photon.PHOTON",
+      "priceID": "gno.land/r/gnoswap/test_token/test_photon.PHOTON",
+      "createdAt": "2026-09-15T17:13:13Z",
+      "symbol": "PHOTON",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/trading",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_photon",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_sol.SOL",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_sol.svg",
+      "name": "Solana",
+      "path": "gno.land/r/gnoswap/test_token/test_sol.SOL",
+      "priceID": "gno.land/r/gnoswap/test_token/test_sol.SOL",
+      "createdAt": "2026-09-15T17:13:14Z",
+      "symbol": "SOL",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_sol",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 9,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_trx.svg",
+      "name": "Tron",
+      "path": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+      "priceID": "gno.land/r/gnoswap/test_token/test_trx.TRX",
+      "createdAt": "2026-09-15T17:13:15Z",
+      "symbol": "TRX",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_trx",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/test_usdc.svg",
+      "name": "Usd Coin",
+      "path": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+      "priceID": "gno.land/r/gnoswap/test_token/test_usdc.USDC",
+      "createdAt": "2026-09-15T17:13:15Z",
+      "symbol": "USDC",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io/user-guide/getting-started",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/test_token/test_usdc",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    },
+    {
+      "description": "This is a GRC20 token issued on dev.gnos",
+      "displayPath": "gno.land/r/gnoswap/gns.GNS",
+      "logoURI": "https://raw.githubusercontent.com/onbloc/gno-token-resource/refs/heads/main/grc20/images/gno_land_r_gnoswap_gns.svg",
+      "name": "GnoSwap",
+      "path": "gno.land/r/gnoswap/gns.GNS",
+      "priceID": "gno.land/r/gnoswap/gns.GNS",
+      "createdAt": "2026-09-15T17:13:27Z",
+      "symbol": "GNS",
+      "type": "GRC20",
+      "websiteURL": "https://beta.gnoswap.io",
+      "twitterURL": "https://x.com/gnoswaplabs",
+      "discordURL": "https://discord.com/invite/u4bdGHStb2",
+      "docsURL": "https://docs.gnoswap.io",
+      "wrappedPath": "",
+      "pkgPath": "gno.land/r/gnoswap/gns",
+      "routes": {
+        "funcs": {
+          "approve": {
+            "args": [
+              "$spender",
+              "$amount"
+            ],
+            "name": "Approve"
+          },
+          "transfer": {
+            "args": [
+              "$to",
+              "$amount"
+            ],
+            "name": "Transfer"
+          },
+          "transfer_from": {
+            "args": [
+              "$from",
+              "$to",
+              "$amount"
+            ],
+            "name": "TransferFrom"
+          }
+        }
+      },
+      "decimals": 6,
+      "isVerified": true
+    }
+  ],
+  "message": "Success"
+}

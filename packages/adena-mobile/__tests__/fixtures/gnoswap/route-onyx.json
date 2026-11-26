@@ -1,0 +1,23 @@
+{
+  "protocolFee": "0.15",
+  "originAmount": "4556245",
+  "amount": "4556245",
+  "feeAmount": "6844",
+  "exactType": "EXACT_IN",
+  "estimatedRoutes": [
+    {
+      "amountIn": "1000000",
+      "amountOut": "4556245",
+      "pools": [
+        {
+          "tokenA": "gno.land/r/gnoland/wugnot.wugnot",
+          "tokenB": "gno.land/r/gnoswap/gns.GNS",
+          "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/gns.GNS:3000",
+          "price": "4.576909323195700097",
+          "fee": 3000
+        }
+      ],
+      "quote": 100
+    }
+  ]
+}

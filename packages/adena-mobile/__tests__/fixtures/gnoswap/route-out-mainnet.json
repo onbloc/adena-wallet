@@ -1,0 +1,44 @@
+{
+  "protocolFee": "0.15",
+  "originAmount": "962929",
+  "amount": "962929",
+  "feeAmount": "7236",
+  "exactType": "EXACT_OUT",
+  "estimatedRoutes": [
+    {
+      "amountIn": "2000000",
+      "amountOut": "472910",
+      "pools": [
+        {
+          "tokenA": "gno.land/r/gnoland/wugnot.wugnot",
+          "tokenB": "gno.land/r/nym-thegnomic001/gnomic.GNOMIC",
+          "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/nym-thegnomic001/gnomic.GNOMIC:3000",
+          "price": "6.038225008501300728",
+          "fee": 3000
+        },
+        {
+          "tokenA": "gno.land/r/gnoswap/gns.GNS",
+          "tokenB": "gno.land/r/nym-thegnomic001/gnomic.GNOMIC",
+          "poolPath": "gno.land/r/gnoswap/gns.GNS:gno.land/r/nym-thegnomic001/gnomic.GNOMIC:10000",
+          "price": "1.361224389360522702",
+          "fee": 10000
+        }
+      ],
+      "quote": 50
+    },
+    {
+      "amountIn": "2000000",
+      "amountOut": "490019",
+      "pools": [
+        {
+          "tokenA": "gno.land/r/gnoland/wugnot.wugnot",
+          "tokenB": "gno.land/r/gnoswap/gns.GNS",
+          "poolPath": "gno.land/r/gnoland/wugnot.wugnot:gno.land/r/gnoswap/gns.GNS:3000",
+          "price": "4.099764178850461072",
+          "fee": 3000
+        }
+      ],
+      "quote": 50
+    }
+  ]
+}

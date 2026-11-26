@@ -15,6 +15,12 @@ export const queryKeys = {
   nativeBalance: (networkId: string, accountId: string) => [...queryKeys.balances(), 'native', networkId, accountId] as const,
   tokenBalances: (networkId: string, accountId: string, tokenIds: string[]) =>
     [...queryKeys.balances(), 'tokens', networkId, accountId, tokenIds.join(',')] as const,
+  // Under balances() so a balance refresh after any transaction covers the swap screen too.
+  swapBalances: (networkId: string, accountId: string, tokenIds: string[]) =>
+    [...queryKeys.balances(), 'swap', networkId, accountId, tokenIds.join(',')] as const,
+  swapTokens: (networkId: string) => [...queryKeys.all, 'swap-tokens', networkId] as const,
+  swapQuote: (networkId: string, inputTokenId: string, outputTokenId: string, amountIn: string) =>
+    [...queryKeys.all, 'swap-quote', networkId, inputTokenId, outputTokenId, amountIn] as const,
   tokenList: (networkId: string, accountId: string) => [...queryKeys.all, 'token-list', networkId, accountId] as const,
   tokenSearch: (networkId: string) => [...queryKeys.all, 'token-search', networkId] as const,
   tokenLookup: (networkId: string, tokenId: string) => [...queryKeys.all, 'token-lookup', networkId, tokenId] as const,

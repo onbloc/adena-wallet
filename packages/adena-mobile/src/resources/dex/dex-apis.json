@@ -1,9 +1,62 @@
 {
   "gnoland-1": {
     "provider": "gnoswap",
-    "apiUrl": "https://gnoswap.io/api/v1",
+    "apiUrl": "https://api.gnoswap.io/v1",
     "wrappedPaths": {
       "ugnot": "gno.land/r/gnoland/wugnot.wugnot"
+    },
+    "swap": {
+      "routerPath": "gno.land/r/gnoswap/router",
+      "routerAddress": "g1vc883gshu5z7ytk5cdynhc8c2dh67pdp4cszkp",
+      "wrappedNative": {
+        "denom": "ugnot",
+        "tokenPath": "gno.land/r/gnoland/wugnot.wugnot",
+        "packagePath": "gno.land/r/gnoland/wugnot",
+        "minDeposit": "1000"
+      },
+      "feeTiers": [100, 500, 3000, 10000],
+      "nativeFeeReserve": "1000000",
+      "popularTokens": ["ugnot", "gno.land/r/gnoswap/gns.GNS"]
+    }
+  },
+  "onyx-1": {
+    "provider": "gnoswap",
+    "apiUrl": "https://onyx.api.gnoswap.io/v1",
+    "wrappedPaths": {
+      "ugnot": "gno.land/r/gnoland/wugnot.wugnot"
+    },
+    "swap": {
+      "routerPath": "gno.land/r/gnoswap/router",
+      "routerAddress": "g1vc883gshu5z7ytk5cdynhc8c2dh67pdp4cszkp",
+      "wrappedNative": {
+        "denom": "ugnot",
+        "tokenPath": "gno.land/r/gnoland/wugnot.wugnot",
+        "packagePath": "gno.land/r/gnoland/wugnot",
+        "minDeposit": "1000"
+      },
+      "feeTiers": [100, 500, 3000, 10000],
+      "nativeFeeReserve": "1000000",
+      "popularTokens": ["ugnot", "gno.land/r/gnoswap/gns.GNS"]
+    }
+  },
+  "gnoswap": {
+    "provider": "gnoswap",
+    "apiUrl": "https://dev-interface-v2.api.gnoswap.io/v1",
+    "wrappedPaths": {
+      "ugnot": "gno.land/r/gnoland/wugnot.wugnot"
+    },
+    "swap": {
+      "routerPath": "gno.land/r/gnoswap/router",
+      "routerAddress": "g1vc883gshu5z7ytk5cdynhc8c2dh67pdp4cszkp",
+      "wrappedNative": {
+        "denom": "ugnot",
+        "tokenPath": "gno.land/r/gnoland/wugnot.wugnot",
+        "packagePath": "gno.land/r/gnoland/wugnot",
+        "minDeposit": "1000"
+      },
+      "feeTiers": [100, 500, 3000, 10000],
+      "nativeFeeReserve": "1000000",
+      "popularTokens": ["ugnot", "gno.land/r/gnoswap/gns.GNS", "gno.land/r/gnoswap/test_token/test_usdc.USDC"]
     }
   }
 }

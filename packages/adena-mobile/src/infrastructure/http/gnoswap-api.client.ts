@@ -36,6 +36,14 @@ export interface GnoswapTokenPrice {
   volumeUsd24h?: string;
 }
 
+export interface GnoswapRouteRequest {
+  inputTokenPath: string;
+  outputTokenPath: string;
+  exactType: 'EXACT_IN' | 'EXACT_OUT';
+  // Raw integer amount of the exact side.
+  amount: string;
+}
+
 interface Envelope<T> {
   data: T;
   message?: string;
@@ -74,6 +82,25 @@ export class GnoswapApiClient {
     const response = await this.http.request<Envelope<GnoswapTokenPrice[]>>(`${apiUrl}/tokens/prices`);
 
     return Array.isArray(response?.data) ? response.data : [];
+  }
+
+  // Swap data stays `unknown` here; the swap parsers validate every field before use.
+  async getTokenMetas(apiUrl: string): Promise<unknown> {
+    return (await this.http.request<Envelope<unknown>>(`${apiUrl}/token-metas`))?.data;
+  }
+
+  // Paginated by `page` (1-based) and `limit`; a page past the end answers an empty list.
+  async getPools(apiUrl: string, page: number, limit: number): Promise<unknown> {
+    return (await this.http.request<Envelope<unknown>>(`${apiUrl}/pools?page=${page}&limit=${limit}`))?.data;
+  }
+
+  async getTokenPriceList(apiUrl: string): Promise<unknown> {
+    return (await this.http.request<Envelope<unknown>>(`${apiUrl}/tokens/prices`))?.data;
+  }
+
+  // Route finder served next to the REST API (the web app's `routerUrl` + "/v1/api/route").
+  getRoute(apiUrl: string, request: GnoswapRouteRequest): Promise<unknown> {
+    return this.http.request<unknown>(`${apiUrl}/api/route`, { method: 'POST', body: request });
   }
 
   // `start`/`end` are unix seconds aligned to `interval`; `end` is exclusive.
