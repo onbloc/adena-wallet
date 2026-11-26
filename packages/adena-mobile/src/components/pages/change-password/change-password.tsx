@@ -152,7 +152,7 @@ export const ChangePasswordPage = ({
         </View>
       )}
       {biometricLabel && (
-        <Text variant='meta' color='secondary'>Leave the new password empty to change only this setting.</Text>
+        <Text variant='meta' color='secondary'>Leave the new password blank to keep your current password.</Text>
       )}
     </Screen>
   );
