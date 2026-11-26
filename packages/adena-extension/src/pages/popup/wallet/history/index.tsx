@@ -6,6 +6,7 @@ import useAppNavigate from '@hooks/use-app-navigate';
 import { useCurrentAccount } from '@hooks/use-current-account';
 import { useNetworkProfile } from '@hooks/use-network-profile';
 import useScrollHistory from '@hooks/use-scroll-history';
+import { canFetchNextHistoryPage } from '@hooks/wallet/transaction-history/derive-history-status';
 import { useTransactionHistory } from '@hooks/wallet/transaction-history/use-transaction-history';
 import { useTransactionHistoryPage } from '@hooks/wallet/transaction-history/use-transaction-history-page';
 import mixins from '@styles/mixins';
@@ -63,7 +64,7 @@ const HistoryContainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (loadingNextFetch && status !== 'loading' && !isFetching && hasNextPage) {
+    if (canFetchNextHistoryPage(loadingNextFetch, status, isFetching, hasNextPage)) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }
   }, [loadingNextFetch, status, isFetching, hasNextPage]);

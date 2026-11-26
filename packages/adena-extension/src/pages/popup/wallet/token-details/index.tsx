@@ -16,6 +16,7 @@ import useSessionParams from '@hooks/use-session-state';
 import { useTokenBalance } from '@hooks/use-token-balance';
 import { useTokenTransactions } from '@hooks/wallet/token-details/use-token-transactions';
 import { useTokenTransactionsPage } from '@hooks/wallet/token-details/use-token-transactions-page';
+import { canFetchNextHistoryPage } from '@hooks/wallet/transaction-history/derive-history-status';
 import mixins from '@styles/mixins';
 import { getTheme } from '@styles/theme';
 import { RoutePath } from '@types';
@@ -133,7 +134,7 @@ export const TokenDetails = (): JSX.Element => {
     enabled: !isUsedApi && !isCosmosNative,
   });
 
-  const { status, isFetching, data, fetchNextPage } = useMemo(() => {
+  const { status, isFetching, data, hasNextPage, fetchNextPage } = useMemo(() => {
     if (isUsedApi) {
       return pageTransactionHistoryQuery;
     }
@@ -141,10 +142,10 @@ export const TokenDetails = (): JSX.Element => {
   }, [isUsedApi, pageTransactionHistoryQuery, commonTransactionHistoryQuery]);
 
   useEffect(() => {
-    if (loadingNextFetch && status !== 'loading' && !isFetching) {
+    if (canFetchNextHistoryPage(loadingNextFetch, status, isFetching, hasNextPage)) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }
-  }, [loadingNextFetch, status, isFetching]);
+  }, [loadingNextFetch, status, isFetching, hasNextPage]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {

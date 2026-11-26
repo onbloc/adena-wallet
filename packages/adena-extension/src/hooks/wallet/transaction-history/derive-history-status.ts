@@ -2,6 +2,13 @@ import type { QueryStatus } from '@tanstack/react-query';
 
 import type { TransactionHistoryResult, TransactionHistoryStatus } from './types';
 
+export const canFetchNextHistoryPage = (
+  loadingNextFetch: boolean,
+  status: TransactionHistoryStatus,
+  isFetching: boolean,
+  hasNextPage: boolean,
+): boolean => loadingNextFetch && status === 'success' && !isFetching && hasNextPage;
+
 export const deriveHistoryStatus = (
   supported: boolean,
   enabled: boolean,
