@@ -164,7 +164,7 @@ describe('RestoreBackupScreen', () => {
 
     await renderScreen(RestoreBackupScreen, { env });
     expect(await screen.findByText('No backup found')).toBeTruthy();
-    expect(screen.getByText('Restore from Google Drive')).toBeTruthy();
+    expect(screen.getByText('Restore backup')).toBeTruthy();
     expect(env.cloudBackupStore.signInCalls).toBe(1);
   });
 });

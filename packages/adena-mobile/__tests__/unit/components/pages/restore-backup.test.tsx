@@ -23,7 +23,8 @@ describe('RestoreBackupPage', () => {
 
     await renderPage(<RestoreBackupPage {...page} />);
 
-    expect(screen.getByText('Restore from iCloud')).toBeTruthy();
+    expect(screen.getByText('Restore backup')).toBeTruthy();
+    expect(screen.getByText('Enter the backup password you created when you backed up this wallet to iCloud.')).toBeTruthy();
     expect(screen.getByText('Backup from 2026-11-24 09:05')).toBeTruthy();
     expect(screen.getByText('Incorrect backup password.')).toBeTruthy();
     expect(screen.queryByRole('radio')).toBeNull();

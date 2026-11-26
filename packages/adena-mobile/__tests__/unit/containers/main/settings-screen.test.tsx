@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -13,7 +13,7 @@ import { ACCOUNT, createWrapper, NETWORK } from '../../../helpers/query-wrapper'
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 const ADDRESS = 'g1jg8mtutu9khhfwc4nxmuhcpftf0pajdhfvsqf5';
 
-// Biometric unlock that starts off (e.g. after an invalidated enrollment) and accepts only 'secret'.
+// A device with biometrics available, so a biometric row would be offered if Settings had one.
 const createWalletService = () => {
   let enabled = false;
 
@@ -111,28 +111,10 @@ describe('SettingsScreen', () => {
     expect(screen.getByRole('switch', { name: 'Hide small balances' }).props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
   });
 
-  it('turns biometric unlock back on with the current password alone', async () => {
-    const walletService = createWalletService();
+  it('leaves biometric unlock to the Change password screen', async () => {
+    await setup(createWalletService());
 
-    await setup(walletService);
-    const toggle = await screen.findByRole('switch', { name: 'Unlock with Face ID' });
-
-    expect(toggle.props.accessibilityState).toEqual(expect.objectContaining({ checked: false }));
-    await fireEvent.press(toggle);
-    await fireEvent.changeText(screen.getByPlaceholderText('Password'), 'wrong');
-    await fireEvent.press(screen.getByRole('button', { name: 'Turn on' }));
-
-    expect(await screen.findByText('Incorrect password.')).toBeTruthy();
-
-    await fireEvent.changeText(screen.getByPlaceholderText('Password'), 'secret');
-    await fireEvent.press(screen.getByRole('button', { name: 'Turn on' }));
-
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Unlock with Face ID' }).props.accessibilityState).toEqual(expect.objectContaining({ checked: true })));
-    expect(walletService.enableBiometricUnlock).toHaveBeenLastCalledWith('secret');
-
-    await fireEvent.press(screen.getByRole('switch', { name: 'Unlock with Face ID' }));
-
-    await waitFor(() => expect(screen.getByRole('switch', { name: 'Unlock with Face ID' }).props.accessibilityState).toEqual(expect.objectContaining({ checked: false })));
-    expect(walletService.disableBiometricUnlock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Change password' })).toBeTruthy();
+    expect(screen.queryByRole('switch', { name: 'Unlock with Face ID' })).toBeNull();
   });
 });

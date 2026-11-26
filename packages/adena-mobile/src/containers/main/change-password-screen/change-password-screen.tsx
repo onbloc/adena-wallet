@@ -31,6 +31,8 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
   // Follows the stored status until the user flips the switch.
   const [biometricChoice, setBiometricChoice] = useState<boolean>();
   const biometricEnabled = biometricChoice ?? Boolean(biometric.data?.enabled);
+  // Turning biometrics back on must not require a new password.
+  const biometricOnly = Boolean(biometricLabel) && biometricEnabled !== Boolean(biometric.data?.enabled) && !newPassword && !confirmPassword;
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const biometricPassword = useBiometricPassword();
@@ -138,6 +140,47 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
     }
   };
 
+  // Enabling verifies the current password; disabling needs it too, so the screen asks the same either way.
+  const saveBiometricOnly = async (current: string): Promise<void> => {
+    submittingRef.current = true;
+    setSubmitting(true);
+
+    try {
+      if (biometricEnabled) {
+        await walletService.enableBiometricUnlock(current);
+      }
+      else {
+        await walletService.verifyPassword(current);
+        await walletService.disableBiometricUnlock();
+      }
+    }
+    catch (error) {
+      if (isAppError(error, AppErrorCode.INVALID_PASSWORD)) {
+        // Shows the current-password field again, where the error is rendered.
+        verifiedPasswordRef.current = null;
+        setVerifiedWith(undefined);
+        setCurrentError('Incorrect password.');
+      }
+      else {
+        // The field may be hidden after biometric verification, so a save failure needs its own message;
+        // the switch goes back to the stored setting.
+        setBiometricChoice(undefined);
+        showToast(`Couldn’t turn ${biometricEnabled ? 'on' : 'off'} ${biometricLabel ?? 'biometric'} unlock: ${toErrorMessage(error)}`, 'error');
+      }
+
+      submittingRef.current = false;
+      setSubmitting(false);
+      return;
+    }
+    finally {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.biometric() });
+    }
+
+    showToast(`${biometricLabel ?? 'Biometric'} unlock turned ${biometricEnabled ? 'on' : 'off'}`, 'success');
+    submittingRef.current = false;
+    navigation.goBack();
+  };
+
   const submit = async (): Promise<void> => {
     if (submittingRef.current) {
       return;
@@ -146,6 +189,11 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
     const current = verifiedPasswordRef.current ?? currentPassword;
 
     if (!current) {
+      return;
+    }
+
+    if (biometricOnly) {
+      await saveBiometricOnly(current);
       return;
     }
 
@@ -232,6 +280,7 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
       biometricLabel={biometricLabel}
       biometricEnabled={biometricEnabled}
       onToggleBiometric={setBiometricChoice}
+      biometricOnly={biometricOnly}
       submitting={submitting}
       onSubmit={submit}
       onBack={handleBack}

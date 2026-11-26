@@ -171,7 +171,7 @@ export const RestoreBackupPage = (props: RestoreBackupPageProps): ReactElement =
         : undefined;
 
   return (
-    <Screen header={<TopBar title={`Restore from ${providerName}`} onBack={props.onBack} />} footer={footer}>
+    <Screen header={<TopBar title='Restore backup' onBack={props.onBack} />} footer={footer}>
       {state.kind === 'loading' && <View style={styles.loading}><Spinner /></View>}
       {state.kind === 'error' && <InlineAlert tone='error' title={state.title} description={state.description} />}
       {state.kind === 'empty' && (
@@ -182,7 +182,7 @@ export const RestoreBackupPage = (props: RestoreBackupPageProps): ReactElement =
       )}
       {state.kind === 'ready' && (
         <>
-          <Text variant='body' color='secondary'>Enter the backup password you created when you backed up this wallet.</Text>
+          <Text variant='body' color='secondary'>{`Enter the backup password you created when you backed up this wallet to ${providerName}.`}</Text>
           <BackupOptions props={props} state={state} />
           <VersionPicker props={props} state={state} />
           <TextField

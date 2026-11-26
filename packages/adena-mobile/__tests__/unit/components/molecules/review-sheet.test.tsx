@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import React from 'react';
+import { StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Text } from '../../../../src/components/atoms';
@@ -68,5 +69,26 @@ describe('ReviewSheet', () => {
     expect(screen.getByText('Broadcasting…', hidden)).toBeTruthy();
     // No close button; the native sheet blocks swipe, scrim and back while broadcasting.
     expect(screen.queryByLabelText('Close', hidden)).toBeNull();
+  });
+
+  it('scrolls the details in a bounded area and keeps the confirm button outside it', async () => {
+    let windowHeight = 0;
+    const Probe = (): null => {
+      windowHeight = useWindowDimensions().height;
+      return null;
+    };
+
+    await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <Probe />
+        <ReviewSheet {...props()}><Text>Summary</Text></ReviewSheet>
+      </SafeAreaProvider>,
+    );
+    const body = screen.getByTestId('review-body', hidden);
+
+    expect(StyleSheet.flatten(body.props.style)).toMatchObject({ maxHeight: Math.round(windowHeight * 0.55) });
+    expect(within(body).getByText('Summary', hidden)).toBeTruthy();
+    expect(within(body).queryByTestId('review-confirm', hidden)).toBeNull();
+    expect(screen.getByTestId('review-confirm', hidden)).toBeTruthy();
   });
 });
