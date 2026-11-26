@@ -156,11 +156,18 @@ export const ChangePasswordScreen = ({ navigation }: NativeStackScreenProps<Main
     }
     catch (error) {
       if (isAppError(error, AppErrorCode.INVALID_PASSWORD)) {
+        // Shows the current-password field again, where the error is rendered.
         verifiedPasswordRef.current = null;
         setVerifiedWith(undefined);
+        setCurrentError('Incorrect password.');
+      }
+      else {
+        // The field may be hidden after biometric verification, so a save failure needs its own message;
+        // the switch goes back to the stored setting.
+        setBiometricChoice(undefined);
+        showToast(`Couldn’t turn ${biometricEnabled ? 'on' : 'off'} ${biometricLabel ?? 'biometric'} unlock: ${toErrorMessage(error)}`, 'error');
       }
 
-      setCurrentError(isAppError(error, AppErrorCode.INVALID_PASSWORD) ? 'Incorrect password.' : toErrorMessage(error));
       submittingRef.current = false;
       setSubmitting(false);
       return;

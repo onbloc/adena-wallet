@@ -120,6 +120,21 @@ describe('ChangePasswordScreen', () => {
     expect(walletService.changePassword).not.toHaveBeenCalled();
   });
 
+  it('shows a failed biometric-only save even when biometrics verified the current password', async () => {
+    walletService.readBiometricPassword.mockResolvedValue(TEST_PASSWORD);
+    walletService.disableBiometricUnlock.mockRejectedValueOnce(new AppError(AppErrorCode.STORAGE_ERROR, 'Secure storage access failed'));
+    await setup();
+    expect(await screen.findByText(/Current password verified with/)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('switch', { name: /Unlock with/ }));
+    await submit();
+
+    await waitFor(() => expect(useToastStore.getState().toast).toMatchObject({ tone: 'error', message: expect.stringContaining('Secure storage access failed') }));
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    // The switch shows the stored setting again.
+    expect(screen.getByRole('switch', { name: /Unlock with/ }).props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+  });
+
   it('turns biometrics off when the switch is flipped off', async () => {
     await setup();
     await fireEvent.press(await screen.findByRole('switch', { name: /Unlock with/ }));
