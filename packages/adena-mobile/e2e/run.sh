@@ -3,7 +3,8 @@
 #   pnpm e2e                          # every flow on the booted simulator/emulator
 #   pnpm e2e --include-tags smoke     # tagged subset
 #   pnpm e2e e2e/flows/03-lock-unlock.yaml
-# Extra arguments go to `maestro test`. Env overrides: E2E_MNEMONIC, E2E_PASSWORD, E2E_RECIPIENT, E2E_CHAIN.
+# Extra arguments go to `maestro test`. Env overrides: E2E_PLATFORM (android | ios), E2E_MNEMONIC, E2E_PASSWORD,
+# E2E_RECIPIENT, E2E_CHAIN.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -35,8 +36,26 @@ done
 
 export MAESTRO_CLI_NO_ANALYTICS=1
 
+# The app id differs per platform (Android package app.adena, iOS bundle app.adena.Adena).
+# E2E_PLATFORM picks one; otherwise a connected Android device or emulator wins over the iOS simulator.
+PLATFORM="${E2E_PLATFORM:-}"
+
+if [ -z "$PLATFORM" ]; then
+  if command -v adb >/dev/null 2>&1 && adb devices | awk 'NR > 1 && $2 == "device"' | grep -q .; then
+    PLATFORM=android
+  else
+    PLATFORM=ios
+  fi
+fi
+
+case "$PLATFORM" in
+  android) APP_ID=app.adena ;;
+  ios) APP_ID=app.adena.Adena ;;
+  *) echo "E2E_PLATFORM must be android or ios" >&2; exit 1 ;;
+esac
+
 exec "$MAESTRO_BIN" test \
-  -e APP_ID=com.adena \
+  -e APP_ID="$APP_ID" \
   -e MNEMONIC="$MNEMONIC" \
   -e PASSWORD="$PASSWORD" \
   -e RECIPIENT="$RECIPIENT" \

@@ -100,10 +100,10 @@ Settings → *iCloud backup* (iOS) / *Google Drive backup* (Android) saves an en
 
 One-time setup outside the repository:
 
-1. **Apple** (developer account): create the iCloud container `iCloud.com.adena`, enable the iCloud capability on the App ID `com.adena` and assign the container to it, then regenerate the provisioning profiles. The entitlements (`ios/AdenaMobile/AdenaMobile.entitlements`) already list the container; a device build fails to sign until the profile includes it.
+1. **Apple** (developer account): create the iCloud container `iCloud.com.adena`, enable the iCloud capability on the App ID `app.adena.Adena` and assign the container to it, then regenerate the provisioning profiles. The entitlements (`ios/AdenaMobile/AdenaMobile.entitlements`) already list the container; a device build fails to sign until the profile includes it.
 2. **Google Cloud** (project that owns the app):
    * Enable the *Google Drive API* and add the `https://www.googleapis.com/auth/drive.appdata` scope to the OAuth consent screen, and publish the consent screen (plus any verification it asks for) before release.
-   * Create an OAuth client of type *Android* for package `com.adena` with the SHA-1 of each signing key (debug keystore, upload key, and the Play App Signing key from the Play Console). The Authorization API matches the app by package name and certificate, so no client id is read by the app.
+   * Create an OAuth client of type *Android* for package `app.adena` with the SHA-1 of each signing key (debug keystore, upload key, and the Play App Signing key from the Play Console). The Authorization API matches the app by package name and certificate, so no client id is read by the app.
 3. Rebuild the native apps (`pod install`, Gradle) after pulling this change.
 
 On-device checks (not covered by Jest):
