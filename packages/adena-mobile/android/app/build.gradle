@@ -86,7 +86,7 @@ android {
 
     namespace "com.adena"
     defaultConfig {
-        applicationId "com.adena"
+        applicationId "app.adena"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

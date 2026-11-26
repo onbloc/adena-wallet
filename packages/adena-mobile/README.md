@@ -79,9 +79,11 @@ Flows live in `e2e/flows`, reusable steps in `e2e/subflows`. They drive an insta
 pnpm e2e                                  # every flow on the booted simulator/emulator
 pnpm e2e:smoke                            # onboarding + lock/unlock only
 pnpm e2e --device <udid> e2e/flows/07-dapp-connect.yaml
+E2E_PLATFORM=ios pnpm e2e                 # force a platform when both are connected
 ```
 
 * `e2e/run.sh` derives the test account address and builds the dApp deep links with `scripts/dapp-request.mjs`, then passes them to Maestro as env vars. Override `E2E_MNEMONIC`, `E2E_PASSWORD`, `E2E_RECIPIENT`, `E2E_CHAIN` as needed.
+* The app id differs per platform (Android `app.adena`, iOS `app.adena.Adena`). The runner takes it from `E2E_PLATFORM` (`android` or `ios`), a `--platform`/`-p` passed to Maestro, and each id of a `--device`/`--udid` list (Android when `adb devices` lists it, otherwise iOS). These must agree, and a device list may not mix platforms; otherwise the run stops before Maestro starts. With none of them, a connected Android device or emulator wins over the iOS simulator. Without an explicit device it also passes `--platform` to Maestro, so the device it picks matches the app id. It prints the resolved platform and app id to stderr.
 * Every flow starts from a wiped app (`clearState` plus `clearKeychain` on iOS). **Run it on a dedicated simulator**, not one holding wallets you care about: `xcrun simctl create "Adena E2E" ...`, then install the `.app` from DerivedData with `xcrun simctl install`.
 * Debug builds need Metro running (`pnpm start`). A release build embeds the bundle and needs nothing else.
 * Flows never broadcast a transaction; the dApp flow rejects the signing request, so the default account needs no balance.
@@ -100,10 +102,10 @@ Settings → *iCloud backup* (iOS) / *Google Drive backup* (Android) saves an en
 
 One-time setup outside the repository:
 
-1. **Apple** (developer account): create the iCloud container `iCloud.com.adena`, enable the iCloud capability on the App ID `com.adena` and assign the container to it, then regenerate the provisioning profiles. The entitlements (`ios/AdenaMobile/AdenaMobile.entitlements`) already list the container; a device build fails to sign until the profile includes it.
+1. **Apple** (developer account): create the iCloud container `iCloud.com.adena`, enable the iCloud capability on the App ID `app.adena.Adena` and assign the container to it, then regenerate the provisioning profiles. The entitlements (`ios/AdenaMobile/AdenaMobile.entitlements`) already list the container; a device build fails to sign until the profile includes it.
 2. **Google Cloud** (project that owns the app):
    * Enable the *Google Drive API* and add the `https://www.googleapis.com/auth/drive.appdata` scope to the OAuth consent screen, and publish the consent screen (plus any verification it asks for) before release.
-   * Create an OAuth client of type *Android* for package `com.adena` with the SHA-1 of each signing key (debug keystore, upload key, and the Play App Signing key from the Play Console). The Authorization API matches the app by package name and certificate, so no client id is read by the app.
+   * Create an OAuth client of type *Android* for package `app.adena` with the SHA-1 of each signing key (debug keystore, upload key, and the Play App Signing key from the Play Console). The Authorization API matches the app by package name and certificate, so no client id is read by the app.
 3. Rebuild the native apps (`pod install`, Gradle) after pulling this change.
 
 On-device checks (not covered by Jest):
