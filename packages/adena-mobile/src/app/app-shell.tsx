@@ -10,6 +10,7 @@ import { useAppTheme } from '../hooks/use-app-theme';
 import { useAutoLock } from '../hooks/use-auto-lock';
 import { useDeepLinkHandler } from '../hooks/use-deep-link-handler';
 import { HapticsContext } from '../hooks/use-haptics';
+import { useNotificationSync } from '../hooks/use-notification-sync';
 import { navigationRef } from '../navigation/navigation-ref';
 import { RootNavigator } from '../navigation/root-navigator';
 import { queryKeys } from '../queries/query-keys';
@@ -67,6 +68,7 @@ export const AppShell = (): ReactElement => {
   const recordActivity = useAutoLock();
 
   useDeepLinkHandler(navigationReady);
+  useNotificationSync();
 
   const retryBootstrap = (): void => {
     bootstrap.refetch();

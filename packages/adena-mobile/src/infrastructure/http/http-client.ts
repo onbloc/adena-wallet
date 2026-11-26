@@ -2,7 +2,7 @@ import { HTTP_TIMEOUT_MS } from '../../config/endpoints';
 import { AppError, AppErrorCode } from '../../core/errors';
 
 export interface HttpRequest {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
   headers?: Record<string, string>;
   timeoutMs?: number;
@@ -35,6 +35,17 @@ export class FetchHttpClient implements HttpClient {
 
       if (!response.ok) {
         throw new HttpStatusError(response.status, await response.json().catch(() => null));
+      }
+
+      if (response.status === 204) {
+        return undefined as T;
+      }
+
+      // Writes may answer 200/201 with an empty body.
+      if (init.method === 'PUT' || init.method === 'DELETE') {
+        const text = await response.text();
+
+        return (text ? JSON.parse(text) : undefined) as T;
       }
 
       return (await response.json()) as T;

@@ -1,5 +1,7 @@
 #import <AdenaMobileSpecs/AdenaMobileSpecs.h>
 #import <Foundation/Foundation.h>
+// ObjC++ skips the Swift header's module imports; SceneDelegate's superclass must be declared first.
+#import <React/RCTDefaultReactNativeFactoryDelegate.h>
 
 #import "AdenaMobile-Swift.h"
 

@@ -10,6 +10,7 @@ import { useAutoLock } from '../../../src/hooks/use-auto-lock';
 import { useDeepLinkHandler } from '../../../src/hooks/use-deep-link-handler';
 import { useNativeContainerQuery } from '../../../src/queries/boot.queries';
 import { SessionStatus, useSessionStore } from '../../../src/stores/session.store';
+import { createTestNotificationService } from '../../helpers/query-wrapper';
 
 const mockNavigator = { crash: false };
 const recordActivity = jest.fn();
@@ -57,6 +58,7 @@ describe('App', () => {
     walletService: { getStatus, lock },
     hapticsService: { play: jest.fn() },
     preferenceService: { get: () => ({ theme: 'light' }), subscribe: () => () => undefined },
+    notificationService: createTestNotificationService(),
   };
 
   beforeEach(() => {

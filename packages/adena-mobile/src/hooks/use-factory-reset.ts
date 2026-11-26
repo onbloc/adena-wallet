@@ -10,11 +10,13 @@ import { useToastStore } from '../stores/toast.store';
 
 // Wipes persisted data, caches and client stores, then returns the app to onboarding.
 export const useFactoryReset = (): (() => Promise<void>) => {
-  const { appResetService, walletService } = useContainer();
+  const { appResetService, walletService, notificationService } = useContainer();
   const queryClient = useQueryClient();
 
   return useCallback(async () => {
     const statusBefore = useSessionStore.getState().status;
+
+    const releasePushRegistration = notificationService.prepareReset();
 
     try {
       await appResetService.resetAll();
@@ -34,10 +36,12 @@ export const useFactoryReset = (): (() => Promise<void>) => {
       throw error;
     }
 
+    // Best effort, after the reset succeeded: an unreachable push server must not block it.
+    releasePushRegistration().catch(() => undefined);
     queryClient.clear();
     useDappRequestStore.setState({ queue: [], active: null, inFlight: false });
     useOnboardingStore.getState().clear();
     useToastStore.getState().dismiss();
     useSessionStore.setState(state => ({ status: SessionStatus.EMPTY, revision: state.revision + 1 }));
-  }, [appResetService, queryClient, walletService]);
+  }, [appResetService, notificationService, queryClient, walletService]);
 };

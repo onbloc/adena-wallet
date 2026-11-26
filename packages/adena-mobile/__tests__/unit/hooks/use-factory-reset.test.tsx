@@ -10,9 +10,11 @@ import { createWrapper } from '../../helpers/query-wrapper';
 describe('useFactoryReset', () => {
   const resetAll = jest.fn();
   const getStatus = jest.fn();
+  const releasePush = jest.fn(async () => undefined);
+  const prepareReset = jest.fn(() => releasePush);
 
   const setup = () => {
-    const { Wrapper, client } = createWrapper({ appResetService: { resetAll }, walletService: { getStatus } });
+    const { Wrapper, client } = createWrapper({ appResetService: { resetAll }, walletService: { getStatus }, notificationService: { prepareReset } });
 
     client.setQueryData(['secret'], 'cached');
     return { client, hook: renderHook(() => useFactoryReset(), { wrapper: Wrapper }) };
@@ -38,6 +40,9 @@ describe('useFactoryReset', () => {
     expect(useToastStore.getState().toast).toBeNull();
     expect(useDappRequestStore.getState()).toMatchObject({ queue: [], active: null, inFlight: false });
     expect(useSessionStore.getState()).toMatchObject({ status: SessionStatus.EMPTY, revision: 1 });
+    // Captured before the wipe, released after it.
+    expect(prepareReset.mock.invocationCallOrder[0]).toBeLessThan(resetAll.mock.invocationCallOrder[0]);
+    expect(releasePush).toHaveBeenCalledTimes(1);
   });
 
   it('follows the stored state when the reset fails part way', async () => {
@@ -54,6 +59,8 @@ describe('useFactoryReset', () => {
     expect(useSessionStore.getState().status).toBe(SessionStatus.LOCKED);
     // Started unlocked: the reset screen unmounts with the navigator, so the toast carries the error.
     expect(useToastStore.getState().toast).toMatchObject({ tone: 'error', message: 'Reset failed: Keychain locked' });
+    // The wallet survived, so its push registration stays.
+    expect(releasePush).not.toHaveBeenCalled();
   });
 
   it('leaves the error to the reset screen when the navigator stays', async () => {

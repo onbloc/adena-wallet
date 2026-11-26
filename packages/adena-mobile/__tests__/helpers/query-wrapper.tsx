@@ -6,7 +6,12 @@ import { AppContainer } from '../../src/di/container';
 import { ContainerProvider } from '../../src/di/container-provider';
 import { Account } from '../../src/domain/account';
 import { ChainFamily, Network } from '../../src/domain/network';
+import { NOOP_NOTIFICATION_API } from '../../src/infrastructure/http/notification-api.client';
+import { StorageNotificationSettingRepository } from '../../src/repositories/notification-setting.repository';
 import { StoragePreferenceRepository } from '../../src/repositories/preference.repository';
+import { AccountService } from '../../src/services/account.service';
+import { NetworkService } from '../../src/services/network.service';
+import { NotificationService, UNAVAILABLE_PUSH_MESSAGING } from '../../src/services/notification.service';
 import { PreferenceService } from '../../src/services/preference.service';
 import { MemoryKeyValueStore } from '../../src/storage/memory-key-value-store';
 
@@ -27,6 +32,15 @@ export const NETWORK: Network = {
 
 export const ACCOUNT: Account = { id: 'acc-1', keyringId: 'k', keyringType: KeyringType.HD_WALLET, name: 'A', hdIndex: 0, publicKey: 'pk', createdAt: 0 };
 
+// Push unavailable and no server: settings work locally and sync never calls out.
+export const createTestNotificationService = (): NotificationService => new NotificationService(
+  new StorageNotificationSettingRepository(new MemoryKeyValueStore()),
+  UNAVAILABLE_PUSH_MESSAGING,
+  NOOP_NOTIFICATION_API,
+  {} as AccountService,
+  {} as NetworkService,
+);
+
 // Infinite gcTime: a mutation's default 5 min gc timer would keep Jest from exiting.
 export const createTestQueryClient = (): QueryClient =>
   new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } } });
@@ -38,6 +52,7 @@ export const createWrapper = (services: Partial<Record<keyof AppContainer, unkno
     accountPhotoService: { get: () => undefined },
     hapticsService: { play: () => undefined },
     preferenceService: new PreferenceService(new StoragePreferenceRepository(new MemoryKeyValueStore())),
+    notificationService: createTestNotificationService(),
     ...services,
   } as unknown as AppContainer;
   const Wrapper = ({ children }: PropsWithChildren): ReactElement => (

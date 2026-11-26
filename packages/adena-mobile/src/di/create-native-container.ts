@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 import { nativeHapticEngine } from '../infrastructure/haptics/native-haptic-engine';
+import { createFirebasePushMessaging } from '../infrastructure/push/firebase-push-messaging';
 import NativeAdenaBiometricVault from '../native/NativeAdenaBiometricVault';
 import NativeAdenaCloudBackup from '../native/NativeAdenaCloudBackup';
 import { AndroidBiometricCredentialRepository } from '../repositories/android-biometric-credential.repository';
@@ -37,6 +38,7 @@ export const createNativeContainer = async (): Promise<AppContainer> => {
       Platform.OS === 'android' ? CloudBackupProvider.GOOGLE_DRIVE : CloudBackupProvider.ICLOUD,
     ),
     backupCodec: new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS, kdf)),
+    pushMessaging: createFirebasePushMessaging(),
   });
 
   await container.migrationService.migrateAll();

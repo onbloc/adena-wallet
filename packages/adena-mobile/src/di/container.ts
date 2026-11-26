@@ -1,6 +1,8 @@
+import { REMOTE_RESOURCES } from '../config/endpoints';
 import { FEATURES } from '../config/features';
 import { GnoswapApiClient } from '../infrastructure/http/gnoswap-api.client';
 import { FetchHttpClient, HttpClient } from '../infrastructure/http/http-client';
+import { NOOP_NOTIFICATION_API, NotificationApiClient, NotificationRegistrationApi } from '../infrastructure/http/notification-api.client';
 import { OnblocApiClient } from '../infrastructure/http/onbloc-api.client';
 import { StorageAccountRepository } from '../repositories/account.repository';
 import { StorageAccountPhotoRepository } from '../repositories/account-photo.repository';
@@ -17,6 +19,7 @@ import { StorageConnectedAppRepository } from '../repositories/connected-app.rep
 import { DexMarketDataRepository, MarketDataRepository } from '../repositories/market-data.repository';
 import { StorageNetworkRepository } from '../repositories/network.repository';
 import { StorageNftPreferenceRepository } from '../repositories/nft-preference.repository';
+import { StorageNotificationSettingRepository } from '../repositories/notification-setting.repository';
 import { SecurePasswordAttemptRepository } from '../repositories/password-attempt.repository';
 import { PendingBroadcastRepository, StoragePendingBroadcastRepository } from '../repositories/pending-broadcast.repository';
 import { StoragePreferenceRepository } from '../repositories/preference.repository';
@@ -44,6 +47,7 @@ import { MarketDataService } from '../services/market-data.service';
 import { MigrationService } from '../services/migration.service';
 import { NetworkService } from '../services/network.service';
 import { NftService } from '../services/nft.service';
+import { NotificationService, PushMessaging, UNAVAILABLE_PUSH_MESSAGING } from '../services/notification.service';
 import { OnrampService } from '../services/onramp.service';
 import { PasswordAttemptLimiter } from '../services/password-attempt-limiter';
 import { PreferenceService } from '../services/preference.service';
@@ -83,6 +87,10 @@ export interface Infrastructure {
   random?: () => number;
   // Wallet mutation queue; defaults to the one shared by every container in this JS runtime.
   walletMutations?: SerialQueue;
+  // FCM in the native container; push is unavailable when omitted.
+  pushMessaging?: PushMessaging;
+  // Push registration server; defaults to REMOTE_RESOURCES.notificationApiBase (no-op while empty).
+  notificationApi?: NotificationRegistrationApi;
 }
 
 // The main app and each Android inject sheet build their own container over the same storage. Sharing
@@ -111,6 +119,7 @@ export interface Services {
   preferenceService: PreferenceService;
   migrationService: MigrationService;
   cloudBackupService: CloudBackupService;
+  notificationService: NotificationService;
 }
 
 export type AppContainer = Services & {
@@ -197,5 +206,14 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
     cloudBackupService,
+    notificationService: overrides.notificationService ?? new NotificationService(
+      new StorageNotificationSettingRepository(keyValueStore),
+      infra.pushMessaging ?? UNAVAILABLE_PUSH_MESSAGING,
+      infra.notificationApi
+      ?? (REMOTE_RESOURCES.notificationApiBase ? new NotificationApiClient(http, REMOTE_RESOURCES.notificationApiBase) : NOOP_NOTIFICATION_API),
+      accountService,
+      networkService,
+      () => preferenceRepository.get().language,
+    ),
   };
 };

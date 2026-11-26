@@ -9,6 +9,8 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, '15.5'
 prepare_react_native_project!
 
+# React Native Firebase requires dynamic frameworks (Firebase Apple SDK 13+ ships through SPM only).
+ENV['USE_FRAMEWORKS'] ||= 'dynamic'
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
@@ -24,6 +26,18 @@ target 'AdenaMobile' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # MLKit ships static frameworks, which CocoaPods does not link into a dynamic pod; the scanner
+  # stays static so the app target links MLKit instead.
+  pre_install do |installer|
+    installer.pod_targets.each do |pod|
+      if pod.name == 'VisionCameraBarcodeScanner'
+        def pod.build_type
+          Pod::BuildType.static_framework
+        end
+      end
+    end
+  end
+
   post_install do |installer|
     react_native_post_install(
       installer,
@@ -31,5 +45,19 @@ target 'AdenaMobile' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Older pod resource bundles (Google/Firebase privacy bundles) declare targets below Xcode's minimum.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_configuration|
+        if build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'].to_f < 15.5
+          build_configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
+        end
+        # Dynamic frameworks link on their own; some pods (clipboard, image picker) use UTType APIs
+        # without declaring MobileCoreServices / UniformTypeIdentifiers.
+        if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.framework'
+          build_configuration.build_settings['OTHER_LDFLAGS'] = ['$(inherited)', '-framework', 'MobileCoreServices', '-framework', 'UniformTypeIdentifiers']
+        end
+      end
+    end
   end
 end
