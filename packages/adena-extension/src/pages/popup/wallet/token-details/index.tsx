@@ -1,7 +1,7 @@
 import etc from '@assets/etc.svg';
 import { SCANNER_URL } from '@common/constants/resource.constant';
 import { toRegistryKey } from '@common/utils/grc20-token-path';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeScannerUrl } from '@common/utils/scanner-utils';
 import { isCosmosNativeTokenModel, isGRC20TokenModel } from '@common/validation/validation-token';
 import { HighlightNumber, LeftArrowBtn, StaticMultiTooltip, Text } from '@components/atoms';
 import { DoubleButton, TransactionHistory } from '@components/molecules';
@@ -211,9 +211,7 @@ export const TokenDetails = (): JSX.Element => {
 
   const getAccountDetailUri = (): string => {
     const scannerUrl = profile?.linkUrl || SCANNER_URL;
-    return scannerParameters
-      ? `${scannerUrl}/account/${currentFundingAddress}?${makeQueryString(scannerParameters)}`
-      : `${scannerUrl}/account/${currentFundingAddress}`;
+    return makeScannerUrl(scannerUrl, `/account/${currentFundingAddress}`, scannerParameters ?? {});
   };
 
   const getTokenUri = (): string => {
@@ -223,9 +221,7 @@ export const TokenDetails = (): JSX.Element => {
       // `{packagePath}.{symbol}` — the same token key the wallet uses. Fall back
       // to the bare pkgPath for a legacy value with no symbol.
       const tokenPath = toRegistryKey(tokenBalance.tokenId) ?? tokenBalance.pkgPath;
-      return scannerParameters
-        ? `${scannerUrl}/tokens/${tokenPath}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/tokens/${tokenPath}`;
+      return makeScannerUrl(scannerUrl, `/tokens/${tokenPath}`, scannerParameters ?? {});
     }
     return '';
   };

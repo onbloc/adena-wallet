@@ -1,5 +1,5 @@
 import { SCANNER_URL } from '@common/constants/resource.constant';
-import { makeQueryString } from '@common/utils/string-utils';
+import { makeScannerUrl } from '@common/utils/scanner-utils';
 import useLink from '@hooks/use-link';
 import { useNetwork } from '@hooks/use-network';
 import { useNetworkProfile } from '@hooks/use-network-profile';
@@ -21,9 +21,7 @@ const DocumentSignerList = ({ signerInfos }: DocumentSignerListProps): React.Rea
   const handleLinkClick = useCallback(
     (address: string) => {
       const scannerUrl = profile?.linkUrl || SCANNER_URL;
-      const openLinkUrl = scannerParameters
-        ? `${scannerUrl}/account/${address}?${makeQueryString(scannerParameters)}`
-        : `${scannerUrl}/account/${address}`;
+      const openLinkUrl = makeScannerUrl(scannerUrl, `/account/${address}`, scannerParameters ?? {});
       openLink(openLinkUrl);
     },
     [profile, scannerParameters, openLink],
