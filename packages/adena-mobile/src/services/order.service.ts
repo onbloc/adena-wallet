@@ -102,6 +102,10 @@ export class OrderService {
     return this.configFor(network) !== undefined;
   }
 
+  getOrderConfig(network: Network): DexOrderConfig | undefined {
+    return this.configFor(network)?.orders;
+  }
+
   getTokens(network: Network): Promise<SwapToken[]> {
     return this.swapService.getTokens(network);
   }

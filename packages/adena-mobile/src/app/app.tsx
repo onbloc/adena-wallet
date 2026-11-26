@@ -13,7 +13,7 @@ import { AppErrorBoundary } from './app-error-boundary';
 import { AppShell } from './app-shell';
 import { SystemThemeProvider } from './app-theme-provider';
 
-const queryClient = createQueryClient();
+const queryClient = createQueryClient({ lockOnLockedError: true });
 
 const confirmStorageReset = (onConfirm: () => void): void =>
   Alert.alert(

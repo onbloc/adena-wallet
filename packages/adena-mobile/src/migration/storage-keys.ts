@@ -11,6 +11,7 @@ export const StorageKey = {
   NFT_PREFERENCES: 'nft-preferences',
   PENDING_BROADCASTS: 'pending-broadcasts',
   SESSION_CARDS: 'session-cards',
+  SESSION_TASKS: 'session-tasks',
   RESET_PENDING: 'reset.pending',
   RESTORE_PENDING: 'restore.pending',
   CLOUD_BACKUP: 'cloud-backup',

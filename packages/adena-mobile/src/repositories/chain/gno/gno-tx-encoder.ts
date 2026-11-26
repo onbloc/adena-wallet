@@ -144,13 +144,15 @@ export const buildUnsignedGnoTx = (messages: GnoMessage[], fee: TransactionFee, 
     memo,
   });
 
-export const buildGnoTxSignature = (publicKey: Uint8Array, signature: Uint8Array): TxSignature =>
+// `sessionAddr` marks a session-key signature for the master's messages; empty for a regular signer.
+export const buildGnoTxSignature = (publicKey: Uint8Array, signature: Uint8Array, sessionAddr = ''): TxSignature =>
   TxSignature.create({
     pub_key: {
       type_url: SECP256K1_PUBKEY_TYPE,
       value: PubKeySecp256k1.encode({ key: publicKey }).finish(),
     },
     signature,
+    session_addr: sessionAddr,
   });
 
 // Same payload as tm2-js-client Wallet.signTransaction, but bound to the caller's chain id
@@ -179,9 +181,10 @@ export const buildSimulationGnoTx = (
   fee: TransactionFee,
   memo: string,
   publicKey: Uint8Array,
+  sessionAddr = '',
 ): Tx => ({
   ...buildUnsignedGnoTx(messages, fee, memo),
-  signatures: [buildGnoTxSignature(publicKey, new Uint8Array(SECP256K1_SIGNATURE_LENGTH))],
+  signatures: [buildGnoTxSignature(publicKey, new Uint8Array(SECP256K1_SIGNATURE_LENGTH), sessionAddr)],
 });
 
 // Upper bound on how many bytes the final fee can add over the probe fee once encoded.

@@ -163,6 +163,9 @@ export interface ChainSession {
   spendResetAt: number;
   // Unix seconds; 0 means no expiry.
   expiresAt: number;
+  // The session's own signer state.
+  accountNumber: string;
+  sequence: string;
 }
 
 // Local, non-secret record of a card this device issued.

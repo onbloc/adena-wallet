@@ -1,7 +1,37 @@
-import { makeStyles, spacing } from '../../../theme';
+import { makeStyles, radius, spacing } from '../../../theme';
 
-export const useStyles = makeStyles(() => ({
-  body: { gap: spacing.space16 },
-  rows: { gap: spacing.space12 },
-  items: { gap: spacing.space4 },
+export const useStyles = makeStyles(colors => ({
+  body: { gap: spacing.space20 },
+  hero: { gap: spacing.space16, padding: spacing.space20, borderRadius: radius.sheet, backgroundColor: colors.action.primary },
+  heroHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.space12 },
+  heroTitle: { flex: 1, gap: 2 },
+  avatar: { width: 40, height: 40, borderRadius: radius.circle, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background.surface },
+  onDark: { color: colors.text.inverse },
+  onDarkMuted: { color: colors.text.disabled },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.space8,
+    paddingHorizontal: spacing.space12,
+    paddingVertical: spacing.space4,
+    borderRadius: radius.circle,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+  },
+  statusDot: { width: 8, height: 8, borderRadius: radius.circle, backgroundColor: colors.text.inverse },
+  statusDotOff: { backgroundColor: colors.text.disabled },
+  amountRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.space8 },
+  bigAmount: { fontFamily: 'Inter-Bold', fontSize: 40, lineHeight: 46, letterSpacing: -0.6, color: colors.text.inverse },
+  pushRight: { marginLeft: 'auto' },
+  track: { height: 6, borderRadius: radius.circle, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: radius.circle, backgroundColor: colors.text.inverse },
+  heroFooter: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.space8 },
+  section: { gap: spacing.space8 },
+  sectionTitle: { fontFamily: 'Inter-SemiBold' },
+  list: { borderRadius: radius.sheet, backgroundColor: colors.background.subtle, paddingHorizontal: spacing.space16 },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space12, paddingVertical: spacing.space16 },
+  listDivider: { borderTopWidth: 1, borderTopColor: colors.border.subtle },
+  listIcon: { width: 32, height: 32, borderRadius: radius.circle, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.action.primary },
+  taskIcon: { width: 32, height: 32, borderRadius: radius.circle, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background.surface },
+  listText: { flex: 1, gap: 2 },
+  addressRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space8 },
 }));

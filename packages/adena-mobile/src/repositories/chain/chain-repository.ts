@@ -20,7 +20,16 @@ export interface SigningKey {
 // chains that only simulate signed txs then fall back to a conservative estimate.
 export interface SimulationSigner {
   publicKey: Uint8Array;
+  // Set when a session key signs for its master; the tx is simulated as that session.
+  sessionAddress?: string;
   withKey?: <T>(task: (key: SigningKey) => Promise<T>) => Promise<T>;
+}
+
+// Signer state of a session account (the session's own account number and sequence, not the master's).
+export interface SessionSignerState {
+  address: string;
+  accountNumber: string;
+  sequence: string;
 }
 
 // Chain-family adapter: every network access and chain-specific encoding goes through here.
@@ -38,7 +47,8 @@ export interface ChainRepository<TMessage = unknown> {
   // Simulates the draft and reports gas usage plus the chain's gas price.
   estimateFee(draft: TransactionDraft<TMessage>, signer: SimulationSigner, network: Network): Promise<FeeEstimate>;
   // With `pin`, signs with exactly that sequence and refuses (PREVIOUS_TRANSACTION_PENDING) unless it is the on-chain one.
-  signTransaction(draft: TransactionDraft<TMessage>, key: SigningKey, network: Network, pin?: SignerSequence): Promise<SignedTransaction>;
+  // With `session`, `key` is the session key and the signature is marked as the session's.
+  signTransaction(draft: TransactionDraft<TMessage>, key: SigningKey, network: Network, pin?: SignerSequence, session?: SessionSignerState): Promise<SignedTransaction>;
   // The hash the node will report for this tx, in the form getTransactionStatus accepts.
   transactionHash(signed: SignedTransaction): string;
   // Throws TransactionPendingError (with the tx hash) when the outcome is unknown; other errors are definitive rejections.

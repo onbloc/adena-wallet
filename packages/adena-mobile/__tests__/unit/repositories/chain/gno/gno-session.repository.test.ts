@@ -26,6 +26,8 @@ describe('toChainSession', () => {
       spendPeriod: 60,
       spendResetAt: 40,
       expiresAt: 100,
+      accountNumber: '0',
+      sequence: '0',
     });
   });
 
@@ -40,6 +42,8 @@ describe('toChainSession', () => {
       spendPeriod: 0,
       spendResetAt: 0,
       expiresAt: 0,
+      accountNumber: '0',
+      sequence: '0',
     });
   });
 });
@@ -86,6 +90,8 @@ describe('GnoSessionRepository queries', () => {
       spendPeriod: 86400,
       spendResetAt: 1789990000,
       expiresAt: 1790000000,
+      accountNumber: '9',
+      sequence: '0',
     }]);
   });
 });

@@ -4,17 +4,24 @@ import { fn } from 'storybook/test';
 import { CardDetailPage } from './card-detail';
 
 const card = {
-  name: 'Trading bot',
+  name: 'GNOT sender',
+  initial: 'G',
+  kindLabel: 'Card on this phone',
   expired: false,
   address: 'g1sessioncardaddress000000000000000000000',
-  usedLabel: '0.3 GNOT',
-  limitLabel: '2 GNOT',
+  usedAmount: '0.3',
+  limitLabel: '/ 2 GNOT',
+  periodLabel: 'Today',
   ratio: 0.15,
   usageCaption: 'Resets in 20 hours',
-  where: ['gno.land/r/gnoswap/router'],
-  limitRow: '2 GNOT · Every day, network fees included',
-  untilRow: '2026-12-03 10:00 · 6 days left',
-  restrictions: ['Create or revoke cards', 'Deploy code', 'Run scripts', 'Send GNOT'],
+  whereLabel: 'Send GNOT to any address',
+  whereTile: 'Send GNOT',
+  limitTile: '2 GNOT',
+  limitCaption: 'Every day',
+  untilTile: '6 days left',
+  untilCaption: '2026-12-03 10:00',
+  where: ['Send GNOT to any address'],
+  restrictions: ['Create or revoke cards', 'Deploy code', 'Run scripts'],
   issuedElsewhere: false,
 };
 
@@ -24,6 +31,10 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   args: {
     card,
+    tasks: [
+      { id: '1', title: '0.5 GNOT to g1ab…cdef', statusLabel: 'In 12s', tone: 'neutral' as const },
+      { id: '2', title: '0.1 GNOT to g1ab…cdef', statusLabel: 'Sent', tone: 'success' as const },
+    ],
     loading: false,
     missing: false,
     onBack: fn(),
@@ -40,7 +51,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Active: Story = {};
 
-export const IssuedElsewhere: Story = { args: { card: { ...card, issuedElsewhere: true, expired: true } } };
+export const IssuedElsewhere: Story = { args: { card: { ...card, issuedElsewhere: true, expired: true }, tasks: [] } };
 
 export const Loading: Story = { args: { loading: true } };
 

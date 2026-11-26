@@ -3,9 +3,11 @@ import { toBase64, toHex } from '@cosmjs/encoding';
 
 import { AppError, AppErrorCode, TransactionPendingError } from '../core/errors';
 import { Account } from '../domain/account';
+import { SCHEDULED_FEE_RESERVE, ScheduledSend } from '../domain/card-template';
 import { FeeEstimate } from '../domain/fee';
 import { Network } from '../domain/network';
 import {
+  CardPermissionKind,
   CardPolicy,
   CardRecord,
   CardStatus,
@@ -20,8 +22,10 @@ import { ChainRegistry } from '../repositories/chain/chain-registry';
 import { SessionRepository } from '../repositories/chain/session-repository';
 import { SessionCardRepository } from '../repositories/session-card.repository';
 import { SessionKeyRepository } from '../repositories/session-key.repository';
+import { addAmount, compareAmount } from '../utils/amount';
 import { randomBytes } from '../utils/id';
 import { AccountService } from './account.service';
+import { SessionTaskService } from './session-task.service';
 import { TransactionService } from './transaction.service';
 import type { AccountScopedData } from './wallet.service';
 
@@ -44,6 +48,8 @@ export interface PreparedCardTransaction {
   draft: TransactionDraft;
   estimate: FeeEstimate;
   policy?: CardPolicy;
+  // A send the new card signs by itself after a delay.
+  schedule?: ScheduledSend;
   card?: SessionCard;
 }
 
@@ -80,6 +86,7 @@ export class SessionCardService {
     private readonly transactionService: TransactionService,
     private readonly records: SessionCardRepository,
     private readonly keys: SessionKeyRepository,
+    private readonly tasks: SessionTaskService,
     private readonly now: () => number = Date.now,
   ) {}
 
@@ -155,9 +162,13 @@ export class SessionCardService {
     return { path, realms, tokenRealms: await sessions.findTokenRealms(realms, network) };
   }
 
-  async prepareIssue(account: Account, network: Network, policy: CardPolicy): Promise<PreparedCardTransaction> {
+  async prepareIssue(account: Account, network: Network, policy: CardPolicy, schedule?: ScheduledSend): Promise<PreparedCardTransaction> {
     if (validateCardPolicy(policy).length > 0) {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'Check the card settings');
+    }
+
+    if (schedule) {
+      this.assertSchedulable(policy, schedule, network);
     }
 
     await this.keys.assertAvailable();
@@ -177,7 +188,24 @@ export class SessionCardService {
     const draft = this.draft(network, this.createMessages(masterAddress, placeholder.publicKey, policy, network));
     const estimate = await this.transactionService.estimateFee(draft, account, network);
 
-    return { action: CardAction.ISSUE, account, network, draft, estimate, policy };
+    return { action: CardAction.ISSUE, account, network, draft, estimate, policy, schedule };
+  }
+
+  private assertSchedulable(policy: CardPolicy, schedule: ScheduledSend, network: Network): void {
+    const canSend = policy.permissions.some(permission => permission.kind === CardPermissionKind.SEND);
+    const cost = addAmount(schedule.amount, SCHEDULED_FEE_RESERVE);
+
+    if (!canSend || !this.chainRegistry.forNetwork(network).isValidAddress(schedule.toAddress, network)) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'This card cannot make that send');
+    }
+
+    if (!/^[1-9]\d*$/.test(schedule.amount) || compareAmount(cost, policy.spendLimit) > 0) {
+      throw new AppError(AppErrorCode.INVALID_AMOUNT, 'The card limit does not cover the send and its fee');
+    }
+
+    if (!Number.isInteger(schedule.delaySeconds) || schedule.delaySeconds <= 0 || schedule.delaySeconds >= policy.duration) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'The send must run before the card expires');
+    }
   }
 
   async prepareRevoke(account: Account, network: Network, card: SessionCard): Promise<PreparedCardTransaction> {
@@ -224,10 +252,16 @@ export class SessionCardService {
     const keyPair = await generateKeyPair();
     const sessionAddress = chain.deriveAddress(keyPair.publicKey, network);
     const publicKey = toBase64(keyPair.publicKey);
+    // A scheduled send signs with the card later; that copy lives in memory only and is wiped after it runs.
+    const taskKey = prepared.schedule ? Uint8Array.from(keyPair.privateKey) : undefined;
 
     try {
       // Stored before broadcasting, so a committed card never ends up without its key.
       await this.keys.save(sessionAddress, toHex(keyPair.privateKey));
+    }
+    catch (error) {
+      taskKey?.fill(0);
+      throw error;
     }
     finally {
       keyPair.privateKey.fill(0);
@@ -238,7 +272,7 @@ export class SessionCardService {
     try {
       await this.transactionService.assertSufficientFunds(draft, account, network, undefined, prepared.estimate.storageDeposit);
 
-      return await this.transactionService.signAndBroadcast(draft, account, network, {
+      const result = await this.transactionService.signAndBroadcast(draft, account, network, {
         onSigned: txHash => this.records.save({
           sessionAddress,
           accountId: account.id,
@@ -249,6 +283,12 @@ export class SessionCardService {
           txHash,
         }),
       });
+
+      if (taskKey && prepared.schedule && result.committed) {
+        this.tasks.scheduleSend({ network, accountId: account.id, masterAddress, sessionAddress, ...prepared.schedule }, taskKey);
+      }
+
+      return result;
     }
     catch (error) {
       // An unknown outcome may still commit; listCards drops the record once the chain confirms it never did.
@@ -258,6 +298,10 @@ export class SessionCardService {
 
       throw error;
     }
+    finally {
+      // Handed over (and copied) by scheduleSend, or not needed.
+      taskKey?.fill(0);
+    }
   }
 
   private async revoke(prepared: PreparedCardTransaction, fee: TransactionFee): Promise<BroadcastResult> {
@@ -265,6 +309,7 @@ export class SessionCardService {
     const address = prepared.card?.session.address;
 
     if (result.committed && address) {
+      this.tasks.cancelForSession(address);
       await this.forget(address);
     }
 
@@ -275,6 +320,8 @@ export class SessionCardService {
     const result = await this.broadcast(prepared, fee);
 
     if (result.committed) {
+      this.tasks.list().filter(task => task.masterAddress === this.accountService.getAddress(prepared.account, prepared.network))
+        .forEach(task => this.tasks.cancelForSession(task.sessionAddress));
       await Promise.all(this.records.list(prepared.account.id, prepared.network.chainId).map(record => this.forget(record.sessionAddress)));
     }
 

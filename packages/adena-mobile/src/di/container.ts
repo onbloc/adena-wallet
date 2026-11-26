@@ -24,6 +24,7 @@ import { ApiPriceRepository, PriceRepository } from '../repositories/price.repos
 import { StorageProcessedDappRequestRepository } from '../repositories/processed-dapp-request.repository';
 import { StorageSessionCardRepository } from '../repositories/session-card.repository';
 import { SessionKeyRepository } from '../repositories/session-key.repository';
+import { StorageSessionTaskRepository } from '../repositories/session-task.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
 import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
@@ -54,6 +55,7 @@ import { PriceService } from '../services/price.service';
 import { ResetMarker } from '../services/reset-marker';
 import { RestoreMarker } from '../services/restore-marker';
 import { SessionCardService } from '../services/session-card.service';
+import { SessionTaskService } from '../services/session-task.service';
 import { SwapService } from '../services/swap.service';
 import { TokenService } from '../services/token.service';
 import { TransactionService } from '../services/transaction.service';
@@ -116,6 +118,7 @@ export interface Services {
   migrationService: MigrationService;
   cloudBackupService: CloudBackupService;
   sessionCardService: SessionCardService;
+  sessionTaskService: SessionTaskService;
   orderService: OrderService;
 }
 
@@ -159,12 +162,14 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const tokenService = overrides.tokenService ?? new TokenService(chainRegistry, accountService, tokenListRepository);
   const nftService = overrides.nftService
     ?? new NftService(chainRegistry, accountService, new StorageNftPreferenceRepository(keyValueStore));
+  const sessionTaskService = overrides.sessionTaskService ?? new SessionTaskService(chainRegistry, new StorageSessionTaskRepository(keyValueStore), infra.now);
   const sessionCardService = overrides.sessionCardService ?? new SessionCardService(
     chainRegistry,
     accountService,
     transactionService,
     new StorageSessionCardRepository(keyValueStore),
     new SessionKeyRepository(secureStore),
+    sessionTaskService,
     infra.now,
   );
   const swapService = overrides.swapService ?? new SwapService(chainRegistry, accountService, transactionService, DEX_API_CONFIG, infra.now);
@@ -214,5 +219,6 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     migrationService,
     cloudBackupService,
     sessionCardService,
+    sessionTaskService,
   };
 };

@@ -4,7 +4,7 @@ import { Animated, Easing, Pressable, View } from 'react-native';
 import { HapticKind } from '../../../domain/haptics';
 import { useHaptics } from '../../../hooks/use-haptics';
 import { useThemeColors } from '../../../theme';
-import { Spinner, Text } from '../../atoms';
+import { Icon, Spinner, Text } from '../../atoms';
 import { useStyles } from './hold-to-confirm-button.styles';
 
 export const HOLD_TO_CONFIRM_MS = 1200;
@@ -34,7 +34,8 @@ export const HoldToConfirmButton = ({
   const playHaptic = useHaptics();
   const progress = useRef(new Animated.Value(0)).current;
   const inactive = disabled || loading;
-  const fill = tone === 'destructive' ? colors.status.error : colors.action.primary;
+  const background = inactive ? colors.action.disabled : tone === 'destructive' ? colors.status.error : colors.action.primary;
+  const foreground = inactive ? colors.text.disabled : colors.text.inverse;
 
   useEffect(() => {
     if (inactive) {
@@ -70,13 +71,13 @@ export const HoldToConfirmButton = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onLongPress={handleLongPress}
-      style={[styles.base, { borderColor: inactive ? colors.action.disabled : fill }]}
+      style={[styles.base, { backgroundColor: background }]}
       testID={testID}
     >
-      <Animated.View style={[styles.fill, { width, backgroundColor: fill }]} />
+      <Animated.View style={[styles.fill, { width, backgroundColor: colors.text.inverse }]} />
       <View style={styles.label}>
-        {loading && <Spinner size={18} />}
-        <Text variant='button' color={inactive ? 'disabled' : 'primary'}>{loading ? loadingLabel : label}</Text>
+        {loading ? <Spinner size={18} tone='inverse' /> : <Icon name='target' size={20} color={foreground} />}
+        <Text variant='button' style={{ color: foreground }}>{loading ? loadingLabel : label}</Text>
       </View>
     </Pressable>
   );

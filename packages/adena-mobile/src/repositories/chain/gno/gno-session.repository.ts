@@ -38,6 +38,8 @@ export const toChainSession = (info: SessionAccountInfo, denom: string): ChainSe
   spendPeriod: info.spend_period ?? 0,
   spendResetAt: info.spend_reset ?? 0,
   expiresAt: info.expires_at ?? 0,
+  accountNumber: info.account_number ?? '0',
+  sequence: info.sequence ?? '0',
 });
 
 // auth/accounts/<master>/session(s) answers JSON `null` (or nothing) when there is no session, which
@@ -104,6 +106,10 @@ export class GnoSessionRepository implements SessionRepository {
 
   buildRevokeAllMessages(masterAddress: string): GnoMessage[] {
     return [{ type: GnoMessageType.AUTH_REVOKE_ALL_SESSIONS, value: { creator: masterAddress } }];
+  }
+
+  buildSendMessages(masterAddress: string, toAddress: string, amount: string, network: Network): GnoMessage[] {
+    return [{ type: GnoMessageType.BANK_MSG_SEND, value: { from_address: masterAddress, to_address: toAddress, amount: `${amount}${network.nativeToken.denom}` } }];
   }
 
   async listRealms(path: string, network: Network): Promise<string[]> {

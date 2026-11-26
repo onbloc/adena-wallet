@@ -9,7 +9,7 @@ export * from './address-book-edit';
 export * from './app-failure';
 export * from './backup-phrase';
 export * from './buy-crypto';
-export * from './card-create';
+export * from './card-chat';
 export * from './card-detail';
 export * from './cards';
 export * from './change-password';

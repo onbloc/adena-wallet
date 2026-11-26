@@ -62,9 +62,14 @@ export type MainTab = (typeof MainTab)[keyof typeof MainTab];
 export interface SessionCardRowView {
   id: string;
   name: string;
+  initial: string;
+  kindLabel: string;
   whereLabel: string;
-  usedLabel: string;
+  // Spent in the current period, without the symbol ("0.3").
+  usedAmount: string;
+  // "/ 2 GNOT".
   limitLabel: string;
+  periodLabel: string;
   // 0..1 share of the limit spent in the current period.
   ratio: number;
   timeLeftLabel: string;
@@ -73,15 +78,23 @@ export interface SessionCardRowView {
 
 export interface SessionCardDetailView {
   name: string;
+  initial: string;
+  kindLabel: string;
   expired: boolean;
   address: string;
-  usedLabel: string;
+  usedAmount: string;
   limitLabel: string;
+  periodLabel: string;
   ratio: number;
   usageCaption?: string;
+  whereLabel: string;
+  whereTile: string;
+  whereCaption?: string;
+  limitTile: string;
+  limitCaption: string;
+  untilTile: string;
+  untilCaption: string;
   where: string[];
-  limitRow: string;
-  untilRow: string;
   restrictions: string[];
   // Issued by another wallet or device: no local name or key.
   issuedElsewhere: boolean;
@@ -94,18 +107,42 @@ export interface OrderRowView {
   title: string;
   subtitle: string;
   progress: number;
-  progressLabel: string;
-  statusLabel: string;
-  claimLabel?: string;
+  // DCA rounds drawn one segment each when there are few enough.
+  segments?: { total: number; done: number };
+  pillLabel: string;
+  footerLeft: string;
+  footerRight: string;
+  claimable: boolean;
 }
 
 export interface OrderDetailView {
-  title: string;
-  progress: number;
-  progressLabel: string;
-  statusLabel: string;
+  row: OrderRowView;
+  tiles: { icon: ReviewFactIcon; label: string; value: string; caption?: string }[];
   rows: { label: string; value: string; emphasis?: boolean }[];
   notes: string[];
   canClaim: boolean;
   cancelDescription: string;
+}
+
+export type ReviewFactIcon = 'pin' | 'gauge' | 'clock' | 'card' | 'arrowUp' | 'repeat' | 'swap' | 'wallet';
+
+// What an approval sheet shows, without the fee (added by the screen).
+export interface ReviewContent {
+  title: string;
+  subtitle?: string;
+  facts: { icon: ReviewFactIcon; label: string; value: string }[];
+  restrictions?: string[];
+  assurances?: string[];
+  rows?: { label: string; value: string }[];
+  worstCase?: { value: string; caption?: string };
+  warnings: { title: string; description?: string }[];
+  confirmLabel: string;
+  destructive?: boolean;
+}
+
+export interface SessionTaskView {
+  id: string;
+  title: string;
+  statusLabel: string;
+  tone: 'neutral' | 'success' | 'warning' | 'error';
 }

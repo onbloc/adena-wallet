@@ -3,9 +3,15 @@ import { View } from 'react-native';
 
 import { Button, Chip, Text } from '../../atoms';
 import { BottomSheet, InlineAlert, KeyValueRow, ListRow, Screen, SectionLabel, SelectField, TextField, TopBar } from '../../molecules';
-import { CardOptionView } from '../card-create/card-create';
 import { CardReviewSheet, CardReviewSheetProps } from '../cards/card-review-sheet';
 import { useStyles } from './order-create.styles';
+
+export interface CardOptionView<T extends string | number> {
+  key: T;
+  label: string;
+  selected: boolean;
+  disabled?: boolean;
+}
 
 export interface OrderTokenOptionView {
   id: string;

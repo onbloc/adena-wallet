@@ -4,19 +4,27 @@ import { fn } from 'storybook/test';
 import { OrderDetailPage } from './order-detail';
 
 const order = {
-  title: 'Buy GNS with GNOT',
-  progress: 0.3,
-  progressLabel: '3 of 10 buys',
-  statusLabel: 'Next in 2 days',
-  rows: [
-    { label: 'Each buy', value: '50 GNOT' },
-    { label: 'How often', value: 'Every week' },
-    { label: 'Still in escrow', value: '350 GNOT' },
-    { label: 'Ready to claim', value: '36.6 GNS', emphasis: true },
+  row: {
+    id: 'dca:7',
+    kind: 'dca' as const,
+    title: 'Buy GNS',
+    subtitle: 'Recurring buy · 50 GNOT every week',
+    progress: 0.3,
+    segments: { total: 10, done: 3 },
+    pillLabel: '3 of 10',
+    footerLeft: '350 GNOT left',
+    footerRight: '36.6 GNS to claim',
+    claimable: true,
+  },
+  tiles: [
+    { icon: 'repeat' as const, label: 'Each buy', value: '50 GNOT', caption: 'Every week' },
+    { icon: 'wallet' as const, label: 'In escrow', value: '350 GNOT', caption: 'of 500 GNOT' },
+    { icon: 'arrowUp' as const, label: 'To claim', value: '36.6 GNS' },
   ],
+  rows: [],
   notes: ['GnoSwap keepers run each buy on schedule. A missed slot is skipped, not doubled up.'],
   canClaim: true,
-  cancelDescription: 'Claims what was bought and returns 350 GNOT.',
+  cancelDescription: 'Cancelling claims what was bought and returns 350 GNOT.',
 };
 
 const meta = {

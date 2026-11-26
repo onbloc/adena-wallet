@@ -22,6 +22,8 @@ export interface SessionRepository {
   // `publicKey` is base64.
   buildRevokeMessages(masterAddress: string, publicKey: string): unknown[];
   buildRevokeAllMessages(masterAddress: string): unknown[];
+  // A native transfer from the master, for a session that may send (bank/send).
+  buildSendMessages(masterAddress: string, toAddress: string, amount: string, network: Network): unknown[];
   // Deployed realm packages at `path` or below it.
   listRealms(path: string, network: Network): Promise<string[]>;
   // The given realms whose public functions can move the caller's tokens (Transfer, Approve, ...).

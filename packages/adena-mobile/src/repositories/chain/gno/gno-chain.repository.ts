@@ -21,7 +21,7 @@ import {
 import { isValidAddress, normalizeAddress } from '../../../utils/address';
 import { formatTokenAmount, parseCoin } from '../../../utils/amount';
 import { BigNumber } from '../../../utils/big-number';
-import { ChainRepository, SigningKey, SimulationSigner } from '../chain-repository';
+import { ChainRepository, SessionSignerState, SigningKey, SimulationSigner } from '../chain-repository';
 import { parseGnoMessages } from './gno-message-parser';
 import { GnoMemPackage, GnoMessage, GnoMessageType } from './gno-messages';
 import { GnoProvider, GnoProviderFactory } from './gno-provider';
@@ -254,7 +254,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     try {
       const tx = signed && signer.withKey
         ? await signer.withKey(async key => (await this.signGnoTx(provider, { ...draft, fee: probeFee }, key, network)).tx)
-        : buildSimulationGnoTx(draft.messages, probeFee, draft.memo, signer.publicKey);
+        : buildSimulationGnoTx(draft.messages, probeFee, draft.memo, signer.publicKey, signer.sessionAddress);
       const simulation = await simulateGnoTx(provider, tx, denom);
       // The final fee can encode longer than the probe fee, and tx bytes are charged as gas.
       const sizeHeadroom = BigInt(feeSizeHeadroomBytes(probeFee, network.feeToken.denom) * this.feePolicy.txSizeCostPerByte);
@@ -294,10 +294,14 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     key: SigningKey,
     network: Network,
     pin?: SignerSequence,
+    session?: SessionSignerState,
   ): Promise<{ tx: Tx; accountNumber: string; sequence: string }> {
     const publicKey = Secp256k1.compressPubkey((await Secp256k1.makeKeypair(key.privateKey)).pubkey);
     const signer = new KeySigner(key.privateKey, publicKey, network.addressPrefix);
-    const { account_number: accountNumber, sequence } = (await provider.getAccount(await signer.getAddress())).BaseAccount;
+    // A session account lives in its master's session store, so its signer state comes from there.
+    const { account_number: accountNumber, sequence } = session
+      ? { account_number: session.accountNumber, sequence: session.sequence }
+      : (await provider.getAccount(await signer.getAddress())).BaseAccount;
 
     if (pin && (pin.sequence !== sequence || (pin.accountNumber !== undefined && pin.accountNumber !== accountNumber))) {
       throw new AppError(AppErrorCode.PREVIOUS_TRANSACTION_PENDING, PINNED_SEQUENCE_MISMATCH_MESSAGE);
@@ -306,10 +310,10 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     const tx = buildUnsignedGnoTx(draft.messages, draft.fee, draft.memo);
     const signBytes = buildGnoSignBytes(tx, draft.chainId, accountNumber, sequence);
 
-    return { tx: { ...tx, signatures: [buildGnoTxSignature(publicKey, await signer.signData(signBytes))] }, accountNumber, sequence };
+    return { tx: { ...tx, signatures: [buildGnoTxSignature(publicKey, await signer.signData(signBytes), session?.address)] }, accountNumber, sequence };
   }
 
-  async signTransaction(draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network, pin?: SignerSequence): Promise<SignedTransaction> {
+  async signTransaction(draft: TransactionDraft<GnoMessage>, key: SigningKey, network: Network, pin?: SignerSequence, session?: SessionSignerState): Promise<SignedTransaction> {
     const provider = await this.provider(network).catch((error) => {
       throw toNetworkError(error);
     });
@@ -320,7 +324,7 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
     }
 
     try {
-      const { tx, accountNumber, sequence } = await this.signGnoTx(provider, draft, key, network, pin);
+      const { tx, accountNumber, sequence } = await this.signGnoTx(provider, draft, key, network, pin, session);
 
       return { encoded: toBase64(Tx.encode(tx).finish()), accountNumber, sequence };
     }

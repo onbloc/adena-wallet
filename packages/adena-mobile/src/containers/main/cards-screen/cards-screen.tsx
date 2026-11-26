@@ -9,7 +9,7 @@ import { useCardTransaction } from '../../../hooks/use-reviewed-transaction';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainTabScreenProps } from '../../../navigation/screen-props';
 import { orderTokenLookup, toOrderRowView } from '../../../presenters/order.presenter';
-import { toRevokeAllReview, toSessionCardRowView } from '../../../presenters/session-card.presenter';
+import { toRevokeAllReview, toRevokeReview, toSessionCardRowView } from '../../../presenters/session-card.presenter';
 import { useOrdersQuery, useOrderTokensQuery } from '../../../queries/order.queries';
 import { useSessionCardsQuery } from '../../../queries/session-card.queries';
 
@@ -21,7 +21,8 @@ export const CardsScreen = ({ navigation }: MainTabScreenProps<'Cards'>): ReactE
   const supported = sessionCardService.isSupported(network);
   const query = useSessionCardsQuery(account, network);
   const cards = useMemo(() => query.data ?? [], [query.data]);
-  const revokeAll = useCardTransaction('All cards revoked', () => undefined);
+  const revoke = useCardTransaction('Card revoked', () => undefined);
+  const [revokingId, setRevokingId] = useState<string>();
   const ordersSupported = orderService.isSupported(network);
   const ordersQuery = useOrdersQuery(account, network);
   const tokensQuery = useOrderTokensQuery(network);
@@ -48,7 +49,7 @@ export const CardsScreen = ({ navigation }: MainTabScreenProps<'Cards'>): ReactE
 
   const notice = cards.length >= SESSION_COUNT_WARNING
     ? `${cards.length} of ${SESSION_MAX_PER_ACCOUNT} cards in use. Revoke cards you no longer need.`
-    : revokeAll.notice;
+    : revoke.notice;
 
   const handleCreate = (): void => navigation.navigate('CardCreate');
 
@@ -70,29 +71,43 @@ export const CardsScreen = ({ navigation }: MainTabScreenProps<'Cards'>): ReactE
 
   const handleRevokeAll = (): void => {
     if (account) {
-      revokeAll.start(() => sessionCardService.prepareRevokeAll(account, network));
+      setRevokingId(undefined);
+      revoke.start(() => sessionCardService.prepareRevokeAll(account, network));
     }
   };
+
+  const handleRevokeCard = (sessionAddress: string): void => {
+    const card = cards.find(item => item.session.address === sessionAddress);
+
+    if (account && card) {
+      setRevokingId(sessionAddress);
+      revoke.start(() => sessionCardService.prepareRevoke(account, network, card));
+    }
+  };
+
+  const prepared = revoke.prepared;
+  const review = prepared?.card ? toRevokeReview(prepared.card) : prepared ? toRevokeAllReview(cards.length) : undefined;
 
   return (
     <CardsPage
       supported={supported}
       loading={supported && query.isPending && Boolean(account)}
-      error={query.error ? toErrorMessage(query.error) : revokeAll.prepareError}
+      error={query.error ? toErrorMessage(query.error) : revoke.prepareError}
       cards={rows}
       notice={notice}
       refreshing={refreshing}
       onRefresh={onRefresh}
       onCreate={handleCreate}
       onOpenCard={handleOpenCard}
+      onRevokeCard={handleRevokeCard}
       onRevokeAll={handleRevokeAll}
-      preparingRevokeAll={revokeAll.preparing}
-      revokeAll={{
-        review: revokeAll.prepared ? { ...toRevokeAllReview(cards.length), fee: revokeAll.fee } : undefined,
-        confirming: revokeAll.confirming,
-        error: revokeAll.confirmError,
-        onConfirm: revokeAll.confirm,
-        onClose: revokeAll.close,
+      preparingId={revoke.preparing ? revokingId : undefined}
+      revoke={{
+        review: review ? { ...review, fee: revoke.fee } : undefined,
+        confirming: revoke.confirming,
+        error: revoke.confirmError,
+        onConfirm: revoke.confirm,
+        onClose: revoke.close,
       }}
       ordersSupported={ordersSupported}
       ordersLoading={ordersSupported && ordersQuery.isPending && Boolean(account)}

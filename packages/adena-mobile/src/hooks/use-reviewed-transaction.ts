@@ -3,11 +3,13 @@ import { useCallback, useRef, useState } from 'react';
 
 import { FeeSelectorProps } from '../components/molecules';
 import { toErrorMessage } from '../core/error-message';
+import { AppError, AppErrorCode } from '../core/errors';
 import { useContainer } from '../di/container-provider';
 import { Account } from '../domain/account';
 import { FeeEstimate } from '../domain/fee';
 import { Network } from '../domain/network';
 import { BroadcastResult, TransactionFee } from '../domain/transaction';
+import { handleLockedError } from '../queries/query-client';
 import { queryKeys } from '../queries/query-keys';
 import { OrderService, PreparedOrderTransaction } from '../services/order.service';
 import { PreparedCardTransaction, SessionCardService } from '../services/session-card.service';
@@ -45,6 +47,7 @@ export const useReviewedTransaction = <T extends ReviewedTarget>(
   onCommitted: (prepared: T) => void,
 ): ReviewedTransaction<T> => {
   const { account, network } = useWalletSnapshot();
+  const { keyringSession } = useContainer();
   const queryClient = useQueryClient();
   const showToast = useToastStore(state => state.show);
   const [prepared, setPrepared] = useState<T | null>(null);
@@ -74,6 +77,12 @@ export const useReviewedTransaction = <T extends ReviewedTarget>(
   });
 
   const start = (factory: () => Promise<T>): void => {
+    // Signing needs the keyring: a closed one sends the user to the unlock screen first.
+    if (!keyringSession.isUnlocked()) {
+      handleLockedError(new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet is locked'));
+      return;
+    }
+
     if (!pendingBroadcast.canSend) {
       return;
     }

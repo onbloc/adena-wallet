@@ -27,6 +27,8 @@ const session = (overrides: Partial<ChainSession> = {}): ChainSession => ({
   spendPeriod: SpendPeriod.DAILY,
   spendResetAt: NOW - 100,
   expiresAt: NOW + 3600,
+  accountNumber: '9',
+  sequence: '0',
   ...overrides,
 });
 

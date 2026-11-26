@@ -11,7 +11,7 @@ import { AddTokenScreen } from '../containers/main/add-token-screen';
 import { AddressBookEditScreen } from '../containers/main/address-book-edit-screen';
 import { AddressBookScreen } from '../containers/main/address-book-screen';
 import { BuyCryptoScreen } from '../containers/main/buy-crypto-screen';
-import { CardCreateScreen } from '../containers/main/card-create-screen';
+import { CardChatScreen } from '../containers/main/card-chat-screen';
 import { CardDetailScreen } from '../containers/main/card-detail-screen';
 import { ChangePasswordScreen } from '../containers/main/change-password-screen';
 import { CheckoutScreen } from '../containers/main/checkout-screen';
@@ -128,7 +128,7 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
       <MainStack.Screen name='Swap' component={SwapScreen} options={{ presentation: 'fullScreenModal' }} />
-      <MainStack.Screen name='CardCreate' component={CardCreateScreen} />
+      <MainStack.Screen name='CardCreate' component={CardChatScreen} />
       <MainStack.Screen name='CardDetail' component={CardDetailScreen} />
       <MainStack.Screen name='OrderCreate' component={OrderCreateScreen} />
       <MainStack.Screen name='OrderDetail' component={OrderDetailScreen} />
