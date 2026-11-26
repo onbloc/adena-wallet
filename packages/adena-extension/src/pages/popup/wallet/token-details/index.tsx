@@ -133,7 +133,7 @@ export const TokenDetails = (): JSX.Element => {
     enabled: !isUsedApi && !isCosmosNative,
   });
 
-  const { status, isLoading, isFetching, data, isSupported, fetchNextPage } = useMemo(() => {
+  const { status, isFetching, data, fetchNextPage } = useMemo(() => {
     if (isUsedApi) {
       return pageTransactionHistoryQuery;
     }
@@ -141,10 +141,10 @@ export const TokenDetails = (): JSX.Element => {
   }, [isUsedApi, pageTransactionHistoryQuery, commonTransactionHistoryQuery]);
 
   useEffect(() => {
-    if (loadingNextFetch && !isLoading && !isFetching) {
+    if (loadingNextFetch && status !== 'loading' && !isFetching) {
       fetchNextPage().then(() => setLoadingNextFetch(false));
     }
-  }, [loadingNextFetch, isLoading, isFetching]);
+  }, [loadingNextFetch, status, isFetching]);
 
   useEffect(() => {
     if (document.getElementsByTagName('body').length > 0) {
@@ -285,15 +285,15 @@ export const TokenDetails = (): JSX.Element => {
               Transaction history is not supported yet
             </Text>
           )
-        : isLoading && isSupported
+        : status === 'loading'
           ? (
               <LoadingTokenDetails />
             )
           : transactions.length > 0
             ? (
                 <TransactionHistory
-                  status={status}
-                  transactionInfoLists={isSupported ? transactions : []}
+                  status={status === 'unsupported' ? 'error' : status}
+                  transactionInfoLists={status !== 'unsupported' ? transactions : []}
                   onClickItem={onClickItem}
                 />
               )

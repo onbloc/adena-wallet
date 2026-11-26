@@ -8,6 +8,7 @@ import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
+import { deriveHistoryStatus } from './derive-history-status';
 import { dedupeAndSortTransactions } from './session-history-source';
 import type { TransactionHistoryResult } from './types';
 
@@ -28,7 +29,11 @@ export const useTransactionHistory = ({
     CommonState.fetchedHistoryBlockHeight,
   );
 
-  const { data: fetchedTransactions, refetch } = useQuery({
+  const {
+    data: fetchedTransactions,
+    refetch,
+    status: fetchStatus,
+  } = useQuery({
     queryKey: ['history/common/all', currentNetwork.networkId, currentAddress],
 
     queryFn: async () => {
@@ -73,7 +78,7 @@ export const useTransactionHistory = ({
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
     `history/common/all/${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
@@ -96,11 +101,14 @@ export const useTransactionHistory = ({
 
   return {
     data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
-    status,
-    isLoading,
-    isFetching,
+    status: deriveHistoryStatus(
+      transactionHistoryService.supported,
+      enabled,
+      fetchStatus,
+      processingStatus,
+      !!fetchedTransactions,
+    ),
+    isFetching: isProcessing,
     hasNextPage: transactions ? transactions.length !== blockIndex : false,
     fetchNextPage,
     refetch: refetchTransactions,

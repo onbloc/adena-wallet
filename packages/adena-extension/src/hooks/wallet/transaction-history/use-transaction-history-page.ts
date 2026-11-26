@@ -7,6 +7,7 @@ import { InfiniteData, keepPreviousData, RefetchOptions, useInfiniteQuery } from
 import { TransactionWithPageInfo } from '@types';
 import { useCallback, useMemo } from 'react';
 
+import { deriveHistoryStatus } from './derive-history-status';
 import { dedupeAndSortTransactions } from './session-history-source';
 import type { TransactionHistoryResult } from './types';
 
@@ -27,6 +28,8 @@ export const useTransactionHistoryPage = ({
 
   const {
     data: allTransactions,
+    status: fetchStatus,
+    isFetchingNextPage,
     hasNextPage,
     refetch,
     fetchNextPage,
@@ -82,7 +85,7 @@ export const useTransactionHistoryPage = ({
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
     `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
@@ -102,11 +105,14 @@ export const useTransactionHistoryPage = ({
 
   return {
     data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
-    status,
-    isLoading,
-    isFetching,
+    status: deriveHistoryStatus(
+      transactionHistoryService.supported,
+      enabled,
+      fetchStatus,
+      processingStatus,
+      !!allTransactions?.pages.length,
+    ),
+    isFetching: isFetchingNextPage || isProcessing,
     hasNextPage: hasNextPage !== false,
     fetchNextPage: (): Promise<boolean> => {
       return fetchNextPage()

@@ -7,6 +7,7 @@ import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionWithPageInfo } from '@types';
 import { useMemo } from 'react';
 
+import { deriveHistoryStatus } from '../transaction-history/derive-history-status';
 import type { TransactionHistoryResult } from '../transaction-history/types';
 
 export const useTokenTransactionsPage = (
@@ -21,6 +22,8 @@ export const useTokenTransactionsPage = (
 
   const {
     data: allTransactions,
+    status: fetchStatus,
+    isFetchingNextPage,
     refetch,
     hasNextPage,
     fetchNextPage,
@@ -73,7 +76,7 @@ export const useTokenTransactionsPage = (
     return transactions[0]?.hash;
   }, [transactions]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
     `token-details/page/history/${currentNetwork.chainId}/${firstTransactionHash}/${tokenPath}`,
     transactions,
   );
@@ -84,11 +87,14 @@ export const useTokenTransactionsPage = (
 
   return {
     data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
-    status,
-    isLoading,
-    isFetching,
+    status: deriveHistoryStatus(
+      transactionHistoryService.supported,
+      enabled,
+      fetchStatus,
+      processingStatus,
+      !!allTransactions?.pages.length,
+    ),
+    isFetching: isFetchingNextPage || isProcessing,
     fetchNextPage: () =>
       fetchNextPage()
         .then(() => true)

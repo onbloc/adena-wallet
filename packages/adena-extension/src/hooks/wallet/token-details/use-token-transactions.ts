@@ -6,6 +6,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
+import { deriveHistoryStatus } from '../transaction-history/derive-history-status';
 import type { TransactionHistoryResult } from '../transaction-history/types';
 
 export const useTokenTransactions = (
@@ -19,7 +20,11 @@ export const useTokenTransactions = (
   const { tokenMetainfos } = useTokenMetainfo();
   const [fetchedHistoryBlockHeight, setFetchedHistoryBlockHeight] = useState<number | null>(null);
 
-  const { data: allTransactions, refetch } = useQuery({
+  const {
+    data: allTransactions,
+    refetch,
+    status: fetchStatus,
+  } = useQuery({
     queryKey: ['token-details/history', currentNetwork.networkId, `${isNative}`, currentAddress, tokenPath],
 
     queryFn: () => {
@@ -63,7 +68,7 @@ export const useTokenTransactions = (
     return allTransactions.transactions.slice(0, blockIndex || 0);
   }, [allTransactions, blockIndex]);
 
-  const { data, isFetched, status, isLoading, isFetching } = useMakeTransactionsWithTime(
+  const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
     `token-details/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
     transactions,
   );
@@ -83,11 +88,14 @@ export const useTokenTransactions = (
 
   return {
     data: data || null,
-    isSupported: transactionHistoryService.supported && enabled,
-    isFetched: isFetched,
-    status,
-    isLoading,
-    isFetching,
+    status: deriveHistoryStatus(
+      transactionHistoryService.supported,
+      enabled,
+      fetchStatus,
+      processingStatus,
+      !!allTransactions,
+    ),
+    isFetching: isProcessing,
     hasNextPage: allTransactions?.transactions.length !== blockIndex,
     fetchNextPage,
     refetch: refetchTransactions,
