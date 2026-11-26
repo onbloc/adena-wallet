@@ -1,6 +1,6 @@
 import type { QueryStatus } from '@tanstack/react-query';
 
-import type { TransactionHistoryStatus } from './types';
+import type { TransactionHistoryResult, TransactionHistoryStatus } from './types';
 
 export const deriveHistoryStatus = (
   supported: boolean,
@@ -19,4 +19,12 @@ export const deriveHistoryStatus = (
     return 'loading';
   }
   return processingStatus;
+};
+
+export const deriveHistoryData = (
+  data: TransactionHistoryResult['data'] | undefined,
+  status: TransactionHistoryStatus,
+  hasFetchData: boolean,
+): TransactionHistoryResult['data'] => {
+  return status === 'error' && !hasFetchData ? null : data || null;
 };

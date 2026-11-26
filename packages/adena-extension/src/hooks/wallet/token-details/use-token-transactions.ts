@@ -6,7 +6,7 @@ import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 
-import { deriveHistoryStatus } from '../transaction-history/derive-history-status';
+import { deriveHistoryData, deriveHistoryStatus } from '../transaction-history/derive-history-status';
 import type { TransactionHistoryResult } from '../transaction-history/types';
 
 export const useTokenTransactions = (
@@ -86,15 +86,18 @@ export const useTokenTransactions = (
     refetch(options);
   };
 
+  const hasFetchData = !!allTransactions;
+  const status = deriveHistoryStatus(
+    transactionHistoryService.supported,
+    enabled,
+    fetchStatus,
+    processingStatus,
+    hasFetchData,
+  );
+
   return {
-    data: data || null,
-    status: deriveHistoryStatus(
-      transactionHistoryService.supported,
-      enabled,
-      fetchStatus,
-      processingStatus,
-      !!allTransactions,
-    ),
+    data: deriveHistoryData(data, status, hasFetchData),
+    status,
     isFetching: isProcessing,
     hasNextPage: allTransactions?.transactions.length !== blockIndex,
     fetchNextPage,

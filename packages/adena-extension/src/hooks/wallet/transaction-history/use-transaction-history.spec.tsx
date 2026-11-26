@@ -1,3 +1,4 @@
+import { useCurrentAccount } from '@hooks/use-current-account';
 import { QueryClient, QueryClientProvider, useIsFetching } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
@@ -136,5 +137,38 @@ describe('useTransactionHistory', () => {
     await waitFor(() => expect(result.current.activeRequests).toBe(0));
     expect(result.current.status).toBe('success');
     expect(result.current.data).toBe(previousData);
+  });
+
+  it('reports error and clears data when the address changes and the new fetch fails', async () => {
+    fetchAllTransactionHistory.mockResolvedValue({ transactions: [] });
+    const { result, rerender } = renderHook(() => ({
+      ...useTransactionHistory({ enabled: true }),
+      activeRequests: useIsFetching(),
+    }), {
+      wrapper: makeWrapper(),
+    });
+    await waitFor(() => expect(result.current.status).toBe('success'));
+    expect(result.current.data).toEqual([]);
+    const previousData = result.current.data;
+    const currentAccount = useCurrentAccount();
+
+    let failFetch!: (error: Error) => void;
+    fetchAllTransactionHistory.mockReturnValueOnce(new Promise((_resolve, reject) => {
+      failFetch = reject;
+    }));
+
+    await vi.mocked(useCurrentAccount).withImplementation(
+      () => ({ ...currentAccount, currentAddress: 'g1otheraccount' }),
+      async () => {
+        rerender();
+        await waitFor(() => expect(result.current.activeRequests).toBe(1));
+        expect(fetchAllTransactionHistory).toHaveBeenLastCalledWith('g1otheraccount');
+        expect(result.current.data).toBe(previousData);
+
+        await act(async () => failFetch(new Error('New account history unavailable')));
+        await waitFor(() => expect(result.current.status).toBe('error'));
+        expect(result.current.data).toBeNull();
+      },
+    );
   });
 });

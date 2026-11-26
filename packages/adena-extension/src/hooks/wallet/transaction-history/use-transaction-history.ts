@@ -8,7 +8,7 @@ import { RefetchOptions, useQuery } from '@tanstack/react-query';
 import { useAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
-import { deriveHistoryStatus } from './derive-history-status';
+import { deriveHistoryData, deriveHistoryStatus } from './derive-history-status';
 import { dedupeAndSortTransactions } from './session-history-source';
 import type { TransactionHistoryResult } from './types';
 
@@ -99,15 +99,18 @@ export const useTransactionHistory = ({
     [refetch],
   );
 
+  const hasFetchData = !!fetchedTransactions;
+  const status = deriveHistoryStatus(
+    transactionHistoryService.supported,
+    enabled,
+    fetchStatus,
+    processingStatus,
+    hasFetchData,
+  );
+
   return {
-    data: data || null,
-    status: deriveHistoryStatus(
-      transactionHistoryService.supported,
-      enabled,
-      fetchStatus,
-      processingStatus,
-      !!fetchedTransactions,
-    ),
+    data: deriveHistoryData(data, status, hasFetchData),
+    status,
     isFetching: isProcessing,
     hasNextPage: transactions ? transactions.length !== blockIndex : false,
     fetchNextPage,

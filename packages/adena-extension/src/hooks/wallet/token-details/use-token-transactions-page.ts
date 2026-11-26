@@ -7,7 +7,7 @@ import { RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionWithPageInfo } from '@types';
 import { useMemo } from 'react';
 
-import { deriveHistoryStatus } from '../transaction-history/derive-history-status';
+import { deriveHistoryData, deriveHistoryStatus } from '../transaction-history/derive-history-status';
 import type { TransactionHistoryResult } from '../transaction-history/types';
 
 export const useTokenTransactionsPage = (
@@ -85,15 +85,18 @@ export const useTokenTransactionsPage = (
     refetch(options);
   };
 
+  const hasFetchData = !!allTransactions?.pages.length;
+  const status = deriveHistoryStatus(
+    transactionHistoryService.supported,
+    enabled,
+    fetchStatus,
+    processingStatus,
+    hasFetchData,
+  );
+
   return {
-    data: data || null,
-    status: deriveHistoryStatus(
-      transactionHistoryService.supported,
-      enabled,
-      fetchStatus,
-      processingStatus,
-      !!allTransactions?.pages.length,
-    ),
+    data: deriveHistoryData(data, status, hasFetchData),
+    status,
     isFetching: isFetchingNextPage || isProcessing,
     fetchNextPage: () =>
       fetchNextPage()
