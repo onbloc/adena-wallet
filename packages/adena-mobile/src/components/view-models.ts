@@ -53,7 +53,59 @@ export interface ActivitySectionView {
 
 export const MainTab = {
   WALLET: 'wallet',
+  CARDS: 'cards',
   ACTIVITY: 'activity',
 } as const;
 
 export type MainTab = (typeof MainTab)[keyof typeof MainTab];
+
+export interface SessionCardRowView {
+  id: string;
+  name: string;
+  whereLabel: string;
+  usedLabel: string;
+  limitLabel: string;
+  // 0..1 share of the limit spent in the current period.
+  ratio: number;
+  timeLeftLabel: string;
+  expired: boolean;
+}
+
+export interface SessionCardDetailView {
+  name: string;
+  expired: boolean;
+  address: string;
+  usedLabel: string;
+  limitLabel: string;
+  ratio: number;
+  usageCaption?: string;
+  where: string[];
+  limitRow: string;
+  untilRow: string;
+  restrictions: string[];
+  // Issued by another wallet or device: no local name or key.
+  issuedElsewhere: boolean;
+}
+
+export interface OrderRowView {
+  // `${kind}:${id}`.
+  id: string;
+  kind: 'dca' | 'limit';
+  title: string;
+  subtitle: string;
+  progress: number;
+  progressLabel: string;
+  statusLabel: string;
+  claimLabel?: string;
+}
+
+export interface OrderDetailView {
+  title: string;
+  progress: number;
+  progressLabel: string;
+  statusLabel: string;
+  rows: { label: string; value: string; emphasis?: boolean }[];
+  notes: string[];
+  canClaim: boolean;
+  cancelDescription: string;
+}

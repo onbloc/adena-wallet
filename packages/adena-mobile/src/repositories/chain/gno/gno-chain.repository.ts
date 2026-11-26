@@ -6,6 +6,7 @@ import { AppError, AppErrorCode, PINNED_SEQUENCE_MISMATCH_MESSAGE, TransactionPe
 import { TokenBalance } from '../../../domain/account';
 import { FeeEstimate, GNO_FEE_POLICY } from '../../../domain/fee';
 import { ChainFamily, Network } from '../../../domain/network';
+import { describePermission, formatExpiry, formatSpendPeriod, parseAllowPath } from '../../../domain/session-card';
 import {
   BroadcastResult,
   MessageSourceFile,
@@ -201,6 +202,27 @@ export class GnoChainRepository implements ChainRepository<GnoMessage> {
             code: sourceFiles(message.value.package),
             warning: 'This runs code with your account\'s permissions. It can move your funds and act as you. Review every file.',
           };
+        case GnoMessageType.AUTH_CREATE_SESSION: {
+          const { value } = message;
+
+          return {
+            title: 'Create card',
+            details: [
+              { label: 'Card address', value: this.deriveAddress(fromBase64(value.session_key), network) },
+              { label: 'Where', value: value.allow_paths.map(entry => describePermission(parseAllowPath(entry))).join('\n') },
+              { label: 'Limit', value: `${formatCoins(value.spend_limit)} · ${formatSpendPeriod(Number(value.spend_period))}` },
+              { label: 'Until', value: formatExpiry(Number(value.expires_at)) },
+            ],
+          };
+        }
+
+        case GnoMessageType.AUTH_REVOKE_SESSION:
+          return {
+            title: 'Revoke card',
+            details: [{ label: 'Card address', value: this.deriveAddress(fromBase64(message.value.session_key), network) }],
+          };
+        case GnoMessageType.AUTH_REVOKE_ALL_SESSIONS:
+          return { title: 'Revoke all cards', details: [{ label: 'Account', value: message.value.creator }] };
       }
     });
   }

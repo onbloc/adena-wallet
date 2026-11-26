@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFloatingNavigationOffset, MainTabBar } from '../components/molecules';
 import { MainTab } from '../components/view-models';
 import { ActivityScreen } from '../containers/main/activity-screen';
+import { CardsScreen } from '../containers/main/cards-screen';
 import { HomeScreen } from '../containers/main/home-screen';
 import { useContainer } from '../di/container-provider';
 import { useWalletSnapshot } from '../hooks/use-wallet-snapshot';
@@ -14,8 +15,8 @@ import { MainTabParamList } from './types';
 
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 
-const TAB_BY_ROUTE: Record<keyof MainTabParamList, MainTab> = { Wallet: MainTab.WALLET, Activity: MainTab.ACTIVITY };
-const ROUTE_BY_TAB: Record<MainTab, keyof MainTabParamList> = { wallet: 'Wallet', activity: 'Activity' };
+const TAB_BY_ROUTE: Record<keyof MainTabParamList, MainTab> = { Wallet: MainTab.WALLET, Cards: MainTab.CARDS, Activity: MainTab.ACTIVITY };
+const ROUTE_BY_TAB: Record<MainTab, keyof MainTabParamList> = { wallet: 'Wallet', cards: 'Cards', activity: 'Activity' };
 
 const TabBar = ({ state, navigation, showSwap }: BottomTabBarProps & { showSwap: boolean }): ReactElement => {
   const insets = useSafeAreaInsets();
@@ -56,6 +57,7 @@ export const MainTabs = (): ReactElement => {
       tabBar={tabBarTabsNavigator}
     >
       <Tabs.Screen name='Wallet' component={HomeScreen} />
+      <Tabs.Screen name='Cards' component={CardsScreen} />
       <Tabs.Screen name='Activity' component={ActivityScreen} />
     </Tabs.Navigator>
   );

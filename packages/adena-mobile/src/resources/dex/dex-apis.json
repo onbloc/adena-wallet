@@ -14,9 +14,22 @@
         "packagePath": "gno.land/r/gnoland/wugnot",
         "minDeposit": "1000"
       },
-      "feeTiers": [100, 500, 3000, 10000],
+      "feeTiers": [
+        100,
+        500,
+        3000,
+        10000
+      ],
       "nativeFeeReserve": "1000000",
-      "popularTokens": ["ugnot", "gno.land/r/gnoswap/gns.GNS"]
+      "popularTokens": [
+        "ugnot",
+        "gno.land/r/gnoswap/gns.GNS"
+      ]
+    },
+    "orders": {
+      "dcaPath": "gno.land/r/gnoswap/order/dca",
+      "limitPath": "gno.land/r/gnoswap/order/limit",
+      "whitelistPath": "gno.land/r/gnoswap/order/whitelist"
     }
   },
   "onyx-1": {
@@ -34,9 +47,22 @@
         "packagePath": "gno.land/r/gnoland/wugnot",
         "minDeposit": "1000"
       },
-      "feeTiers": [100, 500, 3000, 10000],
+      "feeTiers": [
+        100,
+        500,
+        3000,
+        10000
+      ],
       "nativeFeeReserve": "1000000",
-      "popularTokens": ["ugnot", "gno.land/r/gnoswap/gns.GNS"]
+      "popularTokens": [
+        "ugnot",
+        "gno.land/r/gnoswap/gns.GNS"
+      ]
+    },
+    "orders": {
+      "dcaPath": "gno.land/r/gnoswap/order/dca",
+      "limitPath": "gno.land/r/gnoswap/order/limit",
+      "whitelistPath": "gno.land/r/gnoswap/order/whitelist"
     }
   },
   "gnoswap": {
@@ -54,9 +80,23 @@
         "packagePath": "gno.land/r/gnoland/wugnot",
         "minDeposit": "1000"
       },
-      "feeTiers": [100, 500, 3000, 10000],
+      "feeTiers": [
+        100,
+        500,
+        3000,
+        10000
+      ],
       "nativeFeeReserve": "1000000",
-      "popularTokens": ["ugnot", "gno.land/r/gnoswap/gns.GNS", "gno.land/r/gnoswap/test_token/test_usdc.USDC"]
+      "popularTokens": [
+        "ugnot",
+        "gno.land/r/gnoswap/gns.GNS",
+        "gno.land/r/gnoswap/test_token/test_usdc.USDC"
+      ]
+    },
+    "orders": {
+      "dcaPath": "gno.land/r/gnoswap/order/dca",
+      "limitPath": "gno.land/r/gnoswap/order/limit",
+      "whitelistPath": "gno.land/r/gnoswap/order/whitelist"
     }
   }
 }

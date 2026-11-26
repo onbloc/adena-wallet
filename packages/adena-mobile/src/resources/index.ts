@@ -182,6 +182,14 @@ export interface DexSwapConfig {
   popularTokens: string[];
 }
 
+// GnoSwap order protocol realms (gnoswap-labs/gnoswap-order-protocol): escrowed DCA and limit orders run by GnoSwap keepers.
+export interface DexOrderConfig {
+  dcaPath: string;
+  limitPath: string;
+  // Pool whitelist shared by both, queried per target ("dca" / "limit").
+  whitelistPath: string;
+}
+
 export interface DexApiConfig {
   provider: DexProvider;
   // Base URL without a trailing slash, e.g. https://api.gnoswap.io/v1.
@@ -190,6 +198,8 @@ export interface DexApiConfig {
   wrappedPaths?: Record<string, string>;
   // Absent on networks where swaps are not offered.
   swap?: DexSwapConfig;
+  // Absent on networks without the order protocol; needs `swap` for its token list and wrapped native coin.
+  orders?: DexOrderConfig;
 }
 
 // Market data (token metadata, prices, OHLCV) and swap contracts per network, keyed by network id.
@@ -232,6 +242,21 @@ const toDexSwapConfig = (networkId: string, resource: unknown): DexSwapConfig | 
   };
 };
 
+const toDexOrderConfig = (networkId: string, resource: unknown, swap: DexSwapConfig | undefined): DexOrderConfig | undefined => {
+  if (resource === undefined) {
+    return undefined;
+  }
+
+  const orders = (resource ?? {}) as Partial<DexOrderConfig>;
+
+  assert(swap !== undefined, `${networkId} orders need swap metadata`);
+  assert(isRealmPath(orders.dcaPath), `${networkId} orders dcaPath must be a realm path`);
+  assert(isRealmPath(orders.limitPath), `${networkId} orders limitPath must be a realm path`);
+  assert(isRealmPath(orders.whitelistPath), `${networkId} orders whitelistPath must be a realm path`);
+
+  return { dcaPath: orders.dcaPath as string, limitPath: orders.limitPath as string, whitelistPath: orders.whitelistPath as string };
+};
+
 export const toDexApiConfigMap = (resource: Record<string, unknown>): DexApiConfigMap =>
   Object.fromEntries(Object.entries(resource).map(([networkId, raw]) => {
     const config = (raw ?? {}) as Partial<DexApiConfig>;
@@ -241,12 +266,14 @@ export const toDexApiConfigMap = (resource: Record<string, unknown>): DexApiConf
     Object.entries(config.wrappedPaths ?? {}).forEach(([denom, path]) =>
       assert(isNonEmptyString(denom) && isNonEmptyString(path), `${networkId} dex wrappedPaths must map denoms to paths`));
     const swap = toDexSwapConfig(networkId, config.swap);
+    const orders = toDexOrderConfig(networkId, config.orders, swap);
 
     return [networkId, {
       provider: config.provider as DexProvider,
       apiUrl: (config.apiUrl as string).replace(/\/+$/, ''),
       wrappedPaths: config.wrappedPaths,
       ...(swap ? { swap } : {}),
+      ...(orders ? { orders } : {}),
     }];
   }));
 

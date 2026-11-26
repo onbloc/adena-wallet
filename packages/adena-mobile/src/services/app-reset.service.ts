@@ -15,6 +15,8 @@ export class AppResetService {
     private readonly keyValueStore: KeyValueStore,
     private readonly migrationService: MigrationService,
     private readonly resetMarker: ResetMarker = new ResetMarker(keyValueStore),
+    // Secrets named by records in general storage (e.g. card keys), removed while those records still exist.
+    private readonly wipeNamedSecrets: () => Promise<void> = async () => undefined,
   ) {}
 
   async resetAll(): Promise<void> {
@@ -28,6 +30,7 @@ export class AppResetService {
     const secrets = Object.values(SecureKey).filter(key => !kept.includes(key));
 
     await Promise.all(secrets.map(key => this.secureStore.removeItem(key)));
+    await this.wipeNamedSecrets();
     // Clears the reset marker too, so it goes only after every secret is gone.
     this.keyValueStore.clearAll();
     await this.migrationService.migrateAll();

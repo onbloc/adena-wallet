@@ -11,6 +11,7 @@ import {
   CircleX,
   Cloud,
   Copy,
+  CreditCard,
   Delete,
   Eye,
   EyeOff,
@@ -85,6 +86,7 @@ const ICONS = {
   camera: Camera,
   cloud: Cloud,
   shield: Shield,
+  card: CreditCard,
 } satisfies Record<string, LucideIcon | ((props: GlyphProps) => ReactElement)>;
 
 export type IconName = keyof typeof ICONS;

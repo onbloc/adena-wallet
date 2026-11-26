@@ -64,25 +64,45 @@ const registryApprove = (caller: string, registry: Grc20RegistryConfig, tokenPat
   };
 };
 
-const approveMessage = (input: SwapMessagesInput, amountIn: string): GnoMessage => {
-  const { caller, config, registry } = input;
-  const token = input.input;
-  const spender = config.routerAddress;
+export interface ApproveRequest {
+  caller: string;
+  config: DexSwapConfig;
+  registry: Grc20RegistryConfig;
+  token: SwapMessageToken;
+  spender: string;
+  amount: string;
+}
 
+// The allowance message for `spender`, in the form the token supports.
+export const buildApproveMessage = ({ caller, config, registry, token, spender, amount }: ApproveRequest): GnoMessage => {
   // wugnot exposes a crossing Approve(spender, amount) for its own token.
   if (token.native) {
-    return call(caller, config.wrappedNative.packagePath, 'Approve', [spender, amountIn]);
+    return call(caller, config.wrappedNative.packagePath, 'Approve', [spender, amount]);
   }
 
   const pkgPath = parseRegistryKey(token.swapPath)?.pkgPath;
-  const routeArgs = token.approveRoute ? resolveRouteArgs(token.approveRoute, { spender, amount: amountIn }) : null;
+  const routeArgs = token.approveRoute ? resolveRouteArgs(token.approveRoute, { spender, amount }) : null;
 
   if (token.approveRoute && routeArgs && pkgPath) {
     return call(caller, pkgPath, token.approveRoute.name, routeArgs);
   }
 
-  return registryApprove(caller, registry, token.swapPath, spender, amountIn);
+  return registryApprove(caller, registry, token.swapPath, spender, amount);
 };
+
+export const buildWrapMessage = (caller: string, config: DexSwapConfig, amount: string): GnoMessage =>
+  call(caller, config.wrappedNative.packagePath, 'Deposit', null, `${amount}${config.wrappedNative.denom}`);
+
+export const buildCallMessage = call;
+
+const approveMessage = (input: SwapMessagesInput, amountIn: string): GnoMessage => buildApproveMessage({
+  caller: input.caller,
+  config: input.config,
+  registry: input.registry,
+  token: input.input,
+  spender: input.config.routerAddress,
+  amount: amountIn,
+});
 
 // A MsgCall's realm function or a MsgRun's code; amounts and the deadline are call args and left out.
 export const swapMessageTargets = (messages: GnoMessage[]): string[] => messages.map((message) => {

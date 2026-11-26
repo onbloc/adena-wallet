@@ -3,6 +3,8 @@ import { AssetRepository } from './asset-repository';
 import { ChainRepository } from './chain-repository';
 import { HistoryRepository } from './history-repository';
 import { NftRepository } from './nft-repository';
+import { OrderRepository } from './order-repository';
+import { SessionRepository } from './session-repository';
 import { SwapRepository } from './swap-repository';
 
 // Everything a chain family contributes. Adding a family = adding one module.
@@ -14,6 +16,10 @@ export interface ChainModule {
   history: HistoryRepository;
   // Families without a DEX integration leave it out.
   swap?: SwapRepository;
+  // Families without session accounts leave it out.
+  sessions?: SessionRepository;
+  // Families without the GnoSwap order protocol leave it out.
+  orders?: OrderRepository;
 }
 
 export class ChainRegistry {
@@ -51,6 +57,14 @@ export class ChainRegistry {
 
   swap(network: Network): SwapRepository | undefined {
     return this.modules.get(network.family)?.swap;
+  }
+
+  sessions(network: Network): SessionRepository | undefined {
+    return this.modules.get(network.family)?.sessions;
+  }
+
+  orders(network: Network): OrderRepository | undefined {
+    return this.modules.get(network.family)?.orders;
   }
 
   supports(family: ChainFamily): boolean {

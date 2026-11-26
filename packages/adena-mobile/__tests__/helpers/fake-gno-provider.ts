@@ -1,4 +1,5 @@
 import { toBase64 } from '@cosmjs/encoding';
+import { ObjectNotFoundError, SessionAccountInfo } from '@gnolang/gno-js-client';
 import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 
 import { GnoProvider } from '../../src/repositories/chain/gno/gno-provider';
@@ -21,6 +22,12 @@ export interface FakeGnoProviderState {
   simulate?: (tx: Tx) => Partial<ResponseDeliverTx>;
   // Indexed txs by hash; any other hash gets the node's not-found error.
   transactions: Record<string, 'committed' | 'failed'>;
+  // Session accounts by master address, as auth/accounts/<master>/sessions reports them.
+  sessions: Record<string, SessionAccountInfo[]>;
+  // Deployed package paths served by vm/qpaths (string-prefix matched, like the node).
+  realmPaths: string[];
+  // Makes the next broadcast fail like a node rejection.
+  rejectBroadcast?: Error;
 }
 
 // The JSON-RPC error text tm2 returns for an unknown tx hash, as the RPC client relays it.
@@ -48,6 +55,8 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
     signatures: {},
     simulated: [],
     transactions: {},
+    sessions: {},
+    realmPaths: [],
     ...overrides,
   };
 
@@ -93,7 +102,25 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
 
       return { hash, height: '41', tx_result: { ResponseBase: { Error: status === 'failed' ? { '@type': '/std.InternalError' } : null } } };
     },
+    getSessions: async (master: string) => state.sessions[master] ?? [],
+    getSession: async (master: string, address: string) => {
+      const session = (state.sessions[master] ?? []).find(item => item.address === address);
+
+      if (!session) {
+        throw new ObjectNotFoundError(`no session ${address}`);
+      }
+
+      return session;
+    },
+    getRealmPaths: async (prefix: string) => state.realmPaths.filter(path => path.startsWith(prefix)),
     sendTransaction: async (encoded: string) => {
+      if (state.rejectBroadcast) {
+        const error = state.rejectBroadcast;
+
+        state.rejectBroadcast = undefined;
+        throw error;
+      }
+
       state.broadcasts.push(encoded);
       return { hash: 'HASH', height: '42', deliver_tx: { ResponseBase: { Data: null } }, check_tx: {} };
     },

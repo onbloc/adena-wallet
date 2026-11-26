@@ -56,6 +56,19 @@ describe('bundled resources', () => {
     expect(DEX_API_CONFIG['atomone-1']).toBeUndefined();
   });
 
+  it('bundles the GnoSwap order realms and requires swap metadata for them', () => {
+    expect(DEX_API_CONFIG['gnoland-1'].orders).toEqual({
+      dcaPath: 'gno.land/r/gnoswap/order/dca',
+      limitPath: 'gno.land/r/gnoswap/order/limit',
+      whitelistPath: 'gno.land/r/gnoswap/order/whitelist',
+    });
+
+    const base = dexApis['gnoland-1'];
+
+    expect(() => toDexApiConfigMap({ net: { ...base, orders: { ...base.orders, dcaPath: 'gno.land/p/evil' } } })).toThrow('dcaPath');
+    expect(() => toDexApiConfigMap({ net: { ...base, swap: undefined } })).toThrow('orders need swap');
+  });
+
   it('rejects swap metadata that does not match the router realm or uses foreign paths', () => {
     const swap = dexApis['gnoland-1'].swap;
     const parse = (patch: Record<string, unknown>) => (): unknown => toDexApiConfigMap({ net: { ...dexApis['gnoland-1'], swap: { ...swap, ...patch } } });

@@ -18,6 +18,7 @@ const SEARCH = 'search';
 export const MainTabBar = ({ selected, showSwap, onNavigate, onSearch, onSwap }: MainTabBarProps): ReactElement => {
   const items: BottomNavigationItem<MainTab | typeof SEARCH>[] = [
     { key: MainTab.WALLET, icon: 'home', label: 'Wallet' },
+    { key: MainTab.CARDS, icon: 'card', label: 'Cards' },
     { key: SEARCH, icon: 'search', label: 'Search' },
     { key: MainTab.ACTIVITY, icon: 'activity', label: 'Activity' },
   ];

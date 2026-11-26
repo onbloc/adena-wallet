@@ -11,6 +11,8 @@ import { AddTokenScreen } from '../containers/main/add-token-screen';
 import { AddressBookEditScreen } from '../containers/main/address-book-edit-screen';
 import { AddressBookScreen } from '../containers/main/address-book-screen';
 import { BuyCryptoScreen } from '../containers/main/buy-crypto-screen';
+import { CardCreateScreen } from '../containers/main/card-create-screen';
+import { CardDetailScreen } from '../containers/main/card-detail-screen';
 import { ChangePasswordScreen } from '../containers/main/change-password-screen';
 import { CheckoutScreen } from '../containers/main/checkout-screen';
 import { CloudBackupScreen } from '../containers/main/cloud-backup-screen';
@@ -23,6 +25,8 @@ import { ManageTokensScreen } from '../containers/main/manage-tokens-screen';
 import { NetworksScreen } from '../containers/main/networks-screen';
 import { NftCollectionScreen } from '../containers/main/nft-collection-screen';
 import { NftDetailScreen } from '../containers/main/nft-detail-screen';
+import { OrderCreateScreen } from '../containers/main/order-create-screen';
+import { OrderDetailScreen } from '../containers/main/order-detail-screen';
 import { QrScannerScreen } from '../containers/main/qr-scanner-screen';
 import { ReceiveScreen } from '../containers/main/receive-screen';
 import { RecoveryPhraseScreen } from '../containers/main/recovery-phrase-screen';
@@ -124,6 +128,10 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
       <MainStack.Screen name='Swap' component={SwapScreen} options={{ presentation: 'fullScreenModal' }} />
+      <MainStack.Screen name='CardCreate' component={CardCreateScreen} />
+      <MainStack.Screen name='CardDetail' component={CardDetailScreen} />
+      <MainStack.Screen name='OrderCreate' component={OrderCreateScreen} />
+      <MainStack.Screen name='OrderDetail' component={OrderDetailScreen} />
       <MainStack.Screen
         name='DappRequest'
         component={DappRequestScreen}

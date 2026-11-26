@@ -4,6 +4,7 @@ import { ScrollView, useWindowDimensions } from 'react-native';
 import { Button } from '../../atoms';
 import { BottomSheet } from '../bottom-sheet';
 import { FeeSelector, FeeSelectorProps } from '../fee-selector';
+import { HoldToConfirmButton } from '../hold-to-confirm-button';
 import { InlineAlert } from '../inline-alert';
 import { KeyValueRow } from '../key-value-row';
 import { styles } from './review-sheet.styles';
@@ -23,11 +24,30 @@ export interface ReviewSheetProps {
   confirming: boolean;
   onConfirm: () => void;
   onClose: () => void;
+  // Grants or ends authority (e.g. cards): confirmed by a continuous hold instead of a tap.
+  confirmMode?: 'tap' | 'hold';
+  confirmTone?: 'primary' | 'destructive';
+  errorTitle?: string;
 }
 
 // Transaction review shared by token and NFT transfers: summary slot, details, fee tier, confirm.
 // The details scroll inside a bounded area so a long review (e.g. exact-output swaps) never pushes the button off screen.
-export const ReviewSheet = ({ visible, title, rows, fee, totals, error, confirmLabel, confirming, onConfirm, onClose, children }: PropsWithChildren<ReviewSheetProps>): ReactElement => {
+export const ReviewSheet = ({
+  visible,
+  title,
+  rows,
+  fee,
+  totals,
+  error,
+  confirmLabel,
+  confirming,
+  onConfirm,
+  onClose,
+  confirmMode = 'tap',
+  confirmTone = 'primary',
+  errorTitle = 'Transaction failed',
+  children,
+}: PropsWithChildren<ReviewSheetProps>): ReactElement => {
   const { height } = useWindowDimensions();
 
   return (
@@ -43,9 +63,11 @@ export const ReviewSheet = ({ visible, title, rows, fee, totals, error, confirmL
         {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} emphasis={row.emphasis} />)}
         <FeeSelector {...fee} />
         {totals}
-        {error && <InlineAlert tone='error' title='Transaction failed' description={error} />}
+        {error && <InlineAlert tone='error' title={errorTitle} description={error} />}
       </ScrollView>
-      <Button label={confirmLabel} loadingLabel='Broadcasting…' loading={confirming} disabled={fee.tooLow} onPress={onConfirm} testID='review-confirm' />
+      {confirmMode === 'hold'
+        ? <HoldToConfirmButton label={confirmLabel} loadingLabel='Broadcasting…' tone={confirmTone} loading={confirming} disabled={fee.tooLow} onConfirm={onConfirm} testID='review-confirm' />
+        : <Button label={confirmLabel} loadingLabel='Broadcasting…' loading={confirming} disabled={fee.tooLow} onPress={onConfirm} testID='review-confirm' />}
     </BottomSheet>
   );
 };

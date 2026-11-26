@@ -91,7 +91,8 @@ describe('RootNavigator', () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED });
     await renderRoot();
     expect(screen.getByText('MainTabs')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toHaveLength(33);
+    expect(navigationRef.getRootState()?.routeNames).toHaveLength(37);
+    expect(navigationRef.getRootState()?.routeNames).toEqual(expect.arrayContaining(['CardCreate', 'CardDetail', 'OrderCreate', 'OrderDetail']));
 
     await act(async () => navigationRef.navigate('DappRequest'));
     expect(await screen.findByText('DappRequestScreen')).toBeTruthy();

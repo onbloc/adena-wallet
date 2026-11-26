@@ -7,7 +7,9 @@ import { GnoAssetRepository } from './gno-asset.repository';
 import { GnoChainRepository } from './gno-chain.repository';
 import { GnoGrc20Registry } from './gno-grc20-registry';
 import { GnoNftRepository } from './gno-nft.repository';
+import { GnoOrderRepository } from './gno-order.repository';
 import { GnoProviderFactory } from './gno-provider';
+import { GnoSessionRepository } from './gno-session.repository';
 import { GnoSwapRepository } from './gno-swap.repository';
 import { GnoTokenResourceRepository } from './gno-token-resource.repository';
 import { GnoHistoryRepository } from './history/gno-history.repository';
@@ -26,6 +28,8 @@ export const createGnoModule = ({ providerFactory, http }: GnoModuleDeps): Chain
     chain: new GnoChainRepository(providerFactory),
     assets: new GnoAssetRepository(providerFactory, tokenResources, new GnoGrc20Registry(providerFactory), api),
     swap: new GnoSwapRepository(providerFactory, new GnoswapApiClient(http), tokenResources),
+    sessions: new GnoSessionRepository(providerFactory),
+    orders: new GnoOrderRepository(providerFactory),
     nfts: new GnoNftRepository(providerFactory, api),
     history: new GnoHistoryRepository(api),
   };

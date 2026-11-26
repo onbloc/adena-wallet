@@ -16,6 +16,7 @@ const mockScreen = (name: string): ReactElement => {
 
 jest.mock('../../../src/containers/main/home-screen', () => ({ HomeScreen: () => mockScreen('HomeScreen') }));
 jest.mock('../../../src/containers/main/activity-screen', () => ({ ActivityScreen: () => mockScreen('ActivityScreen') }));
+jest.mock('../../../src/containers/main/cards-screen', () => ({ CardsScreen: () => mockScreen('CardsScreen') }));
 jest.mock('../../../src/hooks/use-wallet-snapshot', () => ({ useWalletSnapshot: () => ({ network: { id: 'gno' } }) }));
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 20 } };
@@ -51,6 +52,12 @@ describe('MainTabs', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Wallet' }));
     expect(screen.getByText('HomeScreen')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
+  });
+
+  it('puts the Cards tab next to Wallet', async () => {
+    await renderTabs(true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cards' }));
+    expect(await screen.findByText('CardsScreen')).toBeTruthy();
   });
 
   it('opens the stacked Search page from the search icon', async () => {

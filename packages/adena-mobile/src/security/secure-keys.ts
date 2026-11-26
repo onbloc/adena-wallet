@@ -16,4 +16,11 @@ export const SecureKey = {
   SECURE_SCHEMA_VERSION: 'secure-schema-version',
 } as const;
 
-export type SecureKey = (typeof SecureKey)[keyof typeof SecureKey];
+const SESSION_CARD_KEY_PREFIX = 'session-card-key.';
+
+// One biometric-bound item per session card private key, named by the card's session address.
+export type SessionCardSecureKey = `${typeof SESSION_CARD_KEY_PREFIX}${string}`;
+
+export const sessionCardSecureKey = (sessionAddress: string): SessionCardSecureKey => `${SESSION_CARD_KEY_PREFIX}${sessionAddress}`;
+
+export type SecureKey = (typeof SecureKey)[keyof typeof SecureKey] | SessionCardSecureKey;

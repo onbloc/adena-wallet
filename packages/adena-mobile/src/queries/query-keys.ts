@@ -36,4 +36,10 @@ export const queryKeys = {
   tokenInfo: (networkId: string, tokenId: string) => [...queryKeys.all, 'token-info', networkId, tokenId] as const,
   activities: (networkId: string, accountId: string, filterKey: string) =>
     [...queryKeys.all, 'activities', networkId, accountId, filterKey] as const,
+  orders: (networkId: string, accountId: string) => [...queryKeys.all, 'orders', networkId, accountId] as const,
+  orderRules: (networkId: string, kind: string, inputTokenId: string, outputTokenId: string) =>
+    [...queryKeys.all, 'order-rules', networkId, kind, inputTokenId, outputTokenId] as const,
+  sessionCards: (networkId: string, accountId: string) => [...queryKeys.all, 'session-cards', networkId, accountId] as const,
+  sessionCard: (networkId: string, accountId: string, sessionAddress: string) =>
+    [...queryKeys.sessionCards(networkId, accountId), sessionAddress] as const,
 };

@@ -22,6 +22,8 @@ import { PendingBroadcastRepository, StoragePendingBroadcastRepository } from '.
 import { StoragePreferenceRepository } from '../repositories/preference.repository';
 import { ApiPriceRepository, PriceRepository } from '../repositories/price.repository';
 import { StorageProcessedDappRequestRepository } from '../repositories/processed-dapp-request.repository';
+import { StorageSessionCardRepository } from '../repositories/session-card.repository';
+import { SessionKeyRepository } from '../repositories/session-key.repository';
 import { StorageTokenListRepository } from '../repositories/token-list.repository';
 import { SecureVaultRepository } from '../repositories/vault.repository';
 import { DEX_API_CONFIG, ONRAMP_CONFIG, OnrampConfig } from '../resources';
@@ -45,11 +47,13 @@ import { MigrationService } from '../services/migration.service';
 import { NetworkService } from '../services/network.service';
 import { NftService } from '../services/nft.service';
 import { OnrampService } from '../services/onramp.service';
+import { OrderService } from '../services/order.service';
 import { PasswordAttemptLimiter } from '../services/password-attempt-limiter';
 import { PreferenceService } from '../services/preference.service';
 import { PriceService } from '../services/price.service';
 import { ResetMarker } from '../services/reset-marker';
 import { RestoreMarker } from '../services/restore-marker';
+import { SessionCardService } from '../services/session-card.service';
 import { SwapService } from '../services/swap.service';
 import { TokenService } from '../services/token.service';
 import { TransactionService } from '../services/transaction.service';
@@ -111,6 +115,8 @@ export interface Services {
   preferenceService: PreferenceService;
   migrationService: MigrationService;
   cloudBackupService: CloudBackupService;
+  sessionCardService: SessionCardService;
+  orderService: OrderService;
 }
 
 export type AppContainer = Services & {
@@ -153,11 +159,20 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const tokenService = overrides.tokenService ?? new TokenService(chainRegistry, accountService, tokenListRepository);
   const nftService = overrides.nftService
     ?? new NftService(chainRegistry, accountService, new StorageNftPreferenceRepository(keyValueStore));
+  const sessionCardService = overrides.sessionCardService ?? new SessionCardService(
+    chainRegistry,
+    accountService,
+    transactionService,
+    new StorageSessionCardRepository(keyValueStore),
+    new SessionKeyRepository(secureStore),
+    infra.now,
+  );
+  const swapService = overrides.swapService ?? new SwapService(chainRegistry, accountService, transactionService, DEX_API_CONFIG, infra.now);
   const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
   const cloudBackupStateRepository = new StorageCloudBackupStateRepository(keyValueStore);
   const walletService = overrides.walletService
-    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository);
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository, sessionCardService.accountScopedData], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository);
   const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
     infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
     infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),
@@ -179,7 +194,8 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     networkService,
     balanceService,
     transactionService,
-    swapService: overrides.swapService ?? new SwapService(chainRegistry, accountService, transactionService, DEX_API_CONFIG, infra.now),
+    swapService,
+    orderService: overrides.orderService ?? new OrderService(chainRegistry, accountService, transactionService, swapService, DEX_API_CONFIG, infra.now),
     connectedAppService,
     tokenService,
     priceService,
@@ -189,7 +205,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     addressBookService: overrides.addressBookService
       ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
     onrampService: overrides.onrampService ?? new OnrampService(infra.onrampConfig ?? ONRAMP_CONFIG),
-    appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
+    appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker, () => sessionCardService.wipeKeys()),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),
     walletService,
     dappService: overrides.dappService
@@ -197,5 +213,6 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
     cloudBackupService,
+    sessionCardService,
   };
 };

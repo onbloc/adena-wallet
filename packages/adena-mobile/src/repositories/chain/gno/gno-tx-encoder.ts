@@ -1,4 +1,18 @@
-import { Any, decodeTxMessages, MemFile, MemPackage, MsgAddPackage, MsgCall, MsgRun, MsgSend } from '@gnolang/gno-js-client';
+import { fromBase64 } from '@cosmjs/encoding';
+import {
+  Any,
+  decodeTxMessages,
+  MemFile,
+  MemPackage,
+  MsgAddPackage,
+  MsgCall,
+  MsgCreateSession,
+  MsgRevokeAllSessions,
+  MsgRevokeSession,
+  MsgRun,
+  MsgSend,
+  secp256k1PubKeyToAny,
+} from '@gnolang/gno-js-client';
 import {
   encodeCharacterSet,
   parseSignCoin,
@@ -71,8 +85,53 @@ export const encodeGnoMessage = (message: GnoMessage): Any => {
 
       return Any.create({ type_url: message.type, value: MsgRun.encode(msg).finish() });
     }
+
+    case GnoMessageType.AUTH_CREATE_SESSION: {
+      const { value } = message;
+      const msg = MsgCreateSession.create({
+        creator: value.creator,
+        session_key: secp256k1PubKeyToAny(fromBase64(value.session_key)),
+        expires_at: BigInt(value.expires_at || '0'),
+        allow_paths: value.allow_paths,
+        spend_limit: value.spend_limit || '',
+        spend_period: BigInt(value.spend_period || '0'),
+      });
+
+      return Any.create({ type_url: message.type, value: MsgCreateSession.encode(msg).finish() });
+    }
+
+    case GnoMessageType.AUTH_REVOKE_SESSION: {
+      const msg = MsgRevokeSession.create({
+        creator: message.value.creator,
+        session_key: secp256k1PubKeyToAny(fromBase64(message.value.session_key)),
+      });
+
+      return Any.create({ type_url: message.type, value: MsgRevokeSession.encode(msg).finish() });
+    }
+
+    case GnoMessageType.AUTH_REVOKE_ALL_SESSIONS:
+      return Any.create({
+        type_url: message.type,
+        value: MsgRevokeAllSessions.encode(MsgRevokeAllSessions.create({ creator: message.value.creator })).finish(),
+      });
   }
 };
+
+// The chain marks these MsgCreateSession fields omitempty; gno-js-client still emits them when empty.
+const toChainAminoJson = (messages: Record<string, unknown>[]): Record<string, unknown>[] =>
+  messages.map((message) => {
+    if (message['@type'] !== GnoMessageType.AUTH_CREATE_SESSION) {
+      return message;
+    }
+
+    const { spend_limit: spendLimit, spend_period: spendPeriod, ...rest } = message;
+
+    return {
+      ...rest,
+      ...(spendLimit ? { spend_limit: spendLimit } : {}),
+      ...(spendPeriod && spendPeriod !== '0' ? { spend_period: spendPeriod } : {}),
+    };
+  });
 
 const toTxFee = (fee: TransactionFee): TxFee =>
   TxFee.create({ gas_wanted: BigInt(fee.gasWanted), gas_fee: fee.gasFee });
@@ -106,7 +165,7 @@ export const buildGnoSignBytes = (tx: Tx, chainId: string, accountNumber: string
     account_number: accountNumber,
     sequence,
     fee: { amount: parseSignCoin(tx.fee.gas_fee), gas: tx.fee.gas_wanted.toString(10) },
-    msgs: decodeTxMessages(tx.messages),
+    msgs: toChainAminoJson(decodeTxMessages(tx.messages) as Record<string, unknown>[]),
     memo: tx.memo,
   };
 
