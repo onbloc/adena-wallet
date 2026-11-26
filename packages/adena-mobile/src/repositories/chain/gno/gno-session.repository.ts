@@ -1,5 +1,5 @@
-import { toBase64 } from '@cosmjs/encoding';
-import { ObjectNotFoundError, SessionAccountInfo } from '@gnolang/gno-js-client';
+import { fromBase64, toBase64 } from '@cosmjs/encoding';
+import { normalizeSessionAccount, SessionAccountInfo } from '@gnolang/gno-js-client';
 
 import { AppError, AppErrorCode } from '../../../core/errors';
 import { Network } from '../../../domain/network';
@@ -40,6 +40,15 @@ export const toChainSession = (info: SessionAccountInfo, denom: string): ChainSe
   expiresAt: info.expires_at ?? 0,
 });
 
+// auth/accounts/<master>/session(s) answers JSON `null` (or nothing) when there is no session, which
+// gno-js-client 3.1.0 does not handle, so the queries are made here.
+const querySessions = async (provider: GnoProvider, path: string): Promise<unknown> => {
+  const { ResponseBase } = (await provider.abciQuery({ path, data: new Uint8Array(), height: 0, prove: false })).response;
+  const raw = ResponseBase.Data ? new TextDecoder().decode(fromBase64(ResponseBase.Data)).trim() : '';
+
+  return raw ? JSON.parse(raw) : null;
+};
+
 export class GnoSessionRepository implements SessionRepository {
   constructor(private readonly providerFactory: GnoProviderFactory) {}
 
@@ -53,7 +62,9 @@ export class GnoSessionRepository implements SessionRepository {
     const provider = await this.provider(network);
 
     try {
-      return (await provider.getSessions(masterAddress)).map(info => toChainSession(info, network.nativeToken.denom));
+      const sessions = await querySessions(provider, `auth/accounts/${masterAddress}/sessions`);
+
+      return Array.isArray(sessions) ? sessions.map(raw => toChainSession(normalizeSessionAccount(raw), network.nativeToken.denom)) : [];
     }
     catch (error) {
       throw toNetworkError(error);
@@ -64,13 +75,11 @@ export class GnoSessionRepository implements SessionRepository {
     const provider = await this.provider(network);
 
     try {
-      return toChainSession(await provider.getSession(masterAddress, sessionAddress), network.nativeToken.denom);
+      const session = await querySessions(provider, `auth/accounts/${masterAddress}/session/${sessionAddress}`);
+
+      return session && typeof session === 'object' ? toChainSession(normalizeSessionAccount(session), network.nativeToken.denom) : null;
     }
     catch (error) {
-      if (error instanceof ObjectNotFoundError) {
-        return null;
-      }
-
       throw toNetworkError(error);
     }
   }

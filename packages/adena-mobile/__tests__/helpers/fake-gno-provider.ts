@@ -1,5 +1,5 @@
 import { toBase64 } from '@cosmjs/encoding';
-import { ObjectNotFoundError, SessionAccountInfo } from '@gnolang/gno-js-client';
+import { SessionAccountInfo } from '@gnolang/gno-js-client';
 import { ResponseDeliverTx, Tx } from '@gnolang/tm2-js-client';
 
 import { GnoProvider } from '../../src/repositories/chain/gno/gno-provider';
@@ -84,6 +84,23 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
         return simulateAbciResponse(state.simulate ? state.simulate(tx) : { gas_used: state.gasUsed });
       }
 
+      // Like the node: JSON null for no sessions, empty data for an unknown one.
+      const sessions = /^auth\/accounts\/([^/]+)\/sessions$/.exec(path);
+
+      if (sessions) {
+        const list = state.sessions[sessions[1]] ?? [];
+
+        return { response: { ResponseBase: { Data: encodeData(list.length > 0 ? list : null) } } };
+      }
+
+      const single = /^auth\/accounts\/([^/]+)\/session\/([^/]+)$/.exec(path);
+
+      if (single) {
+        const session = (state.sessions[single[1]] ?? []).find(item => item.address === single[2]);
+
+        return { response: { ResponseBase: { Data: session ? encodeData(session) : null } } };
+      }
+
       const address = path.replace('bank/balances/', '');
 
       return { response: { ResponseBase: { Data: encodeData(state.balances[address] ?? '') } } };
@@ -101,16 +118,6 @@ export const createFakeGnoProvider = (overrides: Partial<FakeGnoProviderState> =
       }
 
       return { hash, height: '41', tx_result: { ResponseBase: { Error: status === 'failed' ? { '@type': '/std.InternalError' } : null } } };
-    },
-    getSessions: async (master: string) => state.sessions[master] ?? [],
-    getSession: async (master: string, address: string) => {
-      const session = (state.sessions[master] ?? []).find(item => item.address === address);
-
-      if (!session) {
-        throw new ObjectNotFoundError(`no session ${address}`);
-      }
-
-      return session;
     },
     getRealmPaths: async (prefix: string) => state.realmPaths.filter(path => path.startsWith(prefix)),
     sendTransaction: async (encoded: string) => {
