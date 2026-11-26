@@ -1,12 +1,8 @@
-import addPkgLogo from '@assets/addpkg.svg';
-import contractLogo from '@assets/contract.svg';
 import failed from '@assets/failed.svg';
-import gnotLogo from '@assets/icons/tokens/gnot.svg';
 import success from '@assets/success.svg';
 import theme from '@styles/theme';
 import { validateAddress } from 'adena-module';
 import axios, { AxiosResponse } from 'axios';
-import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 
 export function formatHash(hash: string, num?: number): string {
@@ -21,19 +17,6 @@ export function formatAddress(v: string, num?: number): string {
 
 export function formatNickname(v: string, num: number): string {
   return v.length > num ? `${v.slice(0, num)}..` : v;
-}
-
-export function formatFullNickname(name: string, address: string): string {
-  const resultName = formatNickname(name, 10);
-  const resultAddr = formatAddress(address);
-  return `${resultName} (${resultAddr})`;
-}
-
-export function getDateDiff(d: Date | string): number {
-  if (!d) {
-    return 0;
-  }
-  return new Date().getDate() - new Date(d).getDate();
 }
 
 export function dateTimeFormatEn(
@@ -60,138 +43,8 @@ export function dateTimeFormatEn(
   };
 }
 
-export function fullDateFormat(d: Date | string): string {
-  const currDate = new Date(d);
-  const result = dateTimeFormatEn(currDate);
-  return `${result.month} ${result.day}, ${result.year} ${result.time}`;
-}
-
-export function parseTxsEachDate(txs: object[]): any {
-  return txs.reduce((o: any, cur: any) => {
-    const k = cur.date.slice(0, 10);
-    const currDate = new Date(cur.date);
-    const dateDiff = getDateDiff(currDate);
-    let formatDate = '';
-
-    if (dateDiff === 0) {
-      formatDate = 'Today';
-    }
-    else if (dateDiff === 1) {
-      formatDate = 'Yesterday';
-    }
-    else {
-      const result = dateTimeFormatEn(currDate);
-      formatDate = `${result.month} ${result.day}, ${result.year}`;
-    }
-
-    let txFunc;
-    let txDesc;
-    if (cur.func === 'Sent') {
-      txDesc = `To: ${formatAddress(cur.to, 4)}`;
-    }
-    else if (cur.func === 'Received') {
-      txDesc = `From: ${formatAddress(cur.from, 4)}`;
-    }
-    else if (cur.type === '/vm.m_call') {
-      txDesc = `pkg: ${cur.pkg_path}`;
-    }
-    else if (cur.type === '/vm.m_addpkg') {
-      txFunc = 'AddPkg';
-    }
-    else if (cur.type === '/vm.m_run') {
-      txDesc = 'Run';
-    }
-    else {
-      txDesc = '';
-    }
-
-    let txLogo;
-    if (cur.type === '/bank.MsgSend') {
-      txLogo = gnotLogo;
-    }
-    else if (cur.type === '/vm.m_call') {
-      txLogo = contractLogo;
-    }
-    else if (cur.type === '/vm.m_addpkg') {
-      txLogo = addPkgLogo;
-    }
-    else {
-      txLogo = null;
-    }
-
-    if (o[k]) {
-      if (!isFailedReceive(cur)) {
-        o[k].transaction.push({
-          txImg: txLogo,
-          txStatus: cur.result.status,
-          txType: cur.type,
-          txFunc: txFunc || cur.func,
-          txDesc: txDesc,
-          txSend: prettier(cur.send),
-          protoType: cur,
-        });
-      }
-    }
-    else {
-      if (!isFailedReceive(cur)) {
-        o[k] = {
-          date: formatDate,
-          transaction: [
-            {
-              txImg: txLogo,
-              txStatus: cur.result.status,
-              txReason: cur.result.reason,
-              txType: cur.type,
-              txFunc: txFunc || cur.func,
-              txDesc: txDesc,
-              txSend: prettier(cur.send),
-              protoType: cur,
-            },
-          ],
-        };
-      }
-    }
-    return o;
-  }, {});
-}
-
-const prettier = (target: any): any => {
-  if (target === undefined) {
-    return '0';
-  }
-  else {
-    if (target !== 0) {
-      return target.replace('gnot', '');
-    }
-    else if (target === 0) {
-      return '0';
-    }
-  }
-};
-
-export function minifyStatus(status: string): string {
-  if (status === 'Success') {
-    return 'S';
-  }
-  else {
-    return 'F';
-  }
-}
-
-export function numberWithCommas(value: number, fixed?: number): string {
-  const currentFixed = fixed ?? 0;
-  const fixedValue = value > 0 ? value.toFixed(currentFixed) : value;
-  const parts = fixedValue.toString().split('.');
-  const decimal = parts[1] && Number(parts[1]) > 0 ? '.' + parts[1] : '';
-  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + decimal;
-}
-
 export function addressValidationCheck(v: string): boolean {
   return validateAddress(v);
-}
-
-export function removeUgly(target: any): any {
-  return target.replace('To: ', '').replace('From: ', '').replace('/std.', '');
 }
 
 export function getStatusStyle(status: string): { color: string; statusIcon: any } {
@@ -222,34 +75,8 @@ export function maxFractionDigits(v: number | string, maxDigits: number): string
   return Number(v).toLocaleString('en-US', { maximumFractionDigits: maxDigits });
 }
 
-export function parseFloatNum(v: number | string, fixed: number): string {
-  return parseFloat(Number(v).toFixed(fixed)).toLocaleString();
-}
-
 export function searchTextFilter(target: string, searchText: string): boolean {
   return target.toLocaleLowerCase().includes(searchText.toLocaleLowerCase());
-}
-
-export function amountSetSymbol(v: number | string, full?: boolean): string {
-  if (v === '0' || v === 0) {
-    return String(v);
-  }
-  else if (String(v).includes('-')) {
-    return full ? minFractionDigits(v, 6) : maxFractionDigits(v, 6);
-  }
-  else {
-    return full ? `+${minFractionDigits(v, 6)}` : `+${maxFractionDigits(v, 6)}`;
-  }
-}
-
-export function funcTextFilter(v: string): 'Send' | 'Receive' | undefined {
-  if (['Sent', 'Failed'].includes(v)) {
-    return 'Send';
-  }
-  if (v === 'Received') {
-    return 'Receive';
-  }
-  else v;
 }
 
 export const parseParameters = (url: string): { [x: string]: string } => {
@@ -337,19 +164,6 @@ export const fromBase64 = (data: string): string => {
   return '';
 };
 
-export const createImageByURI = async (uri: string): Promise<string | null> => {
-  try {
-    const imageData = await fetchArrayData(uri);
-    const encodeImageData
-      = 'data:image/svg+xml;base64,' + Buffer.from(imageData?.data, 'binary').toString('base64');
-    return encodeImageData;
-  }
-  catch (e) {
-    console.log(e);
-  }
-  return null;
-};
-
 export const createFaviconByHostname = async (baseUrl: string): Promise<string | null> => {
   if (!/^https?:\/\//.test(baseUrl)) {
     return null;
@@ -403,34 +217,9 @@ const fetchArrayData = (uri: string): Promise<AxiosResponse<any, any> | null> =>
     .catch(() => null);
 };
 
-export const createImageDataBySvg = async (imageUri: string): Promise<string | null> => {
-  try {
-    const response = await axios.get(imageUri, { responseType: 'arraybuffer' });
-    const imageData
-      = 'data:image/svg+xml;base64,' + Buffer.from(response.data, 'binary').toString('base64');
-    return imageData;
-  }
-  catch (e) {
-    console.log(e);
-  }
-  return null;
-};
-
-const isFailedReceive = (cur: any): boolean => {
-  return cur.func === 'Received' && cur.result.status === 'Failed';
-};
-
 // TODO: CHECK SSL
 export const getSiteName = (protocol: string | undefined, hostname: string | undefined): string => {
   return `${protocol}//${hostname}`;
-};
-
-export const optimizeNumber = (value: BigNumber, multiply: BigNumber): BigNumber => {
-  const decimalPosition = multiply.toString().indexOf('.');
-  const decimalLength = decimalPosition > -1 ? `${multiply}`.substring(decimalPosition).length : 0;
-  const extraValue = Math.pow(10, decimalLength);
-  const currentAmount = value.multipliedBy(multiply).multipliedBy(extraValue).dividedBy(extraValue);
-  return currentAmount;
 };
 
 export const dateToLocal = (utcDateStr: string): { value: string; offsetHours: number } => {

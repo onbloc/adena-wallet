@@ -5,21 +5,6 @@ import { atomFamily } from 'jotai-family';
 import { wallet } from './wallet';
 
 /**
- * Address derivation memoized per (accountId, prefix).
- * Invalidates automatically when the wallet atom changes.
- */
-export const accountAddressSelector = atomFamily(
-  ({ accountId, prefix }: { accountId: string; prefix: string }) =>
-    atom(async (get): Promise<string | null> => {
-      const walletInstance = get(wallet);
-      const account = walletInstance?.accounts.find(a => a.id === accountId);
-      if (!account) return null;
-      return account.getAddress(prefix);
-    }),
-  (a, b) => a.accountId === b.accountId && a.prefix === b.prefix,
-);
-
-/**
  * Bulk variant for per-account loops (e.g., balance fetching across all accounts).
  * Returns Record<accountId, address> for the given prefix.
  */
