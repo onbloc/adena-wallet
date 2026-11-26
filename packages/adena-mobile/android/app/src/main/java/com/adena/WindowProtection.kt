@@ -5,15 +5,18 @@ import android.os.Build
 import android.view.WindowManager
 
 /**
- * Wallet windows are always secure: no screenshots, screen recording or recents thumbnail
- * on every API level. RN `Modal` dialogs copy FLAG_SECURE from their activity.
+ * Wallet windows are secure: no screenshots, screen recording or recents thumbnail on every API
+ * level. RN `Modal` dialogs copy FLAG_SECURE from their activity. Debug builds skip FLAG_SECURE so
+ * screenshots, screen recording and E2E captures work during development; release builds always set it.
  */
 object WindowProtection {
   fun apply(activity: Activity) {
-    activity.window.setFlags(
-        WindowManager.LayoutParams.FLAG_SECURE,
-        WindowManager.LayoutParams.FLAG_SECURE,
-    )
+    if (!BuildConfig.DEBUG) {
+      activity.window.setFlags(
+          WindowManager.LayoutParams.FLAG_SECURE,
+          WindowManager.LayoutParams.FLAG_SECURE,
+      )
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       activity.setRecentsScreenshotEnabled(false)
     }
