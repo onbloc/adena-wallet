@@ -36,12 +36,39 @@ done
 
 export MAESTRO_CLI_NO_ANALYTICS=1
 
-# The app id differs per platform (Android package app.adena, iOS bundle app.adena.Adena).
-# E2E_PLATFORM picks one; otherwise a connected Android device or emulator wins over the iOS simulator.
+# The app id differs per platform (Android package app.adena, iOS bundle app.adena.Adena), so it must follow
+# the device Maestro targets. Order: E2E_PLATFORM, then an explicit --device/--udid (Android when adb lists it,
+# otherwise iOS), then auto-detection, where a connected Android device or emulator wins over the iOS simulator.
+DEVICE=""
+expect_device=""
+
+for arg in "$@"; do
+  if [ -n "$expect_device" ]; then
+    DEVICE="$arg"
+    expect_device=""
+    continue
+  fi
+
+  case "$arg" in
+    --device | --udid) expect_device=1 ;;
+    --device=* | --udid=*) DEVICE="${arg#*=}" ;;
+  esac
+done
+
+android_devices() {
+  command -v adb >/dev/null 2>&1 && adb devices | awk 'NR > 1 && $2 == "device" { print $1 }'
+}
+
 PLATFORM="${E2E_PLATFORM:-}"
 
 if [ -z "$PLATFORM" ]; then
-  if command -v adb >/dev/null 2>&1 && adb devices | awk 'NR > 1 && $2 == "device"' | grep -q .; then
+  if [ -n "$DEVICE" ]; then
+    if android_devices | grep -qxF "$DEVICE"; then
+      PLATFORM=android
+    else
+      PLATFORM=ios
+    fi
+  elif android_devices | grep -q .; then
     PLATFORM=android
   else
     PLATFORM=ios
@@ -53,6 +80,8 @@ case "$PLATFORM" in
   ios) APP_ID=app.adena.Adena ;;
   *) echo "E2E_PLATFORM must be android or ios" >&2; exit 1 ;;
 esac
+
+echo "e2e: platform=$PLATFORM app id=$APP_ID${DEVICE:+ device=$DEVICE}" >&2
 
 exec "$MAESTRO_BIN" test \
   -e APP_ID="$APP_ID" \

@@ -79,9 +79,11 @@ Flows live in `e2e/flows`, reusable steps in `e2e/subflows`. They drive an insta
 pnpm e2e                                  # every flow on the booted simulator/emulator
 pnpm e2e:smoke                            # onboarding + lock/unlock only
 pnpm e2e --device <udid> e2e/flows/07-dapp-connect.yaml
+E2E_PLATFORM=ios pnpm e2e                 # force a platform when both are connected
 ```
 
 * `e2e/run.sh` derives the test account address and builds the dApp deep links with `scripts/dapp-request.mjs`, then passes them to Maestro as env vars. Override `E2E_MNEMONIC`, `E2E_PASSWORD`, `E2E_RECIPIENT`, `E2E_CHAIN` as needed.
+* The app id differs per platform (Android `app.adena`, iOS `app.adena.Adena`). The runner picks it from `E2E_PLATFORM` (`android` or `ios`), else from `--device`/`--udid` (Android when `adb devices` lists that id, otherwise iOS), else a connected Android device or emulator wins over the iOS simulator. It prints the resolved platform and app id to stderr.
 * Every flow starts from a wiped app (`clearState` plus `clearKeychain` on iOS). **Run it on a dedicated simulator**, not one holding wallets you care about: `xcrun simctl create "Adena E2E" ...`, then install the `.app` from DerivedData with `xcrun simctl install`.
 * Debug builds need Metro running (`pnpm start`). A release build embeds the bundle and needs nothing else.
 * Flows never broadcast a transaction; the dApp flow rejects the signing request, so the default account needs no balance.
