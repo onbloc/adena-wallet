@@ -5,11 +5,11 @@ import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { CommonState } from '@states';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
 import { useAtom } from 'jotai';
 import { useCallback, useMemo } from 'react';
 
 import { dedupeAndSortTransactions } from './session-history-source';
+import type { TransactionHistoryResult } from './types';
 
 // Indexer-backed (block-index paged) transaction history, used only when the
 // network has no API URL. Session accounts always run on API-backed networks,
@@ -19,22 +19,7 @@ export const useTransactionHistory = ({
   enabled,
 }: {
   enabled: boolean;
-}): {
-  data:
-    | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
-} => {
+}): TransactionHistoryResult => {
   const { currentNetwork } = useNetwork();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();

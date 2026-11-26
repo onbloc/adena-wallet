@@ -4,10 +4,11 @@ import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-t
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { InfiniteData, keepPreviousData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
-import { TransactionInfo, TransactionWithPageInfo } from '@types';
+import { TransactionWithPageInfo } from '@types';
 import { useCallback, useMemo } from 'react';
 
 import { dedupeAndSortTransactions } from './session-history-source';
+import type { TransactionHistoryResult } from './types';
 
 // API-backed (cursor paginated) transaction history. `currentAddress` already
 // resolves to the SESSION address for SessionAccount, and the API attributes
@@ -18,22 +19,7 @@ export const useTransactionHistoryPage = ({
   enabled,
 }: {
   enabled: boolean;
-}): {
-  data:
-    | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
-} => {
+}): TransactionHistoryResult => {
   const { currentNetwork } = useNetwork();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();

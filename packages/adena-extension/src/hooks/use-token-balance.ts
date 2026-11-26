@@ -12,7 +12,7 @@ import BigNumber from 'bignumber.js';
 import { useSetAtom } from 'jotai';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { CosmosFetchResult, fetchCosmosTokenBalances } from './helpers/fetch-cosmos-balances';
+import { CosmosFetchResult, fetchCosmosTokenBalances, getActiveCosmosProfiles } from './helpers/fetch-cosmos-balances';
 import {
   compareTokenBalances,
   sortTokenBalancesByStoredOrder,
@@ -236,13 +236,7 @@ export const useTokenBalance = (): {
   // storage. The chain filter mirrors fetchCosmosTokenBalances so only rows
   // that will be queried appear in the shell.
   const activeCosmosNetworkIds = useMemo<Set<string>>(() => {
-    const profiles = chainRegistry.list().filter((profile) => {
-      if (profile.chainType !== 'cosmos') return false;
-      if (profile.chainGroup === 'atomone' && currentAtomoneNetwork?.id) {
-        return profile.id === currentAtomoneNetwork.id;
-      }
-      return true;
-    });
+    const profiles = getActiveCosmosProfiles(chainRegistry, currentAtomoneNetwork?.id ?? null);
     return new Set(profiles.map(profile => profile.id));
   }, [chainRegistry, currentAtomoneNetwork]);
 

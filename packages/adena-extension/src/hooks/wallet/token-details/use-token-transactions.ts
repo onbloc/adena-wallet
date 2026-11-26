@@ -4,29 +4,15 @@ import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-t
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
 import { RefetchOptions, useQuery } from '@tanstack/react-query';
-import { TransactionInfo } from '@types';
 import { useMemo, useState } from 'react';
+
+import type { TransactionHistoryResult } from '../transaction-history/types';
 
 export const useTokenTransactions = (
   isNative: boolean | undefined,
   tokenPath: string,
   { enabled }: { enabled: boolean },
-): {
-  data:
-    | {
-      title: string;
-      transactions: TransactionInfo[];
-    }[]
-    | null;
-  isFetched: boolean;
-  status: 'loading' | 'error' | 'success';
-  isLoading: boolean;
-  isFetching: boolean;
-  isSupported: boolean;
-  hasNextPage: boolean;
-  fetchNextPage: () => Promise<boolean>;
-  refetch: (options?: RefetchOptions) => void;
-} => {
+): TransactionHistoryResult => {
   const { currentNetwork } = useNetwork();
   const { currentAddress } = useCurrentAccount();
   const { transactionHistoryService } = useAdenaContext();

@@ -217,38 +217,7 @@ export const useTokenMetainfo = (): UseTokenMetainfoReturn => {
     }
 
     await setTokenMetainfo([]);
-    const currentAddress = await getWalletFundingAddress(currentAccount, chain.bech32Prefix);
-
-    /**
-     * For accounts with no transfer events, initialize the state with the list of stored tokens.
-     */
-    const transferTokens = await fetchTransferTokens(currentAddress).catch(() => null);
-    if (!transferTokens) {
-      await tokenService.initAccountTokenMetainfos(currentAccount.id);
-      const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-      setTokenMetainfo([...tokenMetainfos]);
-      return;
-    }
-
-    /**
-     * When there is a transfer event, verify that the token is new and not part of the list of tokens stored in the existing account.
-     * The new tokens are added to the account's token information.
-     */
-    const storedGRC20Tokens = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-
-    const storedGRC20Packages = storedGRC20Tokens
-      .filter((token: TokenModel) => token.networkId === currentNetwork.networkId)
-      .map(grc20Token => grc20Token.tokenId);
-
-    const filteredGRC20Packages = (transferTokens.grc20Packages || []).filter(
-      grc20Token => !storedGRC20Packages.includes(grc20Token.tokenId),
-    );
-
-    await addTokenMetainfos(filteredGRC20Packages);
-
-    await tokenService.initAccountTokenMetainfos(currentAccount.id);
-    const tokenMetainfos = await tokenService.getTokenMetainfosByAccountId(currentAccount.id);
-    setTokenMetainfo([...tokenMetainfos]);
+    await updateAllTokenMetainfos();
   };
 
   const updateAllTokenMetainfos = async (): Promise<void> => {
