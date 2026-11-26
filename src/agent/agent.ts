@@ -17,6 +17,7 @@ import { onblocBalanceAdapter } from './onblocBalanceAdapter';
 import {
   applyToolEvent,
   canRememberTurn,
+  CHAT_PROMPT_MAX_LENGTH,
   createChatSession,
   DEFAULT_GENERATE_SETTINGS,
   estimateContextInput,
@@ -165,6 +166,9 @@ export class AIAgent {
     if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
     if (this.active) throw new Error('A conversation already has an active turn.');
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
+    if (settings.prompt.length > CHAT_PROMPT_MAX_LENGTH) {
+      throw new RangeError(`ADENA_PROMPT_LIMIT: Prompts must not exceed ${CHAT_PROMPT_MAX_LENGTH} characters; shorten the request.`);
+    }
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
     // Every turn starts with the structured classification call, which is capped at 512 tokens.
@@ -203,7 +207,10 @@ export class AIAgent {
         if (event.type === GenerateEventType.Done && !completed) {
           completed = true;
           if (revision === this.revision && !controller.signal.aborted && canRememberTurn(event)) {
-            this.session.complete(prompt, answer, describeToolRecord(calls));
+            if (!this.session.complete(prompt, answer, describeToolRecord(calls))) {
+              yield { ...event, warnings: [...event.warnings, 'This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.'] };
+              continue;
+            }
           }
         }
         yield event;
@@ -365,14 +372,16 @@ export class AIAgent {
       if (selection?.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: selection?.warnings ?? [] }; return; }
       const requiredReads = selection && !selection.aborted ? selection.toolNames : [];
       const evidence = realmEvidence(this.userText(settings), run);
-      yield* guardAnswer(this.lookupEvents(intent, settings, options, run, requiredReads, hidden, evidence, selection), () => true, intent,
-        { requiredReads, userText: this.userText(settings), evidence, account: options.account, auditFailed: () => run.auditFailed });
+      const completion = { explanation: 'pending' as 'pending' | 'complete' | 'incomplete' };
+      yield* guardAnswer(this.lookupEvents(intent, settings, options, run, requiredReads, hidden, evidence, selection, completion), () => true, intent,
+        { requiredReads, userText: this.userText(settings), evidence, account: options.account, auditFailed: () => run.auditFailed,
+          explanationComplete: () => completion.explanation === 'complete' });
     } finally { run.close(); }
   }
 
   private async *lookupEvents(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions,
     run: HarnessRun, requiredReads: readonly string[], hidden: ReadonlySet<string>, evidence: RealmEvidence,
-    selection: LookupToolSelection | undefined): AsyncGenerator<GenerateEvent> {
+    selection: LookupToolSelection | undefined, completion: { explanation: 'pending' | 'complete' | 'incomplete' }): AsyncGenerator<GenerateEvent> {
     let done = this.done(run.signal);
     let outputTokens = selection?.metrics.outputTokens ?? (selection ? undefined : 0);
     const warnings = [...(selection?.warnings ?? [])];
@@ -418,13 +427,18 @@ export class AIAgent {
         for await (const event of this.llm.generate({ ...settings, messages: [{ role: 'user', content: intent.explanation }], tools: undefined, outputSchema: undefined,
           system: [settings.system ?? this.prompt(), 'Answer only the conceptual question. Current facts are rendered separately; do not claim balances, source implementation details, or wallet actions.'].join('\n\n'),
         }, { signal: options.signal, contextTokens: options.contextTokens })) {
-          if (event.type === 'done') record(event); else yield event;
+          if (event.type === 'done') {
+            record(event);
+            completion.explanation = !event.aborted && event.finishReason === 'stop' ? 'complete' : 'incomplete';
+          } else yield event;
         }
       } catch (error) {
         if (options.signal.aborted) throw error;
+        completion.explanation = 'incomplete';
         warnings.push(`The requested explanation failed: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
+    if (completion.explanation === 'pending') completion.explanation = 'incomplete';
     yield { ...done, aborted: done.aborted || options.signal.aborted, warnings, metrics: { ...done.metrics, outputTokens } };
   }
 

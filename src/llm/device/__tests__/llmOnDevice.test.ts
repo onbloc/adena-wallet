@@ -1,19 +1,23 @@
 import * as llamaModule from '@react-native-ai/llama';
-import { tool } from 'ai';
+import { jsonSchema, tool } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 import { z } from 'zod';
 
 import { GenerateEventType, type GenerateEvent } from '../../core';
 import { LLMOnDevice } from '../llmOnDevice';
+import * as modelStorage from '../modelStorage';
 
 jest.mock('@react-native-ai/llama', () => ({
-  downloadModel: jest.fn(),
-  isModelDownloaded: jest.fn(),
-  removeModel: jest.fn(),
   llama: { languageModel: jest.fn() },
 }));
 
-const mocked = jest.mocked(llamaModule);
+jest.mock('../modelStorage', () => ({
+  downloadModel: jest.fn(),
+  isModelDownloaded: jest.fn(),
+  removeModel: jest.fn(),
+}));
+
+const mocked = { ...jest.mocked(llamaModule), ...jest.mocked(modelStorage) };
 
 const usage = (outputTokens: number) => ({
   inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
@@ -202,6 +206,151 @@ describe('LLMOnDevice', () => {
   it('reports the context size of its context params', () => {
     expect(new LLMOnDevice().contextTokens).toBe(8192);
     expect(new LLMOnDevice({ contextParams: { n_ctx: 4096 } }).contextTokens).toBe(4096);
+    expect(new LLMOnDevice({ contextParams: { n_gpu_layers: 0 } }).contextTokens).toBe(8192);
+  });
+
+  it('aborts an active stream and waits for the native provider to drain before reloading', async () => {
+    const started = Promise.withResolvers<void>();
+    const releasing = Promise.withResolvers<void>();
+    const drained = Promise.withResolvers<void>();
+    let providerSignal: AbortSignal | undefined;
+    const model = llamaModel(new MockLanguageModelV4({
+      doStream: async ({ abortSignal }) => {
+        providerSignal = abortSignal;
+        return {
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: 'stream-start', warnings: [] });
+              controller.enqueue({ type: 'text-start', id: 't' });
+              controller.enqueue({ type: 'text-delta', id: 't', delta: 'partial' });
+              abortSignal?.addEventListener('abort', () => controller.error(new Error('stopped')), { once: true });
+              started.resolve();
+            },
+          }) as never,
+        };
+      },
+    }));
+    model.unload.mockImplementation(async () => {
+      expect(providerSignal?.aborted).toBe(true);
+      releasing.resolve();
+      await drained.promise;
+    });
+    const replacement = llamaModel(streaming('fresh'));
+    mocked.isModelDownloaded.mockResolvedValue(true);
+    mocked.llama.languageModel
+      .mockReturnValueOnce(model as never)
+      .mockReturnValueOnce(replacement as never);
+    const llm = new LLMOnDevice();
+    await llm.load();
+    const generating = collect(llm.generate({ prompt: 'hi' }));
+    await started.promise;
+
+    const unloading = llm.unload();
+    const reloading = llm.load();
+    await releasing.promise;
+
+    expect(llm.status.state).toBe('unloading');
+    expect(llm.runtimeInfo()).toBeNull();
+    expect(mocked.llama.languageModel).toHaveBeenCalledTimes(1);
+    await expect(collect(llm.generate({ prompt: 'too soon' }))).rejects.toThrow('Model is not loaded');
+    drained.resolve();
+    await Promise.all([unloading, reloading]);
+    expect((await generating).find(event => event.type === GenerateEventType.Done))
+      .toMatchObject({ aborted: true });
+    expect(llm.status.state).toBe('ready');
+    expect(await collect(llm.generate({ prompt: 'again' })))
+      .toContainEqual({ type: GenerateEventType.Text, delta: 'fresh' });
+  });
+
+  it('keeps lifecycle cancellation active when a tool loop provides its own signal', async () => {
+    const started = Promise.withResolvers<void>();
+    const stopped = Promise.withResolvers<void>();
+    const completed = Promise.withResolvers<void>();
+    let providerSignal: AbortSignal | undefined;
+    const model = llamaModel(new MockLanguageModelV4({
+      doGenerate: async ({ abortSignal }) => {
+        providerSignal = abortSignal;
+        started.resolve();
+        try {
+          await stopped.promise;
+          abortSignal?.throwIfAborted();
+          return {
+            content: [{ type: 'text', text: 'complete' }],
+            finishReason: { unified: 'stop', raw: 'stop' },
+            usage: usage(1),
+            warnings: [],
+          };
+        } finally {
+          completed.resolve();
+        }
+      },
+    }));
+    model.unload.mockImplementation(async () => {
+      expect(providerSignal?.aborted).toBe(true);
+      stopped.resolve();
+      await completed.promise;
+    });
+    mocked.isModelDownloaded.mockResolvedValue(true);
+    mocked.llama.languageModel.mockReturnValue(model as never);
+    const llm = new LLMOnDevice();
+    const loopController = new AbortController();
+    const close = jest.fn();
+    await llm.load();
+    const generating = collect(llm.generate({ prompt: 'hi' }, {
+      loop: { options: { abortSignal: loopController.signal }, close },
+    }));
+    await started.promise;
+
+    await llm.unload();
+
+    expect((await generating).find(event => event.type === GenerateEventType.Done))
+      .toMatchObject({ aborted: true });
+    expect(loopController.signal.aborted).toBe(false);
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(llm.status.state).toBe('idle');
+  });
+
+  it('does not enter the native provider if unloading happens during prompt preparation', async () => {
+    const preparing = Promise.withResolvers<void>();
+    const prepared = Promise.withResolvers<void>();
+    const model = streaming();
+    const llm = await loaded(model);
+    const generating = collect(llm.generate({
+      prompt: 'ping',
+      tools: {
+        ping: tool({
+          inputSchema: jsonSchema(async () => {
+            preparing.resolve();
+            await prepared.promise;
+            return { type: 'object', properties: {} };
+          }),
+          execute: async () => 'pong',
+        }),
+      },
+    }));
+    await preparing.promise;
+
+    await llm.unload();
+    prepared.resolve();
+
+    expect((await generating).find(event => event.type === GenerateEventType.Done))
+      .toMatchObject({ aborted: true });
+    expect(model.doStreamCalls).toHaveLength(0);
+    expect(model.doGenerateCalls).toHaveLength(0);
+    expect(llm.status.state).toBe('idle');
+  });
+
+  it('preserves caller cancellation without releasing the loaded model', async () => {
+    const model = streaming();
+    const llm = await loaded(model);
+    const controller = new AbortController();
+    controller.abort();
+
+    const events = await collect(llm.generate({ prompt: 'hi' }, { signal: controller.signal }));
+
+    expect(events.find(event => event.type === GenerateEventType.Done)).toMatchObject({ aborted: true });
+    expect(model.doStreamCalls).toHaveLength(0);
+    expect(llm.status.state).toBe('ready');
   });
 });
 

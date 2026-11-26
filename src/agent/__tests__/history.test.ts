@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Harness, type RemoteTool } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { createChatSession, GenerateEventType, LLMFromModel, type ChatSession, type GenerateEvent, type LLM } from '../../llm/core';
+import { canRememberTurn, createChatSession, GenerateEventType, LLMFromModel, type ChatSession, type GenerateEvent, type LLM } from '../../llm/core';
 import { AIAgent } from '../agent';
 import { intentReplyText } from '../testing/intentReply';
 import { ACCOUNT, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
@@ -121,6 +121,40 @@ describe('agent history', () => {
     expect(source).not.toHaveBeenCalled();
     expect(wallet.calls).toEqual([]);
     expect(agent.turns).toEqual([{ prompt: 'kept question', answer: 'kept answer' }]);
+  });
+  it('rejects prompts outside the persistence bound even when the remote context admits them', async () => {
+    const { model } = setup();
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }), { contextTokens: 128_000 });
+    const source = jest.fn(async () => new Map());
+    const session = createChatSession();
+    session.complete('kept question', 'kept answer');
+    const agent = new AIAgent({ llm, harness: new Harness({ toolSources: [source] }), session });
+
+    await expect(collect(agent.run({ prompt: 'x'.repeat(16_385) }))).rejects.toThrow('ADENA_PROMPT_LIMIT');
+
+    expect(model.doGenerateCalls).toEqual([]);
+    expect(source).not.toHaveBeenCalled();
+    expect(agent.turns).toEqual([{ prompt: 'kept question', answer: 'kept answer' }]);
+  });
+
+  it('warns when a completed answer cannot be retained without truncating it or existing history', async () => {
+    const largeAnswer = 'x'.repeat(32_769);
+    const { model, llm } = setup([largeAnswer, 'Follow-up answer']);
+    const session = createChatSession();
+    session.complete('kept question', 'kept answer');
+    const agent = agentOver(llm, session);
+
+    const events = await collect(agent.run({ prompt: 'Give a long explanation.' }));
+    const done = events.find((event): event is Extract<GenerateEvent, { type: 'done' }> => event.type === 'done')!;
+
+    expect(events.filter(event => event.type === 'text').map(event => event.delta).join('')).toBe(largeAnswer);
+    expect(canRememberTurn(done)).toBe(true);
+    expect(done.warnings).toContain('This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.');
+    expect(agent.turns).toEqual([{ prompt: 'kept question', answer: 'kept answer' }]);
+    expect(createChatSession(agent.serialize()).turns).toEqual(agent.turns);
+    await collect(agent.run({ prompt: 'Continue.' }));
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain('kept answer');
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).not.toContain('Give a long explanation.');
   });
 
   it('keeps the live tool exchange while pruning stored turns and never replays an earlier transfer', async () => {

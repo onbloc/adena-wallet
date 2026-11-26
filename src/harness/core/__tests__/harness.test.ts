@@ -135,6 +135,39 @@ describe('Harness', () => {
     }
   });
 
+  it.each(['timeout', 'cancel'] as const)('preserves a completed read when audit never settles before %s', async interruption => {
+    jest.useFakeTimers();
+    const controller = new AbortController();
+    const entered = Promise.withResolvers<void>();
+    const pending = Promise.withResolvers<void>();
+    const execute = jest.fn(async () => ({ kind: 'result' as const, value: 'completed read' }));
+    const started = await new Harness({
+      toolSources: [async () => new Map([['ping', { ...tool('ping'), execute }]])],
+      audit: () => { entered.resolve(); return pending.promise; },
+    }).startRun({ ...run, signal: controller.signal, budget: { timeoutMs: 25 } });
+
+    try {
+      const decision = started.dispatch({ name: 'ping', input: {} });
+      await entered.promise;
+      if (interruption === 'timeout') await jest.advanceTimersByTimeAsync(25);
+      else controller.abort();
+
+      expect(await decision).toEqual({ kind: 'result', value: 'completed read', auditFailed: true });
+      expect(started.auditFailed).toBe(true);
+      expect(started.signal.aborted).toBe(true);
+      expect(started.canStartStep()).toBe(false);
+      pending.reject(new Error('Late audit failure'));
+      expect(await started.dispatch({ name: 'ping', input: {} })).toEqual({
+        kind: 'denied', code: 'CANCELLED', auditFailed: true,
+      });
+      expect(execute).toHaveBeenCalledTimes(1);
+    } finally {
+      pending.resolve();
+      started.close();
+      jest.useRealTimers();
+    }
+  });
+
   it('retains an in-flight read when another completed call fails audit', async () => {
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();

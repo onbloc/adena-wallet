@@ -23,15 +23,25 @@ export function createRemoteModel({ apiKey, fetch }: RemoteLlmOptions): Language
     model: createOpenAI({ apiKey, fetch })(REMOTE_MODEL),
     middleware: {
       specificationVersion: 'v4',
-      // Only these two change; the rest of the params (prompt, abort signal) pass through untouched.
-      transformParams: async ({ params: { responseFormat, tools, ...params } }) => ({
-        ...params,
-        // The agent's output schemas are unions at the root (`oneOf`, no `type: object`), which OpenAI's
-        // strict json_schema refuses. Ask for plain JSON instead: the prompts describe the shape and the
-        // answer is validated against the zod schema client-side.
-        responseFormat: responseFormat?.type === 'json' ? { type: 'json' as const } : responseFormat,
-        tools: tools?.map((tool) => (tool.type === 'function' ? { ...tool, inputSchema: withoutUnicodePatterns(tool.inputSchema) } : tool)),
-      }),
+      transformParams: async ({ params: { responseFormat, tools, ...params } }) => {
+        const schema = responseFormat?.type === 'json' ? responseFormat.schema : undefined;
+        // OpenAI forbids root unions. Keep object schemas strict; only unions need JSON mode.
+        const rootUnion = schema?.oneOf !== undefined || schema?.anyOf !== undefined;
+        return {
+          ...params,
+          ...(rootUnion && {
+            prompt: [
+              ...params.prompt,
+              {
+                role: 'system' as const,
+                content: `Return only a JSON object matching this JSON Schema, with no markdown or surrounding text:\n${JSON.stringify(schema)}`,
+              },
+            ],
+          }),
+          responseFormat: rootUnion ? { type: 'json' as const } : responseFormat,
+          tools: tools?.map((tool) => (tool.type === 'function' ? { ...tool, inputSchema: withoutUnicodePatterns(tool.inputSchema) } : tool)),
+        };
+      },
     },
   });
 }

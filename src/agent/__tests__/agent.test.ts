@@ -3,7 +3,7 @@ import { MockLanguageModelV4 } from 'ai/test';
 import { DEFAULT_BUDGET, Harness, type Budget } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp, type FakeOnblocTool } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { canRememberTurn, LLMFromModel, type GenerateEvent } from '../../llm/core';
+import { canRememberTurn, LLMFromModel, type GenerateEvent, type LLM } from '../../llm/core';
 import { AIAgent } from '../agent';
 import type { BalanceRequest } from '../balanceOperation';
 import type { PreparationProposal, RequestIntent } from '../requestIntent';
@@ -142,6 +142,41 @@ describe('integrated request execution', () => {
     const events = await collect(agent.run({ prompt: 'Explain GNOT and show my balance.' }, { account: ACCOUNT }));
     expect(textOf(events)).toContain('42 GNOT');
     expect(textOf(events)).toContain('GNOT is native to Gno.land.');
+    expect(agent.turns[0].answer).toBe(textOf(events));
+  });
+  it.each(['length', 'throw', 'missing-terminal'] as const)('preserves facts but not a compound answer when its explanation ends with %s', async ending => {
+    const explanation = 'What is GNOT?';
+    const { llm: delegate, harness } = setup([], { intent: { ...native, explanation } });
+    let calls = 0;
+    const llm: LLM = {
+      contextTokens: delegate.contextTokens,
+      async *generate(settings, options) {
+        if (calls++ === 0) { yield* delegate.generate(settings, options); return; }
+        yield { type: 'text', delta: 'GNOT is the native' };
+        if (ending === 'throw') throw new Error('Explanation interrupted');
+        if (ending === 'length') yield { type: 'done', aborted: false, finishReason: 'length',
+          warnings: [], messages: [{ role: 'assistant', content: 'GNOT is the native' }], metrics: { totalMs: 1, ttftMs: 1 } };
+      },
+    };
+    const agent = new AIAgent({ llm, harness });
+    const events = await collect(agent.run({ prompt: 'Explain GNOT and show my balance.' }, { account: ACCOUNT }));
+    expect(textOf(events)).toContain('42 GNOT');
+    expect(textOf(events)).toContain('GNOT is the native');
+    expect(textOf(events)).toContain('explanation did not complete');
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(doneOf(events)!)).toBe(false);
+    expect(agent.turns).toEqual([]);
+  });
+  it('retains a selected read after an invalid attempt is corrected', async () => {
+    const { agent, mcp } = setup([
+      call('list_account_transactions', { limit: 'five' }, 'invalid'),
+      call('list_account_transactions', { limit: 5 }, 'corrected'),
+    ], { intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] },
+      selection: ['list_account_transactions'] });
+    const events = await collect(agent.run({ prompt: 'List my recent transactions.' }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([{ name: 'list_account_transactions', arguments: { address: ACCOUNT, limit: 5 } }]);
+    expect(textOf(events)).toContain('tx-123');
+    expect(doneOf(events)?.verifiedAnswer).toBe(true);
     expect(agent.turns[0].answer).toBe(textOf(events));
   });
   it('preserves approval data next to normalized balances', async () => {

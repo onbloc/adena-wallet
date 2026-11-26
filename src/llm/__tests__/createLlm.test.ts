@@ -1,7 +1,12 @@
 import { createLLM } from '../createLlm';
 import { LLMOnDevice } from '../device';
 
-jest.mock('@react-native-ai/llama', () => ({ downloadModel: jest.fn(), llama: { languageModel: jest.fn() } }));
+jest.mock('@react-native-ai/llama', () => ({ llama: { languageModel: jest.fn() } }));
+jest.mock('../device/modelStorage', () => ({
+  downloadModel: jest.fn(),
+  isModelDownloaded: jest.fn(),
+  removeModel: jest.fn(),
+}));
 
 describe('createLLM', () => {
   it('is on-device when no remote options are given', () => {

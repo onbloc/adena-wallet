@@ -35,6 +35,17 @@ describe('chat sessions', () => {
     expect(chat.complete('question', 'x'.repeat(32_769))).toBe(false);
     expect(chat.turns).toEqual([]);
   });
+  it('retains exact boundary-sized turns and refuses oversized prompts or records atomically', () => {
+    const chat = createChatSession();
+    const prompt = 'p'.repeat(16_384);
+    const answer = 'a'.repeat(32_768);
+    const record = 'r'.repeat(2_048);
+    expect(chat.complete(prompt, answer, record)).toBe(true);
+    expect(chat.complete(`${prompt}p`, 'answer')).toBe(false);
+    expect(chat.complete('question', 'answer', `${record}r`)).toBe(false);
+    expect(chat.turns).toEqual([{ prompt, answer, record }]);
+    expect(createChatSession(chat.serialize()).turns).toEqual(chat.turns);
+  });
 
   it('bounds saved turns and rejects corrupt or unsupported snapshots', () => {
     const chat = createChatSession();

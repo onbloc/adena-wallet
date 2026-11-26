@@ -226,7 +226,7 @@ describe('generate', () => {
     expect(model.doStreamCalls).toEqual([]);
   });
 
-  it('ends with an aborted done event when the signal fires mid-stream', async () => {
+  it.each(['caller', 'loop'] as const)('cancels a running provider from the %s signal when both are supplied', async source => {
     const model = new MockLanguageModelV4({
       doStream: async ({ abortSignal }) => ({
         stream: new ReadableStream({
@@ -240,15 +240,18 @@ describe('generate', () => {
         }) as never,
       }),
     });
-    const abort = new AbortController();
+    const caller = new AbortController();
+    const loop = new AbortController();
+    const close = jest.fn();
     const events: GenerateEvent[] = [];
 
     for await (const event of generate(model, {
       prompt: 'hi',
-      signal: abort.signal,
+      signal: caller.signal,
+      loop: { options: { abortSignal: loop.signal }, close },
     })) {
       events.push(event);
-      if (event.type === GenerateEventType.Text) abort.abort();
+      if (event.type === GenerateEventType.Text) (source === 'caller' ? caller : loop).abort();
     }
 
     expect(events[1]).toEqual({ type: GenerateEventType.Text, delta: 'partial' });
@@ -257,6 +260,53 @@ describe('generate', () => {
       aborted: true,
       messages: [],
     });
+    expect(model.doStreamCalls).toHaveLength(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['caller', 'loop', 'both'] as const)('does not call the provider when %s is already aborted', async source => {
+    const caller = new AbortController();
+    const loop = new AbortController();
+    if (source !== 'loop') caller.abort();
+    if (source !== 'caller') loop.abort();
+    const close = jest.fn();
+    const model = modelFrom([...text('must not run'), finish(1)]);
+
+    const events = await collect(generate(model, {
+      prompt: 'hi',
+      signal: caller.signal,
+      loop: { options: { abortSignal: loop.signal }, close },
+    }));
+
+    expect(events).toEqual([expect.objectContaining({
+      type: GenerateEventType.Done,
+      aborted: true,
+      messages: [],
+    })]);
+    expect(model.doStreamCalls).toHaveLength(0);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not turn a completed response into an abort when closing the loop aborts its signal', async () => {
+    const caller = new AbortController();
+    const loop = new AbortController();
+    const close = jest.fn(() => loop.abort());
+    const model = modelFrom([...text('complete'), finish(1)]);
+
+    const events = await collect(generate(model, {
+      prompt: 'hi',
+      signal: caller.signal,
+      loop: { options: { abortSignal: loop.signal }, close },
+    }));
+
+    expect(events[events.length - 1]).toMatchObject({
+      type: GenerateEventType.Done,
+      aborted: false,
+      messages: [expect.objectContaining({ role: 'assistant' })],
+    });
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(loop.signal.aborted).toBe(true);
+    expect(caller.signal.aborted).toBe(false);
   });
 
   it('surfaces provider warnings in the done event', async () => {
@@ -603,6 +653,7 @@ describe('generate with tools', () => {
         aborted: true,
         messages: [],
       });
+      expect(model.doStreamCalls).toHaveLength(0);
       expect(close).toHaveBeenCalledTimes(1);
     });
   });

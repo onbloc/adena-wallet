@@ -68,6 +68,24 @@ function bindLifetime(source: AbortSignal | undefined, timeoutMs: number) {
   return { signal: controller.signal, deadline, cancel };
 }
 
+function waitForAudit(pending: Promise<void>, signal: AbortSignal): Promise<void> {
+  const { promise, resolve, reject } = Promise.withResolvers<void>();
+  const abort = () => {
+    signal.removeEventListener('abort', abort);
+    reject(new Error('Audit interrupted by the run deadline or cancellation.'));
+  };
+  pending.then(() => {
+    signal.removeEventListener('abort', abort);
+    resolve();
+  }, error => {
+    signal.removeEventListener('abort', abort);
+    reject(error);
+  });
+  if (signal.aborted) abort();
+  else signal.addEventListener('abort', abort, { once: true });
+  return promise;
+}
+
 function collectWalletTools(tools: RunContext['walletTools']) {
   const offered = new Map(Object.entries(tools ?? {}));
   for (const [name, tool] of offered) {
@@ -198,13 +216,14 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
         const name = proposal.name;
         const decision = await evaluateProposal(proposal);
         try {
-          if (audit) await audit({
+          const pending = audit?.({
             operationId,
             at: Date.now(),
             ...(isTool(name) || remote?.has(name) || offered.has(name) ? { tool: name } : {}),
             decision: decision.kind,
             ...(decision.kind === 'denied' ? { denial: decision.code } : {}),
           });
+          if (pending) await waitForAudit(pending, signal);
         } catch {
           auditFailed = true;
           return { ...decision, auditFailed: true };

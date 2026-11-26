@@ -62,6 +62,16 @@ module.exports = defineConfig([
     files: ['src/llm/device/**'],
     rules: restrict(llmBan, [['../core/**'], 'Import llm/core through its index (../core).']),
   },
+  {
+    // Remote models are portable too: no device runtime or native React dependencies.
+    files: ['src/llm/remote/**'],
+    rules: restrict(
+      llmBan,
+      [ban('device'), 'llm/remote must not depend on llm/device.'],
+      [['react', 'react-native', '@react-native-ai/*', 'llama.rn'], 'llm/remote must run without React Native.'],
+      [['../core/**'], 'Import llm/core through its index (../core).']
+    ),
+  },
   { files: ['src/harness/**'], rules: restrict(harnessBan) },
   {
     files: ['src/harness/core/**'],

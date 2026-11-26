@@ -35,24 +35,38 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
   evidence?: RealmEvidence;
   account?: string;
   auditFailed?: () => boolean;
+  explanationComplete?: () => boolean;
 } = {}): AsyncGenerator<GenerateEvent> {
   let text = '';
-  let readFailed = false;
+  let incompleteRead = false;
+  const failedReads = new Map<string, { name: string; request?: string }>();
   let toolAttempted = false;
   let mismatch = false;
   let selectionConflict = false;
   let prepared = false;
   let auditFailed = false;
-  const pending = new Map<string, { name: string; input: unknown }>();
+  const pending = new Map<string, { name: string; input: unknown; retry?: string }>();
   const balances: BalanceResult[] = [];
   const reads = new Map<string, unknown[]>();
   const outcomes: string[] = [];
   const sourceAnswers: string[] = [];
   const userText = policy.userText ?? '';
+  const failRead = (id: string, name: string, input?: unknown, retry = pending.get(id)?.retry) => {
+    const parsed = name === balanceToolDefinition.name ? balanceRequestSchema.safeParse(input) : undefined;
+    if (retry !== undefined) failedReads.delete(retry);
+    failedReads.set(id, { name, request: parsed?.success ? balanceKey(parsed.data) : undefined });
+  };
+  const recoveredRead = (name: string, called: { retry?: string } | undefined) => {
+    if (called?.retry !== undefined && failedReads.get(called.retry)?.name === name) failedReads.delete(called.retry);
+  };
   const call = (event: Extract<GenerateEvent, { type: 'tool-call' }>) => {
     toolAttempted = true;
-    pending.set(event.id, { name: event.name, input: event.input });
-    if (event.invalid) readFailed = true;
+    const input = event.name === balanceToolDefinition.name ? balanceRequestSchema.safeParse(event.input) : undefined;
+    const request = input?.success ? balanceKey(input.data) : undefined;
+    const failures = [...failedReads].filter(([, failure]) => failure.name === event.name && failure.request === request);
+    // Only a new, unambiguous retry can resolve an earlier failed attempt.
+    pending.set(event.id, { name: event.name, input: event.input, retry: failures.length === 1 ? failures[0][0] : undefined });
+    if (event.invalid) failRead(event.id, event.name, event.input);
     if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat'
       || (intent.kind === 'prepare' && !isRead(event.name) && event.name !== intent.action)) mismatch = true;
     if (event.name === balanceToolDefinition.name) {
@@ -84,7 +98,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
     if (intent.kind !== 'lookup' && intent.kind !== 'prepare') mismatch = true;
     if (event.name === balanceToolDefinition.name) {
       const parsed = balanceResultSchema.safeParse(value);
-      if (!parsed.success) { readFailed = true; return; }
+      if (!parsed.success) { failRead(event.id, event.name, called?.input, called?.retry); return; }
       const balance = parsed.data;
       const input = balanceRequestSchema.safeParse(called?.input);
       if (called && (!input.success || balanceKey(input.data) !== balanceKey(balance.request))) mismatch = true;
@@ -92,11 +106,13 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         && !userText.toLowerCase().includes(balance.request.asset.value.toLowerCase())
         && balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol))) selectionConflict = true;
       balances.push(balance);
-      if (balance.status !== 'complete') readFailed = true;
+      if (balance.status !== 'complete') incompleteRead = true;
+      else recoveredRead(event.name, called);
     } else if (ok && status !== WalletStatus.Error && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) {
       const previous = reads.get(event.name);
       if (previous) previous.push(value); else reads.set(event.name, [value]);
-    } else readFailed = true;
+      recoveredRead(event.name, called);
+    } else failRead(event.id, event.name, called?.input, called?.retry);
   };
 
   for await (const event of events) {
@@ -121,14 +137,15 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       case 'tool-error':
         toolAttempted = true;
         if (pending.has(event.id) && pending.get(event.id)?.name !== event.name) mismatch = true;
+        if (!isRead(event.name)) outcomes.push('Transaction preparation was not confirmed.');
+        else failRead(event.id, event.name, pending.get(event.id)?.input);
         pending.delete(event.id);
-        if (!isRead(event.name)) outcomes.push('Transaction preparation was not confirmed.'); else readFailed = true;
         yield event;
         break;
       case 'done': {
         const done = { ...event, verifiedAnswer: undefined };
         if (event.aborted && !outcomes.length) { yield { ...done, messages: [] }; break; }
-        if (pending.size) readFailed = true;
+        const readFailed = incompleteRead || failedReads.size > 0 || pending.size > 0;
         const lookup = intent.kind === 'lookup' ? intent : undefined;
         const requirements = lookup?.requests.filter(request => request.target === 'balance') ?? [];
         const hasOther = lookup?.requests.some(request => request.target === 'other') === true;
@@ -137,7 +154,8 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         const evidenceComplete = !policy.evidence?.selected() || policy.evidence.verified();
         const lookupComplete = !!lookup?.requests.length && balanceComplete && otherComplete && evidenceComplete;
         const explanationRequested = lookup?.explanation !== undefined;
-        const explanationComplete = !explanationRequested || !!text.trim();
+        const explanationComplete = !explanationRequested || !!text.trim()
+          && (policy.explanationComplete?.() ?? (!event.aborted && event.finishReason === 'stop'));
         const modelOnly = (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat') && !toolAttempted && !readFailed && !!text.trim();
         const complete = lookupComplete && explanationComplete && !readFailed && !mismatch && !selectionConflict && !outcomes.length;
         const facts = balances.map(formatBalance);

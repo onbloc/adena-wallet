@@ -119,8 +119,18 @@ export async function* generate(
   let aborted = false;
   const warnings: string[] = [];
   let responseMessages: ModelMessage[] = [];
+  const loopSignal = loop?.options.abortSignal;
+  const controller = signal && loopSignal && signal !== loopSignal ? new AbortController() : undefined;
+  const abortSignal = controller?.signal ?? signal ?? loopSignal;
+  const abort = () => controller?.abort(signal?.aborted ? signal.reason : loopSignal?.reason);
 
   try {
+    if (controller) {
+      signal?.addEventListener('abort', abort, { once: true });
+      loopSignal?.addEventListener('abort', abort, { once: true });
+      if (signal?.aborted || loopSignal?.aborted) abort();
+    }
+    if (abortSignal?.aborted) throw abortSignal.reason ?? new Error('Generation aborted.');
     if (contextTokens !== undefined && (!Number.isSafeInteger(contextTokens) || contextTokens <= 0)) {
       throw new RangeError('Context tokens must be a positive safe integer.');
     }
@@ -133,12 +143,12 @@ export async function* generate(
       : [];
     const formatSchemas = bounded && outputSchema
       ? [...schemas, { responseFormat: await asSchema(outputSchema).jsonSchema }] : schemas;
+    if (abortSignal?.aborted) throw abortSignal.reason ?? new Error('Generation aborted.');
     const result = streamText({
       model,
       ...options,
       ...(outputSchema && { output: Output.object({ schema: outputSchema }) }),
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
-      abortSignal: signal,
       ...(bounded && {
         maxOutputTokens,
         prepareStep: ({ messages, instructions }) => {
@@ -151,6 +161,7 @@ export async function* generate(
         },
       }),
       ...loop?.options,
+      abortSignal,
       onError: () => {}, // errors are rethrown from the stream below
     });
     // Part types in the cases below are the AI SDK's; yielded events use GenerateEventType.
@@ -206,11 +217,16 @@ export async function* generate(
           throw part.error;
       }
     }
+    aborted ||= abortSignal?.aborted === true;
     if (!aborted) responseMessages = await result.responseMessages;
   } catch (error) {
-    if (!signal?.aborted && !loop?.options.abortSignal?.aborted) throw error;
+    if (!abortSignal?.aborted) throw error;
     aborted = true;
   } finally {
+    if (controller) {
+      signal?.removeEventListener('abort', abort);
+      loopSignal?.removeEventListener('abort', abort);
+    }
     loop?.close();
   }
 

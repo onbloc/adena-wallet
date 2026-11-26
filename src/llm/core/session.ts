@@ -5,9 +5,11 @@ export type ChatScope =
   | { mode: 'plain' | 'mock' }
   | { mode: 'onbloc'; endpoint: string; chainId: string; account: string };
 
+export const CHAT_PROMPT_MAX_LENGTH = 16_384;
+
 const maxTurns = 50;
 const turnSchema = z.strictObject({
-  prompt: z.string().min(1).max(16_384),
+  prompt: z.string().min(1).max(CHAT_PROMPT_MAX_LENGTH),
   answer: z.string().min(1).max(32_768),
   /** What the agent called and what came of it, written by code: see `describeToolRecord`. */
   record: z.string().min(1).max(2_048).optional(),
@@ -18,6 +20,7 @@ export type ChatTurn = Readonly<z.infer<typeof turnSchema>>;
 export type ChatSession = {
   readonly turns: readonly ChatTurn[];
   messages(prompt: string): ModelMessage[];
+  /** Rejects invalid or oversized turns without changing history. */
   complete(prompt: string, answer: string, record?: string): boolean;
   trimOldest(count: number): void;
   reset(): void;

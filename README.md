@@ -25,6 +25,12 @@ npm run android   # expo run:android (generates android/ and builds)
 First launch: tap **Load**. The model (~1.4 GB) is downloaded from Hugging Face once,
 then loaded from local storage (works offline afterwards).
 
+Model files are cached by the full Hugging Face model ID, not just the filename. Different
+repositories may safely use the same filename. Downloads stream to a temporary native file;
+only a successful download is published as a cached model. The former filename-only cache
+cannot establish a file's repository, so it is not reused or deleted automatically: upgrading
+from that cache requires one new download. Delete file removes only the selected model's new cache.
+
 ### Release builds for a phone
 
 Connect the phone to install (iOS: unlocked, USB, trusted, Developer Mode on, a Team set in
@@ -55,8 +61,8 @@ src/llm/                      The language model
   remote/                       createLLMRemote({ apiKey }): the hosted OpenAI model (Responses API), fixed to
                                 `gpt-6-luna`. No React Native
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
-                                useLlm(llm) hook; runtime.ts, config.ts (model, context size);
-                                jsonGrammar.ts (structured output without the Jinja grammar)
+                                useLlm(llm) hook; runtime.ts, modelStorage.ts (namespaced native file cache),
+                                config.ts (model, context size); jsonGrammar.ts (structured output without the Jinja grammar)
   createLlm.ts                  createLLM(remote?): on-device without options, hosted with them
 src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
@@ -71,7 +77,8 @@ src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wal
   adenaWalletSdk.ts, tokens.ts  builds the transaction, hands it to Adena to approve; token symbol -> package path
 src/mock/                     Test-only code, nothing above depends on it
   wallet/                       MockWalletSdk (read-only), fixture, tokens, funding the mock from Onbloc
-  app/                          Playground screen, prepared-transaction cards, Settings (model source and API key, MCP URL, address), benchmark log
+  app/                          Playground orchestration, model/settings/transcript components,
+                                prepared-transaction cards, scoped chat persistence and benchmark log
   cli/                          make chat (chat.ts), with-server.sh
   scenario/                     scenarios, their check, the runner and the benchmark engine (portable: jest and app)
 ```
@@ -113,11 +120,22 @@ fails with `ADENA_CONTEXT_LIMIT`; shorten the question or start a larger support
 If the current tool exchange outgrows the budget, the run also fails rather than cutting tool
 arguments or results. Removed turns are forgotten by subsequent requests.
 
+Independent of the model's context window, a prompt may contain at most 16,384 UTF-16 code
+units; a larger prompt fails with `ADENA_PROMPT_LIMIT` before classification or discovery.
+Snapshots retain answers up to 32,768 code units and compact tool records up to 2,048.
+A completed answer that cannot fit those storage bounds is still shown in full, with an explicit
+warning that this exchange was not retained. Earlier retained turns are not replaced by it.
+
 Only requests classified as explanations or clarification questions can keep a tool-free model
 answer. They carry a warning that no wallet lookup was performed; this is not verified wallet
 data. A lookup or preparation request cannot be reinterpreted as an explanation merely because
 the model did not call a tool. Missing required results are explicit failures, not remembered
 answers. The guard does not semantically verify every statement in free-form explanation text.
+
+A corrected read retry can satisfy a previously failed attempt. Unresolved failed pages,
+pending calls, partial results and security mismatches still prevent completion. When a lookup
+also requests an explanation, that explanation must end normally: truncated, interrupted or
+missing-terminal explanations preserve fetched facts but do not commit the incomplete turn.
 
 Cancelled, incomplete and failed-lookup turns are not committed. A committed turn keeps the user
 text, the answer and a **tool record**: for each tool call its name, its input and a few words on
@@ -191,6 +209,9 @@ approvals are prepared only from that account and still require host permission 
 The selected preparation stops at its result, including a refusal; there is no follow-up model
 call that can erase a completed handoff or substitute another amount. Audit failures pause new
 execution but preserve completed results and surface a separate warning.
+Waiting for an asynchronous audit callback is bounded by the run's cancellation and deadline.
+If that wait is interrupted, the completed decision is returned with `auditFailed` rather than
+being lost behind a pending audit; new execution remains blocked.
 
 Relative amounts use a fresh complete, unambiguous one-asset balance in the same execution run.
 Code multiplies/divides bounded `bigint` base units; the model never computes the balance or
@@ -438,6 +459,11 @@ In the app, Settings > *Model* switches between the on-device model and OpenAI (
 model and endpoint are fixed). The key is kept in memory only (re-enter it after a restart), is sent
 only to OpenAI, and is not written to the benchmark log. Requests stream through `expo/fetch`.
 
+Supported root-object output schemas retain OpenAI's strict structured-output format. Root
+unions (`oneOf` / `anyOf`) use JSON mode because OpenAI rejects those roots; their schema is
+included in the model instructions, and the returned JSON must still pass client-side validation.
+That fallback does not provide provider-enforced schema conformance.
+
 ## Benchmark in the app (on a phone)
 
 The Chat tab has a **Benchmark** button next to Run. It runs on the loaded model and shows a live
@@ -512,6 +538,13 @@ against any `LLM`; `make scenario` shares the same summary check (`check.ts`).
   llama-server (`-c` in `src/mock/cli/with-server.sh`, `SERVER_CONTEXT_TOKENS` in
   `src/mock/cli/lib/server.ts`) must use the same value to match the phone. Change the model or
   context size in `src/llm/device/config.ts`.
+- Device load, unload and file removal execute in request order. An equivalent model and
+  effective context configuration reuses the ready model; changing the configuration reloads it.
+  During `unloading`, model access is unavailable and active generations are cancelled before
+  native completion draining and release. Playground model controls are blocked during chat,
+  benchmarks, preparation and lifecycle transitions.
+- Caller and tool-loop cancellation signals are combined: either can stop generation, including
+  before the first provider call. A loop cannot replace or disable the caller's cancellation.
 - Structured output (classification, proposals) must not use llama.rn's Jinja path: for a
   reasoning model like Qwen3.5 its grammar is registered as a user grammar, so llama.cpp never
   prefills the generation prompt. The grammar then asks the model to write the assistant header
