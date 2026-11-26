@@ -11,7 +11,10 @@ export interface TransactionHistoryResult {
     }[]
     | null;
   status: TransactionHistoryStatus;
-  // Next-page fetching or post-processing is in progress; excludes background refetches.
+  /**
+   * True while a next page or the processing query is loading. Background
+   * refetches from polling are not counted, so they cannot block the next page.
+   */
   isFetching: boolean;
   hasNextPage: boolean;
   fetchNextPage: () => Promise<boolean>;

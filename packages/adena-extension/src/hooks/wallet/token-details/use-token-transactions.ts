@@ -69,7 +69,8 @@ export const useTokenTransactions = (
   }, [allTransactions, blockIndex]);
 
   const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
-    `token-details/history/${currentNetwork.chainId}/${transactions?.length}/${tokenPath}`,
+    `token-details/history/${currentNetwork.networkId}/${isNative}/${currentAddress}/${tokenPath}`,
+    `${currentNetwork.chainId}/${transactions?.length}`,
     transactions,
   );
 

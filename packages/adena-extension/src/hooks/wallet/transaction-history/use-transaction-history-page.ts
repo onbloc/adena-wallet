@@ -3,7 +3,7 @@ import { useCurrentAccount } from '@hooks/use-current-account';
 import { useMakeTransactionsWithTime } from '@hooks/use-make-transactions-with-time';
 import { useNetwork } from '@hooks/use-network';
 import { useTokenMetainfo } from '@hooks/use-token-metainfo';
-import { InfiniteData, keepPreviousData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
+import { InfiniteData, RefetchOptions, useInfiniteQuery } from '@tanstack/react-query';
 import { TransactionWithPageInfo } from '@types';
 import { useCallback, useMemo } from 'react';
 
@@ -61,7 +61,6 @@ export const useTransactionHistoryPage = ({
         && tokenMetainfos.length > 0
         && transactionHistoryService.supported
         && enabled,
-      placeholderData: keepPreviousData,
       // No refetchInterval here: the history screen owns the single poll timer.
     },
   );
@@ -86,7 +85,8 @@ export const useTransactionHistoryPage = ({
   }, [transactions]);
 
   const { data, status: processingStatus, isFetching: isProcessing } = useMakeTransactionsWithTime(
-    `history/page/all/${currentNetwork.chainId}/${firstTransactionHash}`,
+    `history/page/all/${currentNetwork.networkId}/${currentAddress}`,
+    `${currentNetwork.chainId}/${firstTransactionHash}`,
     transactions,
   );
 
