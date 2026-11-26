@@ -363,6 +363,11 @@ export class WalletService {
     return this.runCurrent(() => this.vaultService.changePassword(currentPassword, nextPassword, () => this.biometricRepository.clear()));
   }
 
+  // Counts against the shared attempt limit like every other typed password.
+  verifyPassword(password: string): Promise<void> {
+    return this.vaultService.verifyPassword(password);
+  }
+
   async revealMnemonic(keyringId: string, password: string): Promise<string> {
     await this.vaultService.verifyPassword(password);
     return this.keyringSession.getMnemonic(keyringId);

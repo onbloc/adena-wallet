@@ -21,6 +21,8 @@ export interface ChangePasswordPageProps {
   biometricLabel?: string;
   biometricEnabled: boolean;
   onToggleBiometric: (value: boolean) => void;
+  // The switch changed with no new password: submitting saves only the biometric setting.
+  biometricOnly?: boolean;
   submitting: boolean;
   onSubmit: () => void;
   onBack: () => void;
@@ -47,6 +49,7 @@ export const ChangePasswordPage = ({
   biometricLabel,
   biometricEnabled,
   onToggleBiometric,
+  biometricOnly = false,
   submitting,
   onSubmit,
   onBack,
@@ -58,7 +61,7 @@ export const ChangePasswordPage = ({
   const fallbackNewRef = useRef<TextInputInstance>(null);
   const confirmRef = useRef<TextInputInstance>(null);
   const nextRef = newPasswordRef ?? fallbackNewRef;
-  const canSubmit = Boolean((currentPassword || currentVerifiedWith) && newPassword && confirmPassword);
+  const canSubmit = Boolean((currentPassword || currentVerifiedWith) && ((newPassword && confirmPassword) || biometricOnly));
 
   const focusNew = (): void => nextRef.current?.focus();
 
@@ -73,8 +76,8 @@ export const ChangePasswordPage = ({
       header={<TopBar title='Change password' onBack={onBack} />}
       footer={(
         <Button
-          label='Change password'
-          loadingLabel='Changing password…'
+          label={biometricOnly ? 'Save' : 'Change password'}
+          loadingLabel={biometricOnly ? 'Saving…' : 'Changing password…'}
           disabled={!canSubmit}
           loading={submitting}
           onPress={onSubmit}
@@ -147,6 +150,9 @@ export const ChangePasswordPage = ({
           <Text variant='row' style={styles.label}>{`Unlock with ${biometricLabel}`}</Text>
           <Switch value={biometricEnabled} onValueChange={onToggleBiometric} disabled={submitting} accessibilityLabel={`Unlock with ${biometricLabel}`} />
         </View>
+      )}
+      {biometricLabel && (
+        <Text variant='meta' color='secondary'>Leave the new password empty to change only this setting.</Text>
       )}
     </Screen>
   );
