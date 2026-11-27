@@ -11,6 +11,8 @@ export const useStyles = makeStyles(colors => ({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border.input,
   },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.space12 },
+  headerText: { flex: 1, gap: spacing.space4 },
   rows: { gap: spacing.space8 },
   actions: { flexDirection: 'row', gap: spacing.space8 },
   action: { flex: 1 },

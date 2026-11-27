@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import React, { ReactElement } from 'react';
 import { Button, Text } from 'react-native';
 
-import { ReviewSheet } from '../../../src/components/molecules';
+import { TransferReviewSheet } from '../../../src/components/molecules';
 import { AiTransferDraft } from '../../../src/domain/ai';
 import { useAiTransferReview } from '../../../src/hooks/use-ai-transfer-review';
 import { useWalletSnapshot } from '../../../src/hooks/use-wallet-snapshot';
@@ -32,7 +32,7 @@ const setup = async () => {
         <Button title='Review' onPress={(): void => { void review.open(transfer).catch(error => setFailure(error.message)); }} />
         <Button title='Invalidate' onPress={review.invalidate} />
         <Text>{failure}</Text>
-        {review.review && <ReviewSheet visible {...review.review} confirmLabel='Confirm and send' />}
+        {review.review && <TransferReviewSheet {...review.review} />}
       </>
     );
   };
@@ -49,14 +49,14 @@ describe('AI transfer approval', () => {
 
     await renderScreen(Harness, { env });
     await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
-    const confirm = await screen.findByRole('button', { name: 'Confirm and send' });
+    const confirm = await screen.findByRole('button', { name: 'Confirm send' });
 
     expect(env.gno.state.broadcasts).toEqual([]);
     expect(accessKeys).not.toHaveBeenCalled();
 
     await fireEvent.press(confirm);
     await waitFor(() => expect(env.gno.state.broadcasts).toHaveLength(1));
-    expect(settled).toHaveBeenCalledWith('transfer', true, 'Transaction confirmed.');
+    expect(settled).toHaveBeenCalledWith('transfer', 'sent');
   });
 
   it('does not sign a reviewed draft after the wallet locks', async () => {
@@ -64,9 +64,9 @@ describe('AI transfer approval', () => {
 
     await renderScreen(Harness, { env });
     await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
-    await screen.findByRole('button', { name: 'Confirm and send' });
+    await screen.findByRole('button', { name: 'Confirm send' });
     env.container.keyringSession.close();
-    await fireEvent.press(screen.getByRole('button', { name: 'Confirm and send' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirm send' }));
 
     expect(await screen.findByText('Wallet context changed. Prepare the transfer again.')).toBeTruthy();
     expect(env.gno.state.broadcasts).toEqual([]);
@@ -78,9 +78,9 @@ describe('AI transfer approval', () => {
 
     await renderScreen(Harness, { env });
     await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
-    await screen.findByRole('button', { name: 'Confirm and send' });
+    await screen.findByRole('button', { name: 'Confirm send' });
     env.container.networkService.selectNetwork(networkById('onyx-1').id);
-    await fireEvent.press(screen.getByRole('button', { name: 'Confirm and send' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirm send' }));
 
     expect(await screen.findByText('Wallet context changed. Prepare the transfer again.')).toBeTruthy();
     expect(accessKeys).not.toHaveBeenCalled();
@@ -101,8 +101,8 @@ describe('AI transfer approval', () => {
     });
     await renderScreen(Harness, { env });
     await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
-    await screen.findByRole('button', { name: 'Confirm and send' });
-    await fireEvent.press(screen.getByRole('button', { name: 'Confirm and send' }));
+    await screen.findByRole('button', { name: 'Confirm send' });
+    await fireEvent.press(screen.getByRole('button', { name: 'Confirm send' }));
 
     await started.promise;
     env.container.networkService.selectNetwork(networkById('onyx-1').id);
@@ -136,7 +136,46 @@ describe('AI transfer approval', () => {
       await gate;
     });
 
-    expect(screen.queryByRole('button', { name: 'Confirm and send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Confirm send' })).toBeNull();
     expect(env.gno.state.broadcasts).toEqual([]);
+  });
+
+  it('shows the same review as the Send flow: amount, recipient, network and total', async () => {
+    const { env, Harness } = await setup();
+
+    await renderScreen(Harness, { env });
+    await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
+    await screen.findByRole('button', { name: 'Confirm send' });
+
+    expect(screen.getByText('Review transfer')).toBeTruthy();
+    expect(screen.getByText('1 GNOT')).toBeTruthy();
+    expect(screen.getByText(RECIPIENT)).toBeTruthy();
+    expect(screen.getByText('Total')).toBeTruthy();
+  });
+
+  it('reports a transfer that is only accepted into the mempool as submitted, not sent', async () => {
+    const { env, Harness, settled } = await setup();
+
+    jest.spyOn(env.container.transactionService, 'signAndBroadcast').mockResolvedValue({ hash: 'ABC', height: '0', committed: false });
+    await renderScreen(Harness, { env });
+    await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Confirm send' }));
+
+    await waitFor(() => expect(settled).toHaveBeenCalledWith('transfer', 'submitted', 'Submitted. Confirmation is pending.'));
+  });
+
+  it('reports a signed transfer with an unknown outcome as unconfirmed, never as dismissed', async () => {
+    const { env, Harness, settled } = await setup();
+
+    jest.spyOn(env.container.transactionService, 'signAndBroadcast').mockImplementation(async (_draft, _account, _network, options) => {
+      options?.onSigned?.('HASH');
+      throw new Error('socket closed');
+    });
+    await renderScreen(Harness, { env });
+    await fireEvent.press(screen.getByRole('button', { name: 'Review' }));
+    await fireEvent.press(await screen.findByRole('button', { name: 'Confirm send' }));
+
+    await waitFor(() => expect(settled).toHaveBeenCalledWith('transfer', 'unconfirmed', 'Outcome not confirmed. Check Activity before sending again.'));
+    expect(settled).not.toHaveBeenCalledWith('transfer', 'dismissed', expect.anything());
   });
 });

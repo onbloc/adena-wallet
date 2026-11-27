@@ -12,6 +12,7 @@ export interface ChatBubbleProps {
   message: ChatMessageView;
   onReviewDraft?: (draftId: string) => void;
   onDismissDraft?: (draftId: string) => void;
+  onViewActivity?: () => void;
 }
 
 const ToolChip = ({ tool }: { tool: ChatToolView }): ReactElement => {
@@ -29,7 +30,7 @@ const ToolChip = ({ tool }: { tool: ChatToolView }): ReactElement => {
 };
 
 // User text on the right, assistant text on the left with tool activity, warnings, errors and draft cards beneath.
-export const ChatBubble = ({ message, onReviewDraft, onDismissDraft }: ChatBubbleProps): ReactElement => {
+export const ChatBubble = ({ message, onReviewDraft, onDismissDraft, onViewActivity }: ChatBubbleProps): ReactElement => {
   const styles = useStyles();
   const isUser = message.role === 'user';
   const hasBody = message.text.length > 0 || message.streaming;
@@ -60,6 +61,7 @@ export const ChatBubble = ({ message, onReviewDraft, onDismissDraft }: ChatBubbl
                   draft={draft}
                   onReview={() => handleReview(draft)}
                   onDismiss={() => handleDismiss(draft)}
+                  onViewActivity={() => onViewActivity?.()}
                 />
               ))}
               {message.error && <InlineAlert tone='error' title={message.error} />}

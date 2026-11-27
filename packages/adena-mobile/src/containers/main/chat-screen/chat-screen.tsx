@@ -1,17 +1,20 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import React, { ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { AiSettingsSheetProps } from '../../../components/molecules';
 import { Chat } from '../../../components/pages/chat';
-import { ChatMessageView, ChatSetup } from '../../../components/view-models';
+import { ChatDraftView, ChatMessageView, ChatSetup } from '../../../components/view-models';
 import { AI_CONFIG } from '../../../config/ai';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
-import { AiConfig, AiLocalModel, AiTransferDraft } from '../../../domain/ai';
+import { AiConfig, AiLocalModel, AiTransferDraft, AiTransferOutcome } from '../../../domain/ai';
+import { Token } from '../../../domain/token';
 import { useAiTransferReview } from '../../../hooks/use-ai-transfer-review';
 import { useWalletSnapshot, WalletSnapshot } from '../../../hooks/use-wallet-snapshot';
 import { MainStackParamList } from '../../../navigation/types';
+import { useTokenPricesQuery } from '../../../queries/token.queries';
+import { PriceService } from '../../../services/price.service';
 import { useToastStore } from '../../../stores/toast.store';
 import { formatTokenAmount } from '../../../utils/amount';
 import { createId } from '../../../utils/id';
@@ -19,14 +22,22 @@ import { createId } from '../../../utils/id';
 const INITIAL_CONFIG: AiConfig = { provider: 'openai', model: AI_CONFIG.defaultModel, hasApiKey: false, models: [] };
 const INITIAL_LOCAL: AiSettingsSheetProps['local'] = { state: 'idle' };
 
-const draftView = (draft: AiTransferDraft): NonNullable<ChatMessageView['drafts']>[number] => ({
+const draftView = (draft: AiTransferDraft): ChatDraftView => ({
   id: draft.id,
   title: `Send ${formatTokenAmount(draft.amount, draft.token.decimals)} ${draft.token.symbol}`,
-  rows: [{ label: 'To', value: draft.toAddress, multiline: true }, { label: 'Network', value: draft.network.networkName }],
+  symbol: draft.token.symbol,
+  tokenLocalIcon: draft.token.localIcon,
+  tokenImageUrl: draft.token.imageUrl,
+  rows: [
+    { label: 'From', value: draft.account.name },
+    { label: 'To', value: draft.toAddress, multiline: true },
+    ...(draft.recipientName ? [{ label: 'Recipient', value: draft.recipientName }] : []),
+    { label: 'Network', value: draft.network.networkName },
+  ],
   state: 'pending',
 });
 
-const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () => void }): ReactElement => {
+const Conversation = ({ wallet, onBack, onOpenActivity }: { wallet: WalletSnapshot; onBack: () => void; onOpenActivity: () => void }): ReactElement => {
   const { aiAssistantService: assistant, accountService, networkService } = useContainer();
   const toast = useToastStore(state => state.show);
   const { account, network } = wallet;
@@ -47,6 +58,11 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
   const activeRef = useRef<AbortController | undefined>(undefined);
   const mountedRef = useRef(true);
   const draftsRef = useRef(new Map<string, AiTransferDraft>());
+  // Every draft the chat has seen, kept after settling so its card can still show a fiat estimate.
+  const draftMetaRef = useRef(new Map<string, AiTransferDraft>());
+  // Drafts prepared by the reply that is running.
+  const turnDraftsRef = useRef(new Set<string>());
+  const [draftTokens, setDraftTokens] = useState<Token[]>([]);
   const scope = { networkId: network.id, accountId: account?.id ?? '' };
   const isCurrentScope = (): boolean => {
     const selectedAccount = accountService.getCurrentAccount();
@@ -57,26 +73,47 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
       && selectedNetwork.rpcUrl === network.rpcUrl && assistant.isSupported(selectedNetwork);
   };
 
-  const settled = useCallback((id: string, sent: boolean, message?: string): void => {
+  const settled = useCallback((id: string, outcome: AiTransferOutcome, message?: string): void => {
+    const draft = draftsRef.current.get(id);
+
     draftsRef.current.delete(id);
+
+    if (draft) {
+      assistant.recordTransferOutcome({ networkId: draft.network.id, accountId: draft.account.id }, draft, outcome);
+    }
+
     setMessages(current => current.map(item => ({
       ...item,
-      drafts: item.drafts?.map(draft => draft.id === id ? { ...draft, state: sent ? 'sent' : 'dismissed' } : draft),
-      warnings: message && item.drafts?.some(draft => draft.id === id) ? [...(item.warnings ?? []), message] : item.warnings,
+      drafts: item.drafts?.map(view => view.id === id ? { ...view, state: outcome, message } : view),
     })));
-  }, []);
+  }, [assistant]);
   const transferReview = useAiTransferReview(account, network, settled);
 
-  const invalidateDrafts = (): void => {
-    draftsRef.current.clear();
-    transferReview.invalidate();
-    setMessages(current => current.map(item => ({ ...item, drafts: item.drafts?.map(draft => draft.state === 'pending' ? { ...draft, state: 'dismissed' } : draft) })));
+  // Cancels pending drafts, only the given ones when `ids` is set; an open review of a canceled draft closes with it.
+  const dismissDrafts = (ids?: ReadonlySet<string>): void => {
+    const matches = (id: string): boolean => !ids || ids.has(id);
+
+    for (const id of [...draftsRef.current.keys()]) {
+      if (matches(id)) {
+        draftsRef.current.delete(id);
+      }
+    }
+
+    if (!ids || (transferReview.activeId !== undefined && ids.has(transferReview.activeId))) {
+      transferReview.invalidate();
+    }
+
+    setMessages(current => current.map(item => ({
+      ...item,
+      drafts: item.drafts?.map(view => view.state === 'pending' && matches(view.id) ? { ...view, state: 'dismissed' } : view),
+    })));
   };
 
-  const stop = (): void => {
+  // `turnOnly` is the Stop button: it ends the running reply and leaves drafts from earlier replies alone.
+  const stop = (turnOnly = false): void => {
     activeRef.current?.abort();
     assistant.clearPending(scope);
-    invalidateDrafts();
+    dismissDrafts(turnOnly ? turnDraftsRef.current : undefined);
   };
 
   const refreshConfig = async (): Promise<AiConfig> => {
@@ -144,8 +181,9 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
           setSettingsVisible(true);
         }
       });
+    // Only a real background clears the chat state; `inactive` also covers Face ID prompts, system overlays and focus changes.
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active') {
+      if (state === 'background') {
         stop();
         setApiKey('');
         setSettingsVisible(false);
@@ -173,6 +211,8 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
 
     const controller = new AbortController();
     const id = createId();
+
+    turnDraftsRef.current = new Set();
 
     activeRef.current = controller;
     setSending(true);
@@ -203,6 +243,9 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
             break;
           case 'draft':
             draftsRef.current.set(event.draft.id, event.draft);
+            draftMetaRef.current.set(event.draft.id, event.draft);
+            turnDraftsRef.current.add(event.draft.id);
+            setDraftTokens(current => current.some(token => token.id === event.draft.token.id) ? current : [...current, event.draft.token]);
             update(message => ({ ...message, drafts: [...(message.drafts ?? []), draftView(event.draft)] }));
             break;
           case 'error':
@@ -338,22 +381,41 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
     ? { kind: 'local-model', ...local }
     : ready && config.hasApiKey ? { kind: 'ready' } : { kind: 'needs-key' };
 
+  const prices = useTokenPricesQuery(network, draftTokens);
+  const viewMessages = useMemo(() => messages.map((message) => {
+    if (!message.drafts) {
+      return message;
+    }
+
+    return {
+      ...message,
+      drafts: message.drafts.map((view) => {
+        const draft = draftMetaRef.current.get(view.id);
+
+        return draft ? { ...view, fiatLabel: PriceService.fiatLabel(draft.amount, draft.token, prices.data) } : view;
+      }),
+    };
+  }), [messages, prices.data]);
+
   return (
     <Chat
-      messages={messages}
+      messages={viewMessages}
       setup={setup}
       settings={settings}
       input={input}
       onChangeInput={setInput}
       sending={sending}
       onSend={(): void => { void send(); }}
-      onStop={stop}
+      onStop={(): void => stop(true)}
       onOpenSettings={openSettings}
       onBack={onBack}
+      onOpenActivity={onOpenActivity}
       review={transferReview.review}
       onNewChat={(): void => {
         stop();
         assistant.reset(scope);
+        draftMetaRef.current.clear();
+        setDraftTokens([]);
         setMessages([]);
       }}
       onReviewDraft={(id) => {
@@ -363,7 +425,7 @@ const Conversation = ({ wallet, onBack }: { wallet: WalletSnapshot; onBack: () =
           void transferReview.open(draft).catch(error => toast(toErrorMessage(error), 'error'));
         }
       }}
-      onDismissDraft={id => settled(id, false)}
+      onDismissDraft={id => settled(id, 'dismissed')}
       suggestions={['What is my GNOT balance?', 'Show my recent transactions']}
       onSelectSuggestion={setInput}
     />
@@ -384,5 +446,12 @@ export const ChatScreen = ({ navigation }: NativeStackScreenProps<MainStackParam
     return <></>;
   }
 
-  return <Conversation key={`${wallet.account?.id}.${wallet.network.id}.${wallet.network.chainId}.${wallet.network.rpcUrl}`} wallet={wallet} onBack={navigation.goBack} />;
+  return (
+    <Conversation
+      key={`${wallet.account?.id}.${wallet.network.id}.${wallet.network.chainId}.${wallet.network.rpcUrl}`}
+      wallet={wallet}
+      onBack={navigation.goBack}
+      onOpenActivity={(): void => navigation.navigate('Main', { screen: 'Activity' })}
+    />
+  );
 };

@@ -1,7 +1,8 @@
 import { fireEvent, screen, within } from '@testing-library/react-native';
 import React from 'react';
 
-import { SendAmountPage, SendAmountPageProps, TransferReview } from '../../../../src/components/pages';
+import { TransferReview } from '../../../../src/components/molecules';
+import { SendAmountPage, SendAmountPageProps } from '../../../../src/components/pages';
 import { FeeTier } from '../../../../src/domain/fee';
 import { renderPage } from './render-page';
 

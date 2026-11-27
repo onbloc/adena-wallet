@@ -37,7 +37,7 @@ describe('ChatBubble', () => {
   it('routes draft actions with the draft id', async () => {
     const onReviewDraft = jest.fn();
     const onDismissDraft = jest.fn();
-    const drafts = [{ id: 'd1', title: 'Send 1 GNOT', rows: [], state: 'pending' as const }];
+    const drafts = [{ id: 'd1', title: 'Send 1 GNOT', symbol: 'GNOT', rows: [], state: 'pending' as const }];
 
     await render(<ChatBubble message={message({ drafts })} onReviewDraft={onReviewDraft} onDismissDraft={onDismissDraft} />);
     await fireEvent.press(screen.getByTestId('chat-draft-review-d1'));

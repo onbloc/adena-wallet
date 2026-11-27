@@ -66,14 +66,22 @@ export interface ChatToolView {
   status: ChatToolStatus;
 }
 
-export type ChatDraftState = 'pending' | 'sent' | 'dismissed';
+// 'submitted': broadcast, confirmation pending. 'unconfirmed': signed but the outcome is unknown, so it may still land.
+export type ChatDraftState = 'pending' | 'sent' | 'submitted' | 'unconfirmed' | 'dismissed';
 
 export interface ChatDraftView {
   id: string;
   // e.g. 'Send 1 GNOT'.
   title: string;
+  symbol: string;
+  tokenLocalIcon?: LocalTokenIcon;
+  tokenImageUrl?: string;
+  // Pre-formatted fiat estimate of the amount, e.g. "≈ $12.30".
+  fiatLabel?: string;
   rows: { label: string; value: string; multiline?: boolean }[];
   state: ChatDraftState;
+  // Outcome detail shown under the state.
+  message?: string;
 }
 
 export interface ChatMessageView {

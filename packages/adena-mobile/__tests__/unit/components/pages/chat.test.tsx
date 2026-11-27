@@ -18,6 +18,7 @@ const props = (overrides: Partial<ChatProps> = {}): ChatProps => ({
   onBack: jest.fn(),
   onReviewDraft: jest.fn(),
   onDismissDraft: jest.fn(),
+  onOpenActivity: jest.fn(),
   settings: CHAT_SETTINGS,
   ...overrides,
 });

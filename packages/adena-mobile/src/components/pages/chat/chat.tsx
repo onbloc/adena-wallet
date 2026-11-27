@@ -2,20 +2,9 @@ import React, { ReactElement, useRef } from 'react';
 import { FlatList, View } from 'react-native';
 
 import { Button, Chip, IconButton, Text } from '../../atoms';
-import { AiSettingsSheet, AiSettingsSheetProps, ChatBubble, ChatComposer, FeeSelectorProps, InlineAlert, KeyValueRow, ReviewSheet, Screen, TopBar } from '../../molecules';
+import { AiSettingsSheet, AiSettingsSheetProps, ChatBubble, ChatComposer, InlineAlert, Screen, TopBar, TransferReviewSheet, TransferReviewSheetProps } from '../../molecules';
 import { ChatMessageView, ChatSetup } from '../../view-models';
 import { useStyles } from './chat.styles';
-
-export interface ChatDraftReview {
-  title: string;
-  rows: { label: string; value: string; multiline?: boolean; emphasis?: boolean }[];
-  fee: FeeSelectorProps;
-  totalLabel?: string;
-  error?: string;
-  confirming: boolean;
-  onConfirm: () => void;
-  onClose: () => void;
-}
 
 export interface ChatProps {
   messages: ChatMessageView[];
@@ -33,8 +22,10 @@ export interface ChatProps {
   onReviewDraft: (draftId: string) => void;
   onDismissDraft: (draftId: string) => void;
   settings: AiSettingsSheetProps;
+  // From a transfer that is still pending or whose outcome is unknown.
+  onOpenActivity: () => void;
   // When set, the review sheet is shown.
-  review?: ChatDraftReview;
+  review?: TransferReviewSheetProps;
   // Empty-state chips.
   suggestions?: string[];
   onSelectSuggestion?: (text: string) => void;
@@ -92,6 +83,7 @@ export const Chat = ({
   onDismissDraft,
   settings,
   review,
+  onOpenActivity,
   suggestions,
   onSelectSuggestion,
 }: ChatProps): ReactElement => {
@@ -102,7 +94,7 @@ export const Chat = ({
   const scrollToEnd = (): void => listRef.current?.scrollToEnd({ animated: true });
 
   const renderMessage = ({ item }: { item: ChatMessageView }): ReactElement => (
-    <ChatBubble message={item} onReviewDraft={onReviewDraft} onDismissDraft={onDismissDraft} />
+    <ChatBubble message={item} onReviewDraft={onReviewDraft} onDismissDraft={onDismissDraft} onViewActivity={onOpenActivity} />
   );
 
   const header = (
@@ -166,20 +158,7 @@ export const Chat = ({
         keyboardShouldPersistTaps='handled'
       />
       <AiSettingsSheet {...settings} />
-      {review && (
-        <ReviewSheet
-          visible
-          title={review.title}
-          rows={review.rows}
-          fee={review.fee}
-          totals={review.totalLabel ? <KeyValueRow label='Total' value={review.totalLabel} emphasis /> : undefined}
-          error={review.error}
-          confirmLabel='Confirm and send'
-          confirming={review.confirming}
-          onConfirm={review.onConfirm}
-          onClose={review.onClose}
-        />
-      )}
+      {review && <TransferReviewSheet {...review} />}
     </Screen>
   );
 };

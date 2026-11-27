@@ -1,6 +1,7 @@
 import { Network } from '../domain/network';
 import { Token, TokenPrice, tokenPriceKey } from '../domain/token';
 import { PriceRepository } from '../repositories/price.repository';
+import { formatUSD } from '../utils/price';
 
 export type TokenPriceMap = Record<string, TokenPrice>;
 
@@ -29,6 +30,13 @@ export class PriceService {
     }
 
     return (Number(amount) / 10 ** token.decimals) * price.usd;
+  }
+
+  // "≈ $1.23" for a raw amount, or undefined when the token has no price.
+  static fiatLabel(amount: string, token: Token, prices?: TokenPriceMap): string | undefined {
+    const usd = PriceService.valueOf(amount, token, prices?.[tokenPriceKey(token.id, token.networkId)]);
+
+    return usd === null ? undefined : `≈ ${formatUSD(usd)}`;
   }
 
   static portfolio(holdings: { token: Token; amount?: string }[], prices: TokenPriceMap): PortfolioValue | null {

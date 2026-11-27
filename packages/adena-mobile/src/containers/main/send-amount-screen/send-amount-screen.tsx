@@ -2,14 +2,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { ReactElement, useCallback, useMemo, useRef, useState } from 'react';
 
-import { applyKeypadKey, KeypadKey } from '../../../components/molecules';
-import { SendAmountPage, TransferReview } from '../../../components/pages';
+import { applyKeypadKey, KeypadKey, TransferReview } from '../../../components/molecules';
+import { SendAmountPage } from '../../../components/pages';
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { Account } from '../../../domain/account';
 import { FeeEstimate } from '../../../domain/fee';
 import { Network } from '../../../domain/network';
-import { Token, tokenPriceKey } from '../../../domain/token';
+import { Token } from '../../../domain/token';
 import { TransactionDraft } from '../../../domain/transaction';
 import { useFeeSelection } from '../../../hooks/use-fee-selection';
 import { usePendingBroadcast } from '../../../hooks/use-pending-broadcast';
@@ -19,7 +19,6 @@ import { queryKeys } from '../../../queries/query-keys';
 import { PriceService } from '../../../services/price.service';
 import { useToastStore } from '../../../stores/toast.store';
 import { addAmount, compareAmount, formatTokenAmount, isPositiveAmount, parseCoin, toBaseUnit, toDisplayAmount } from '../../../utils/amount';
-import { formatUSD } from '../../../utils/price';
 
 // Everything the review shows and the broadcast signs, captured when the fee was estimated.
 interface PreparedTransfer {
@@ -53,11 +52,7 @@ export const SendAmountScreen = ({ navigation, route }: NativeStackScreenProps<M
   const feeSelection = useFeeSelection(prepared?.estimate ?? null, prepared?.network ?? network);
   const { prices } = wallet;
 
-  const fiatOf = useCallback((value: string, of: Token): string | undefined => {
-    const usd = PriceService.valueOf(value, of, prices?.[tokenPriceKey(of.id, of.networkId)]);
-
-    return usd === null ? undefined : `≈ ${formatUSD(usd)}`;
-  }, [prices]);
+  const fiatOf = useCallback((value: string, of: Token): string | undefined => PriceService.fiatLabel(value, of, prices), [prices]);
 
   // A requested token that is not listed (e.g. hidden) is reported instead of silently sending the native coin.
   const asset = wallet.assets.find(item => item.token.id === tokenId)

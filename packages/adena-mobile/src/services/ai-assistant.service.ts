@@ -14,17 +14,40 @@ import {
   AiLocalModelStatus,
   AiRunEvent,
   AiTransferDraft,
+  AiTransferOutcome,
 } from '../domain/ai';
 import { Network } from '../domain/network';
 import { AiLibrary, AiLibraryLoader, loadAiLibrary } from '../infrastructure/ai/ai-library';
 import { streamingFetch } from '../infrastructure/ai/streaming-fetch';
 import { AiChatRepository, AiChatScope } from '../repositories/ai-chat.repository';
 import { AiProvider, AiSettingsRepository } from '../repositories/ai-settings.repository';
+import { formatTokenAmount } from '../utils/amount';
 import { AccountService } from './account.service';
 import { AiWalletService } from './ai-wallet.service';
 import { AccountScopedData } from './wallet.service';
 
 const TURN_TIMEOUT_MS = 5 * 60_000;
+
+// Same as the adena-ai playground. Unset, a reasoning model runs at its default effort, which is slow and
+// spends the output budget on reasoning; wallet answers are grounded in tool results and need none.
+const GENERATION = { temperature: 0.2, maxOutputTokens: 512, reasoning: 'none' } as const;
+
+// Outcomes of prepared transfers enter the model's history as synthetic turns, hidden from the transcript.
+const WALLET_EVENT_PREFIX = '[Wallet event] ';
+const WALLET_EVENT_ACK = 'Noted.';
+
+const OUTCOME_TEXT: Record<AiTransferOutcome, string> = {
+  sent: 'was sent and confirmed',
+  submitted: 'was broadcast; confirmation is still pending',
+  unconfirmed: 'was signed but its outcome is unknown; the user was told to check Activity',
+  dismissed: 'was declined by the user and not sent',
+};
+
+const describeOutcome = (transfer: AiTransferDraft, outcome: AiTransferOutcome): string => {
+  const amount = `${formatTokenAmount(transfer.amount, transfer.token.decimals)} ${transfer.token.symbol}`;
+
+  return `The transfer of ${amount} to ${transfer.toAddress} on ${transfer.network.networkName} ${OUTCOME_TEXT[outcome]}.`;
+};
 
 // A conversation and the agent continuing it. The agent is rebuilt when the model, key or account data changes.
 interface Conversation {
@@ -33,6 +56,8 @@ interface Conversation {
   llm?: LLM;
   // Drafts the running turn prepared, drained into the event stream in order.
   drafts: AiTransferDraft[];
+  // Wallet outcomes waiting to join the session once no turn is running.
+  notes: string[];
   active?: ActiveRun;
 }
 
@@ -140,7 +165,9 @@ export class AiAssistantService implements AccountScopedData {
       return [];
     }
 
-    return this.conversationFor(scope, library).session.turns.map(turn => ({ prompt: turn.prompt, answer: turn.answer }));
+    return this.conversationFor(scope, library).session.turns
+      .filter(turn => !turn.prompt.startsWith(WALLET_EVENT_PREFIX))
+      .map(turn => ({ prompt: turn.prompt, answer: turn.answer }));
   }
 
   async* run(input: { prompt: string; account: Account; network: Network; signal?: AbortSignal }): AsyncGenerator<AiRunEvent> {
@@ -192,6 +219,7 @@ export class AiAssistantService implements AccountScopedData {
 
       conversation = this.conversationFor(scope, library);
       conversation.active = active;
+      this.flushNotes(conversation);
       const agent = await this.agentFor(conversation, library, account, network, isCurrent);
 
       if (!isCurrent()) {
@@ -201,7 +229,7 @@ export class AiAssistantService implements AccountScopedData {
 
       const address = this.accountService.getAddress(account, network);
 
-      for await (const event of agent.run({ prompt }, { account: address, signal: active.controller.signal, allowTransactionPreparation: true })) {
+      for await (const event of agent.run({ prompt, ...GENERATION }, { account: address, signal: active.controller.signal, allowTransactionPreparation: true })) {
         if (!isCurrent()) {
           break;
         }
@@ -240,9 +268,12 @@ export class AiAssistantService implements AccountScopedData {
     }
     finally {
       signal?.removeEventListener('abort', onAbort);
-      const snapshot = isCurrent() && completed && conversation && this.conversations.get(key) === conversation
-        ? conversation.session.serialize()
-        : undefined;
+      let snapshot: string | undefined;
+
+      if (isCurrent() && completed && conversation && this.conversations.get(key) === conversation) {
+        this.flushNotes(conversation);
+        snapshot = conversation.session.serialize();
+      }
 
       if (conversation?.active === active) {
         if (!completed) {
@@ -298,6 +329,22 @@ export class AiAssistantService implements AccountScopedData {
     });
   }
 
+  // Tells the model what became of a transfer it prepared, so a later "did it go through?" is answered from fact.
+  recordTransferOutcome(scope: AiChatScope, transfer: AiTransferDraft, outcome: AiTransferOutcome): void {
+    const conversation = this.conversations.get(scopeKey(scope));
+
+    if (!conversation) {
+      return;
+    }
+
+    conversation.notes.push(`${WALLET_EVENT_PREFIX}${describeOutcome(transfer, outcome)}`);
+
+    // A running turn flushes its notes when it ends, so they never interleave with its own turn.
+    if (!conversation.active && this.flushNotes(conversation)) {
+      this.chats.save(scope, conversation.session.serialize());
+    }
+  }
+
   reset(scope: AiChatScope): void {
     this.clearPending(scope);
     const conversation = this.conversations.get(scopeKey(scope));
@@ -328,6 +375,11 @@ export class AiAssistantService implements AccountScopedData {
     this.chats.removeAccount(accountId);
   }
 
+  // True when at least one note joined the session.
+  private flushNotes(conversation: Conversation): boolean {
+    return conversation.notes.splice(0).map(note => conversation.session.complete(note, WALLET_EVENT_ACK)).some(Boolean);
+  }
+
   private async ensureLocalModel(): Promise<LLMOnDevice> {
     this.localModel ??= this.loadLibrary().then(library => library.device.createLLM({ kind: 'local' })).catch((error: unknown) => {
       this.localModel = undefined;
@@ -348,6 +400,7 @@ export class AiAssistantService implements AccountScopedData {
     const conversation: Conversation = {
       session: library.llm.createChatSession(this.chats.load(scope)),
       drafts: [],
+      notes: [],
     };
 
     this.conversations.set(key, conversation);

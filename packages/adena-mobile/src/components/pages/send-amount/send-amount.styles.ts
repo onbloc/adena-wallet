@@ -18,10 +18,4 @@ export const useStyles = makeStyles(colors => ({
   tokenSelectorPressed: { backgroundColor: colors.background.pressed },
   availableRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   keypad: { marginTop: 'auto' },
-  reviewAmount: { alignItems: 'center', gap: spacing.space4 },
-  reviewAmountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.space12, alignSelf: 'stretch' },
-  reviewAmountLabel: { flexShrink: 1 },
-  reviewRecipient: { gap: spacing.space4, paddingVertical: spacing.space8 },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: spacing.space16, paddingTop: spacing.space8 },
-  totalValue: { flexShrink: 1, textAlign: 'right' },
 }));

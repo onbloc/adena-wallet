@@ -16,6 +16,9 @@ export interface AiTransferDraft {
   draft: TransactionDraft;
 }
 
+// What became of a transfer the assistant prepared; fed back so the model can answer questions about it.
+export type AiTransferOutcome = 'sent' | 'submitted' | 'unconfirmed' | 'dismissed';
+
 export interface AiChatTurn {
   prompt: string;
   answer: string;

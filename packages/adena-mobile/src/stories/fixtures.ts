@@ -1,6 +1,6 @@
 // Shared sample data for page stories; public test addresses only.
-import { AiSettingsSheetProps } from '../components/molecules';
-import { ChatDraftReview, DappMessageView } from '../components/pages';
+import { AiSettingsSheetProps, TransferReviewSheetProps } from '../components/molecules';
+import { DappMessageView } from '../components/pages';
 import { AssetItemView, ChatDraftView, ChatMessageView, NftCardView } from '../components/view-models';
 import { FeeTier } from '../domain/fee';
 
@@ -30,9 +30,12 @@ export const SWAP_MESSAGES: DappMessageView[] = [
 export const CHAT_DRAFT: ChatDraftView = {
   id: 'draft-1',
   title: 'Send 1 GNOT',
+  symbol: 'GNOT',
+  tokenLocalIcon: 'gnot',
+  fiatLabel: '≈ $0.11',
   rows: [
+    { label: 'From', value: 'Account 1' },
     { label: 'To', value: SAMPLE_RECIPIENT, multiline: true },
-    { label: 'Amount', value: '1 GNOT' },
     { label: 'Network', value: 'Gno.land Mainnet' },
   ],
   state: 'pending',
@@ -74,25 +77,29 @@ export const CHAT_SETTINGS: AiSettingsSheetProps = {
   onClose: () => undefined,
 };
 
-export const CHAT_REVIEW: ChatDraftReview = {
-  title: 'Review transfer',
-  rows: [
-    { label: 'To', value: SAMPLE_RECIPIENT, multiline: true },
-    { label: 'Amount', value: '1 GNOT', emphasis: true },
-  ],
-  fee: {
-    options: [
-      { tier: FeeTier.SLOW, label: 'Slow', feeLabel: '0.1003 GNOT' },
-      { tier: FeeTier.AVERAGE, label: 'Average', feeLabel: '0.1103 GNOT' },
-      { tier: FeeTier.FAST, label: 'Fast', feeLabel: '0.1204 GNOT' },
-    ],
-    selected: FeeTier.AVERAGE,
-    onSelect: () => undefined,
-    customAdjustment: '1',
-    onChangeCustomAdjustment: () => undefined,
-    tooLow: false,
+export const CHAT_REVIEW: TransferReviewSheetProps = {
+  review: {
+    amountLabel: '1 GNOT',
+    amountFiatLabel: '≈ $0.11',
+    recipientAddress: SAMPLE_RECIPIENT,
+    networkName: 'Gno.land Mainnet',
+    fee: {
+      options: [
+        { tier: FeeTier.SLOW, label: 'Slow', feeLabel: '0.1003 GNOT' },
+        { tier: FeeTier.AVERAGE, label: 'Average', feeLabel: '0.1103 GNOT' },
+        { tier: FeeTier.FAST, label: 'Fast', feeLabel: '0.1204 GNOT' },
+      ],
+      selected: FeeTier.AVERAGE,
+      onSelect: () => undefined,
+      customAdjustment: '1',
+      onChangeCustomAdjustment: () => undefined,
+      tooLow: false,
+    },
+    totalLabel: '1.1103 GNOT',
+    totalFiatLabel: '≈ $0.12',
   },
-  totalLabel: '1.1103 GNOT',
+  symbol: 'GNOT',
+  tokenLocalIcon: 'gnot',
   confirming: false,
   onConfirm: () => undefined,
   onClose: () => undefined,

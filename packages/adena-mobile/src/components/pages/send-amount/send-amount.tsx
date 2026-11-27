@@ -4,34 +4,21 @@ import { Pressable, PressableStateCallbackType, StyleProp, TextInputInstance, Vi
 import { LocalTokenIcon } from '../../../domain/token';
 import { useThemeColors } from '../../../theme';
 import { formatAddress } from '../../../utils/address';
-import { Avatar, Button, Chip, Divider, Icon, Text } from '../../atoms';
+import { Avatar, Button, Chip, Icon, Text } from '../../atoms';
 import {
   BottomSheet,
-  FeeSelectorProps,
   InlineAlert,
   KeypadKey,
   ListRow,
   NumericKeypad,
-  ReviewSheet,
   Screen,
   TextField,
   TokenImage,
   TopBar,
+  TransferReview,
+  TransferReviewSheet,
 } from '../../molecules';
 import { useStyles } from './send-amount.styles';
-
-// All labels are pre-formatted with their symbols (fees are always in the native token).
-export interface TransferReview {
-  amountLabel: string;
-  amountFiatLabel?: string;
-  recipientName?: string;
-  recipientAddress: string;
-  networkName: string;
-  memo?: string;
-  totalLabel?: string;
-  totalFiatLabel?: string;
-  fee: FeeSelectorProps;
-}
 
 export interface TokenOptionView {
   key: string;
@@ -179,45 +166,16 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => {
         <NumericKeypad onKeyPress={props.onKeyPress} />
       </View>
       {props.review && (
-        <ReviewSheet
-          visible
-          title='Review transfer'
-          rows={[
-            { label: 'Network', value: props.review.networkName, emphasis: true },
-            ...(props.review.memo ? [{ label: 'Memo', value: props.review.memo, multiline: true }] : []),
-          ]}
-          fee={props.review.fee}
-          totals={props.review.totalLabel !== undefined && (
-            <>
-              <Divider />
-              <View style={styles.totalRow}>
-                <Text variant='meta' color='secondary'>Total</Text>
-                <Text variant='row' tabular selectable style={styles.totalValue}>{props.review.totalLabel}</Text>
-              </View>
-              {props.review.totalFiatLabel && (
-                <Text variant='meta' color='secondary' tabular align='right'>{`${props.review.totalFiatLabel} including network fee`}</Text>
-              )}
-            </>
-          )}
+        <TransferReviewSheet
+          review={props.review}
+          symbol={props.symbol}
+          tokenLocalIcon={props.tokenLocalIcon}
+          tokenImageUrl={props.tokenImageUrl}
           error={props.reviewError}
-          confirmLabel='Confirm send'
           confirming={props.confirming}
           onConfirm={props.onConfirm}
           onClose={props.onCloseReview}
-        >
-          <View style={styles.reviewAmount}>
-            <View style={styles.reviewAmountRow}>
-              <TokenImage symbol={props.symbol} localIcon={props.tokenLocalIcon} imageUrl={props.tokenImageUrl} size={32} />
-              <Text variant='display' tabular adjustsFontSizeToFit numberOfLines={1} style={styles.reviewAmountLabel}>{props.review.amountLabel}</Text>
-            </View>
-            {props.review.amountFiatLabel ? <Text variant='meta' color='secondary' tabular align='center'>{props.review.amountFiatLabel}</Text> : null}
-          </View>
-          <View style={styles.reviewRecipient}>
-            <Text variant='meta' color='secondary'>To</Text>
-            {props.review.recipientName ? <Text variant='row'>{props.review.recipientName}</Text> : null}
-            <Text variant='meta' color='secondary' tabular selectable>{props.review.recipientAddress}</Text>
-          </View>
-        </ReviewSheet>
+        />
       )}
       <MemoSheet visible={props.memoSheetVisible} memo={props.memo} onChangeMemo={props.onChangeMemo} onClose={props.onCloseMemo} />
       <BottomSheet visible={props.tokenPickerVisible} title='Select token' onClose={props.onCloseTokenPicker}>

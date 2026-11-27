@@ -21,6 +21,7 @@ const meta = {
     onBack: fn(),
     onReviewDraft: fn(),
     onDismissDraft: fn(),
+    onOpenActivity: fn(),
     settings: { ...CHAT_SETTINGS, onSave: fn(), onClose: fn() },
     onSelectSuggestion: fn(),
   },

@@ -48,6 +48,7 @@ async function setup() {
     yield done;
   };
   const agents: FakeAgent[] = [];
+  const runSettings: Record<string, unknown>[] = [];
 
   class FakeAgent {
     clearPending = jest.fn();
@@ -56,8 +57,9 @@ async function setup() {
       agents.push(this);
     }
 
-    run({ prompt }: { prompt: string }): AsyncGenerator<GenerateEvent> {
-      return execute(this.options, prompt);
+    run(settings: { prompt: string }): AsyncGenerator<GenerateEvent> {
+      runSettings.push(settings);
+      return execute(this.options, settings.prompt);
     }
   }
   const createRemote = jest.fn(() => ({ kind: 'remote', contextTokens: 4096 }));
@@ -90,6 +92,7 @@ async function setup() {
     settings,
     chats,
     agents,
+    runSettings,
     run,
     library,
     loadLibrary,
@@ -186,6 +189,59 @@ describe('AiAssistantService', () => {
     expect(env.agents).toHaveLength(1);
     expect(env.createRemote).toHaveBeenCalledTimes(1);
     expect(env.agents[0].clearPending).not.toHaveBeenCalled();
+  });
+
+  it('runs the agent without reasoning at the playground temperature, not at the model default effort', async () => {
+    const env = await setup();
+
+    await env.run();
+
+    expect(env.runSettings).toEqual([{ prompt: 'question', temperature: 0.2, maxOutputTokens: 512, reasoning: 'none' }]);
+  });
+
+  it('tells the model what became of a prepared transfer without showing it in the transcript', async () => {
+    const env = await setup();
+    const draft = {
+      id: 'prepared',
+      amount: '1000000',
+      toAddress: OWNER,
+      token: { decimals: 6, symbol: 'GNOT' },
+      network: { networkName: 'Gno.land Mainnet' },
+    } as unknown as AiTransferDraft;
+    const seen: string[] = [];
+
+    env.setExecute(async function* (options, prompt) {
+      seen.push(...options.session.messages(prompt).map(message => String(message.content)));
+      options.session.complete(prompt, 'answer');
+      yield done;
+    });
+    await env.run();
+    env.service.recordTransferOutcome(scope, draft, 'unconfirmed');
+
+    expect(await env.service.getTurns(scope)).toEqual([{ prompt: 'question', answer: 'answer' }]);
+    expect(env.chats.load(scope)).toContain('[Wallet event]');
+
+    await env.run();
+    expect(seen.join('\n')).toContain(`[Wallet event] The transfer of 1 GNOT to ${OWNER} on Gno.land Mainnet was signed but its outcome is unknown`);
+  });
+
+  it('queues a transfer outcome that arrives mid-turn until the turn ends', async () => {
+    const env = await setup();
+    const draft = { id: 'prepared', amount: '1000000', toAddress: OWNER, token: { decimals: 6, symbol: 'GNOT' }, network: { networkName: 'Gno.land Mainnet' } } as unknown as AiTransferDraft;
+    const turns: number[] = [];
+
+    await env.run();
+    env.setExecute(async function* (options, prompt) {
+      env.service.recordTransferOutcome(scope, draft, 'sent');
+      turns.push(options.session.turns.length);
+      options.session.complete(prompt, 'answer');
+      yield done;
+    });
+    await env.run();
+
+    expect(turns).toEqual([1]);
+    expect(env.chats.load(scope)).toContain('[Wallet event]');
+    expect(await env.service.getTurns(scope)).toHaveLength(2);
   });
 
   it('replaces cached credentials even when length and last four characters are identical', async () => {
