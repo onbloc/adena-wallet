@@ -176,7 +176,7 @@ describe('required normalized outcomes', () => {
   });
   it.each(['tool-error', 'refusal', 'invalid'] as const)('allows a corrected retry after a recoverable %s', async failure => {
     const name = 'list_account_transactions';
-    const first = { ...call(name, { limit: 'five' }, 'first'), invalid: failure === 'invalid' } as GenerateEvent;
+    const first = { ...call(name, { limit: failure === 'invalid' ? 'five' : 5 }, 'first'), invalid: failure === 'invalid' } as GenerateEvent;
     const failed: GenerateEvent = failure === 'tool-error'
       ? { type: 'tool-error', name, id: 'first', error: 'Read failed' }
       : result(name, { kind: 'denied', reason: 'Invalid input' }, 'first');
@@ -208,15 +208,46 @@ describe('required normalized outcomes', () => {
     expect(answer.text).toContain('tx-next');
     expect(canRememberTurn(answer.done)).toBe(false);
   });
-  it('allows repeated failed corrections to resolve when their final retry succeeds', async () => {
+  it('allows repeated failed attempts for the same request to resolve on success', async () => {
     const name = 'list_account_transactions';
     const answer = await guard(history, [
-      call(name, { limit: 'five' }, 'first'), result(name, { kind: 'denied' }, 'first'),
-      call(name, { limit: -1 }, 'second'), result(name, { kind: 'denied' }, 'second'),
+      call(name, { limit: 5 }, 'first'), result(name, { kind: 'denied' }, 'first'),
+      call(name, { limit: 5 }, 'second'), result(name, { kind: 'denied' }, 'second'),
       call(name, { limit: 5 }, 'final'), result(name, { kind: 'result', value: { hash: 'tx-final' } }, 'final'), done(),
     ], { requiredReads: [name] });
     expect(answer.text).toContain('tx-final');
     expect(canRememberTurn(answer.done)).toBe(true);
+  });
+  it('does not recover a failed request with a later success for different arguments', async () => {
+    const name = 'list_account_transactions';
+    const answer = await guard(history, [
+      call(name, { cursor: 'first' }, 'first'), result(name, { kind: 'denied' }, 'first'),
+      call(name, { cursor: 'next' }, 'next'), result(name, { kind: 'result', value: { hash: 'tx-next' } }, 'next'), done(),
+    ], { requiredReads: [name] });
+    expect(answer.text).toContain('tx-next');
+    expect(answer.text).toContain('could not be verified');
+    expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it('recovers a request when nested object keys are reordered', async () => {
+    const name = 'list_account_transactions';
+    const answer = await guard(history, [
+      call(name, { filter: { from: 'alice', range: { start: 1, end: 3 } }, pages: [1, 2] }, 'first'),
+      result(name, { kind: 'denied' }, 'first'),
+      call(name, { pages: [1, 2], filter: { range: { end: 3, start: 1 }, from: 'alice' } }, 'retry'),
+      result(name, { kind: 'result', value: { hash: 'tx-retried' } }, 'retry'), done(),
+    ], { requiredReads: [name] });
+    expect(answer.text).not.toContain('could not be verified');
+    expect(canRememberTurn(answer.done)).toBe(true);
+  });
+  it.each([undefined, null, 'invalid', { filter: undefined }])('does not equate an unknown failed request %p with an empty object', async input => {
+    const name = 'list_account_transactions';
+    const first: GenerateEvent = { type: 'tool-call', name, input, id: 'first', invalid: false };
+    const answer = await guard(history, [
+      first, result(name, { kind: 'denied' }, 'first'),
+      call(name, {}, 'retry'), result(name, { kind: 'result', value: { hash: 'tx-retried' } }, 'retry'), done(),
+    ], { requiredReads: [name] });
+    expect(answer.text).toContain('could not be verified');
+    expect(canRememberTurn(answer.done)).toBe(false);
   });
   it('does not erase unrelated failures, pending reads, or partial requirements after a retry', async () => {
     const name = 'list_account_transactions';

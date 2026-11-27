@@ -12,6 +12,31 @@ function balanceKey(request: BalanceRequest): string {
   return request.kind === 'all' ? 'all' : `${request.asset.kind}:${request.asset.kind === 'symbol' ? request.asset.value.toLowerCase() : request.asset.value}`;
 }
 
+// Tool inputs are JSON values. Preserve array order and sort object keys recursively.
+function canonicalInput(input: unknown): string | undefined {
+  if (input === null || typeof input === 'string' || typeof input === 'boolean') return JSON.stringify(input);
+  if (typeof input === 'number') return Number.isFinite(input) ? JSON.stringify(input) : undefined;
+  if (Array.isArray(input)) {
+    const values = Array.from(input, canonicalInput);
+    return values.every(value => value !== undefined) ? `[${values.join(',')}]` : undefined;
+  }
+  if (typeof input !== 'object' || (Object.getPrototypeOf(input) !== Object.prototype && Object.getPrototypeOf(input) !== null)) return undefined;
+  const object = input as Record<string, unknown>;
+  const entries: string[] = [];
+  for (const key of Object.keys(object).sort()) {
+    const value = canonicalInput(object[key]);
+    if (value === undefined) return undefined;
+    entries.push(`${JSON.stringify(key)}:${value}`);
+  }
+  return `{${entries.join(',')}}`;
+}
+
+function readRequestKey(name: string, input: unknown): string | undefined {
+  if (name !== balanceToolDefinition.name) return canonicalInput(input);
+  const parsed = balanceRequestSchema.safeParse(input);
+  return parsed.success ? balanceKey(parsed.data) : undefined;
+}
+
 /** Distinguishes embedded symbols such as GNS in xGNS without interpreting user language. */
 function contradictsSymbolMention(text: string, symbol: string): boolean {
   const message = text.toLowerCase();
@@ -59,7 +84,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
 } = {}): AsyncGenerator<GenerateEvent> {
   let text = '';
   let incompleteRead = false;
-  const failedReads = new Map<string, { name: string; request?: string }>();
+  const failedReads = new Map<string, { name: string; request?: string; rejected: boolean }>();
   let toolAttempted = false;
   let mismatch = false;
   let selectionConflict = false;
@@ -76,22 +101,23 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
   const sourceAnswers: string[] = [];
   const userText = policy.userText ?? '';
   const t = (english: string, korean: string) => localized(userText, english, korean);
-  const failRead = (id: string, name: string, input?: unknown, retry = pending.get(id)?.retry) => {
-    const parsed = name === balanceToolDefinition.name ? balanceRequestSchema.safeParse(input) : undefined;
-    if (retry !== undefined) failedReads.delete(retry);
-    failedReads.set(id, { name, request: parsed?.success ? balanceKey(parsed.data) : undefined });
+  const failRead = (id: string, name: string, input?: unknown, retry = pending.get(id)?.retry, rejected = false) => {
+    const request = readRequestKey(name, input);
+    const prior = retry === undefined ? undefined : failedReads.get(retry);
+    if (retry !== undefined && (!rejected || prior?.rejected)) failedReads.delete(retry);
+    failedReads.set(id, { name, request, rejected });
   };
   const recoveredRead = (name: string, called: { retry?: string } | undefined) => {
     if (called?.retry !== undefined && failedReads.get(called.retry)?.name === name) failedReads.delete(called.retry);
   };
   const call = (event: Extract<GenerateEvent, { type: 'tool-call' }>) => {
     toolAttempted = true;
-    const input = event.name === balanceToolDefinition.name ? balanceRequestSchema.safeParse(event.input) : undefined;
-    const request = input?.success ? balanceKey(input.data) : undefined;
-    const failures = [...failedReads].filter(([, failure]) => failure.name === event.name && failure.request === request);
+    const request = readRequestKey(event.name, event.input);
+    const failures = request === undefined ? [] : [...failedReads].filter(([, failure]) =>
+      failure.name === event.name && (failure.rejected || failure.request === request));
     // Only a new, unambiguous retry can resolve an earlier failed attempt.
     pending.set(event.id, { name: event.name, input: event.input, retry: failures.length === 1 ? failures[0][0] : undefined });
-    if (event.invalid) failRead(event.id, event.name, event.input);
+    if (event.invalid) failRead(event.id, event.name, event.input, undefined, true);
     if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat'
       || (intent.kind === 'prepare' && !isRead(event.name) && event.name !== intent.action)) mismatch = true;
     if (event.name === balanceToolDefinition.name) {
@@ -165,7 +191,12 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       const previous = reads.get(event.name);
       if (previous) previous.push(value); else reads.set(event.name, [value]);
       recoveredRead(event.name, called);
-    } else failRead(event.id, event.name, called?.input, called?.retry);
+    } else {
+      const rejected = failedReads.get(event.id)?.rejected === true
+        || object && 'kind' in decision && decision.kind === 'denied'
+          && 'code' in decision && decision.code === 'INVALID_INPUT';
+      failRead(event.id, event.name, called?.input, called?.retry, rejected);
+    }
   };
 
   for await (const event of events) {
@@ -191,7 +222,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         toolAttempted = true;
         if (pending.has(event.id) && pending.get(event.id)?.name !== event.name) mismatch = true;
         if (!isRead(event.name)) outcomes.push(t('Transaction preparation was not confirmed.', '거래 준비를 확인하지 못했습니다.'));
-        else failRead(event.id, event.name, pending.get(event.id)?.input);
+        else failRead(event.id, event.name, pending.get(event.id)?.input, pending.get(event.id)?.retry, failedReads.get(event.id)?.rejected);
         pending.delete(event.id);
         yield event;
         break;
