@@ -14,18 +14,24 @@ without popups.
 
 1. **`get_status`**. Always start here. If `state` is not `ready`, do what
    `next_step` says:
-   - `host_not_installed`: call `connect_wallet`, which installs the agent host.
+   - `host_not_installed`: call `connect_wallet`, which installs the agent host,
+     or have the user run `npx -y @adena-wallet/mcp setup`.
+   - `host_untrusted`: another program serves the agent socket; ask the user
+     to stop it and run `npx -y @adena-wallet/mcp install-host`.
    - `adena_unreachable`: ask the user to open the browser, unlock Adena and
      turn on *Settings → Security & Privacy → AI Agent Connection*.
    - `locked`: ask the user to unlock Adena.
    - `not_connected`: call `connect_wallet`. The user approves the connection
      in Adena.
 2. **`create_session`** with the narrowest scope the task needs:
-   - `allow_paths`: `"vm/exec:<realm path>"` per realm called, `"vm/run"` to
-     run scripts, `"bank/send"` to send coins. Never ask for broader paths
-     than the task needs. `"*"` is refused.
+   - `allow_paths`: `"vm/exec:<full realm path>"` (e.g.
+     `"vm/exec:gno.land/r/demo/counter"`) per realm called, `"bank/send"` to
+     send coins. `"vm/run"` only if `get_status` reports `vm_run_allowed`;
+     prefer `/vm.m_call` messages. Adena refuses `"*"`, a bare `"vm/exec"`,
+     paths broader than one realm and `"bank/multisend"`.
    - `spend_limit`: one ugnot amount, e.g. `"5000000ugnot"`. It also pays gas
-     for every transaction, and cannot exceed `max_spend_limit` from
+     for every transaction. Leave `spend_period` at 0: the total a session may
+     spend (limit × periods) cannot exceed `max_spend_limit` from
      `get_status`, which the user sets in Adena.
    - `expires_in`: as short as the task allows (default `1h`, at most `168h`).
 
@@ -84,3 +90,8 @@ setting on.
   new ones.
 - `session_required` errors list the `required_allow_paths`. Create a session
   with them, or use `signer: "wallet"`.
+- If `create_session` fails with `session_mismatch` or `session_not_found`,
+  stop and tell the user: the approval did not match the request. Do not
+  retry until they have checked Adena > Manage Sessions.
+- Never edit files under `~/.adena-agent`, the browser profile or the npm
+  cache, and never talk to the agent socket directly.
