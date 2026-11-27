@@ -74,7 +74,12 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trust
     const client = new Client({ name: 'ai-agent-harness', version: '0.1.0' }, { jsonSchemaValidator: validator });
     const transport = new StreamableHTTPClientTransport(url, { fetch: fetcher, requestInit: { redirect: 'error' } });
     const options = { signal, timeout: 12000 };
-    const close = () => { void client.close().catch(() => {}); };
+    // client.close() never sends the HTTP DELETE; end the server session first (best effort, may be 405).
+    const end = async () => {
+      await transport.terminateSession().catch(() => {});
+      await client.close();
+    };
+    const close = () => { void end().catch(() => {}); };
     signal.addEventListener('abort', close, { once: true });
     const tools = new Map<string, RemoteTool>();
     try {
@@ -128,7 +133,7 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trust
       return tools;
     } catch (error) {
       signal.removeEventListener('abort', close);
-      await client.close();
+      await end();
       throw error;
     }
   };

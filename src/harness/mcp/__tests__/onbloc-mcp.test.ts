@@ -122,4 +122,38 @@ describe('Onbloc MCP without runtime code generation', () => {
     expect(await tools.get(transferTool.name)!.execute(input)).toEqual({ kind: 'denied', code: 'INVALID_OUTPUT' });
     expect(calls).toEqual([{ name: transferTool.name, arguments: { ...input, address: account } }]);
   });
+
+  describe('session termination', () => {
+    // Gives the fake server a session and records the HTTP DELETE that ends it.
+    const withSession = (inner: typeof fetch, onDelete: () => Promise<Response>) => {
+      const deleted = Promise.withResolvers<void>();
+      const fetcher: typeof fetch = async (url, init) => {
+        if (init?.method === 'DELETE') {
+          deleted.resolve();
+          return onDelete();
+        }
+        const response = await inner(url, init);
+        const headers = new Headers(response.headers);
+        headers.set('mcp-session-id', 'session-1');
+        return new Response(response.body, { status: response.status, headers });
+      };
+      return { fetcher, deleted: deleted.promise };
+    };
+
+    it('ends the server session when the run is aborted', async () => {
+      const fake = fakeOnblocMcp([transferTool]);
+      const { fetcher, deleted } = withSession(fake.fetcher, async () => new Response(null, { status: 405 }));
+      await createOnblocReader({ endpoint, fetcher })(account, controller.signal);
+      controller.abort();
+      await deleted;
+    });
+
+    it('still closes and rethrows the discovery error when ending the session fails', async () => {
+      const fake = fakeOnblocMcp([transferTool, transferTool]);
+      const { fetcher, deleted } = withSession(fake.fetcher, async () => { throw new Error('network down'); });
+      await expect(createOnblocReader({ endpoint, fetcher })(account, controller.signal))
+        .rejects.toThrow('Duplicate Onbloc tool name.');
+      await deleted;
+    });
+  });
 });
