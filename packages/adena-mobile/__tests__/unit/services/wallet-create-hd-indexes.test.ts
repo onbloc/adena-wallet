@@ -106,6 +106,26 @@ describe('WalletService.createWallet with picked HD indexes', () => {
     expect(container.backupReminder.getKeyringId()).toBeNull();
   });
 
+  it('keeps the reminder while a failed write or rollback leaves a readable vault', async () => {
+    const vaultFailure = createTestContainer();
+    const vault = vaultFailure.container.walletService as unknown as { vaultService: { create: (...args: unknown[]) => Promise<unknown>; exists: () => Promise<boolean> } };
+
+    // The primary slot write rejects after the staging copy was saved.
+    jest.spyOn(vault.vaultService, 'create').mockRejectedValue(new Error('primary slot write failed'));
+    jest.spyOn(vault.vaultService, 'exists').mockResolvedValue(true);
+    await expect(vaultFailure.container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, requireBackup: true })).rejects.toThrow();
+    expect(vaultFailure.container.backupReminder.getKeyringId()).not.toBeNull();
+
+    const rollbackFailure = createTestContainer();
+    const service = rollbackFailure.container.walletService as unknown as { vaultService: { destroy: () => Promise<void> } };
+
+    jest.spyOn(rollbackFailure.container.accountService, 'appendAccount').mockRejectedValue(new Error('locked meanwhile'));
+    jest.spyOn(service.vaultService, 'destroy').mockRejectedValue(new Error('delete failed'));
+    await expect(rollbackFailure.container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, requireBackup: true })).rejects.toThrow('locked meanwhile');
+    expect(await rollbackFailure.container.walletService.getStatus()).not.toBe('empty');
+    expect(rollbackFailure.container.backupReminder.getKeyringId()).not.toBeNull();
+  });
+
   it('sets no reminder for a phrase the user already holds', async () => {
     const { container } = createTestContainer();
 

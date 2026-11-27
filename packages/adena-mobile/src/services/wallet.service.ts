@@ -165,7 +165,7 @@ export class WalletService {
         content = await this.vaultService.create([record], password);
       }
       catch (error) {
-        this.backupReminder?.clear(record.id);
+        await this.clearReminderIfVaultGone(record.id);
         throw error;
       }
 
@@ -187,10 +187,18 @@ export class WalletService {
       }
       catch (error) {
         await this.undoCreate().catch(() => undefined);
-        this.backupReminder?.clear(record.id);
+        await this.clearReminderIfVaultGone(record.id);
         throw error;
       }
     });
+  }
+
+  // A write that failed part way or a rollback that failed can still leave a readable vault; the reminder
+  // goes only once the vault is known to be gone.
+  private async clearReminderIfVaultGone(keyringId: string): Promise<void> {
+    if (await this.vaultService.exists().then(exists => !exists, () => false)) {
+      this.backupReminder?.clear(keyringId);
+    }
   }
 
   private async undoCreate(): Promise<void> {
