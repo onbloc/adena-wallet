@@ -86,7 +86,7 @@ such as an unpacked development build, must be added to the list in
 ```sh
 npx -y @adena-wallet/mcp extensions                 # list allowed ids and unallowed Adena builds found
 npx -y @adena-wallet/mcp extensions add <id>         # Chromium id (32 letters a-p) or Firefox add-on id
-npx -y @adena-wallet/mcp extensions add -path <dir>  # unpacked build directory
+npx -y @adena-wallet/mcp extensions add -path <dir>  # unpacked build directory (not on Windows)
 npx -y @adena-wallet/mcp extensions remove <id>
 npx -y @adena-wallet/mcp extensions detect [-allow]  # offer each unpacked Adena build found in Chromium profiles
 ```
@@ -145,6 +145,7 @@ this for you:
 { "mcpServers": { "adena": { "command": "npx", "args": ["-y", "@adena-wallet/mcp@<version>"] } } }
 ```
 
+On Windows, start it through `cmd`: `"command": "cmd", "args": ["/c", "npx", "-y", "@adena-wallet/mcp@<version>"]`.
 
 Each client is connected to Adena separately. It shows up under Connected Apps
 as `agent://<client name>.agent`.
@@ -195,12 +196,9 @@ Unix domain sockets the two use.
   directory it can no longer list.
 - The host identifies each peer with `SIO_AF_UNIX_GETPEERPID` and refuses
   processes of other users, as on macOS and Linux.
-- Process hardening is weaker than on macOS and Linux. adena-mcp sets a
-  process DACL that lets other processes of the user only wait for, query and
-  stop it, and an OWNER RIGHTS entry keeps them from changing that DACL back.
-  An administrator, or any process with `SeDebugPrivilege` enabled, can still
-  read its memory and with it the session keys. There is no core dump control
-  yet. Sign with sessions whose scope you could afford to lose.
+- `adena-mcp.exe` runs the server in a protected child process, so two
+  processes appear per server; see
+  [Platform hardening](docs/security.md#platform-hardening).
 - A running host executable cannot be overwritten, so reinstalling moves it to
   a unique `.old.<pid>.<time>` name first. Retired and staging copies are
   removed by a later install once no host runs them, except those of another

@@ -43,6 +43,7 @@ On disk (`~/.adena-agent`, or `ADENA_AGENT_HOME`; owner-only):
 | `bin/agent-home` | The agent home recorded at install, for the browser-launched host |
 | `extensions.json` | Extension ids allowed besides the store builds |
 | `mcp/sessions.json` | Public session records (address, public key, scope). No keys |
+| `native-messaging/` | Windows only: the manifests the `HKCU` keys point at |
 
 ## Installation and upkeep
 
@@ -50,10 +51,12 @@ On disk (`~/.adena-agent`, or `ADENA_AGENT_HOME`; owner-only):
 `connect_wallet`):
 
 1. Copies `adena-agent-host` from the npm package to `~/.adena-agent/bin`, so
-   the browser never runs a file from the npx cache.
+   the browser never runs a file from the npx cache. A running copy is
+   renamed aside first (Windows cannot overwrite it).
 2. Writes the native messaging manifest `xyz.onbloc.adena_agent` for every
    installed browser (Chrome, Chromium, Brave, Edge, Firefox), allowing the
-   store builds of Adena and the ids in `extensions.json`.
+   store builds of Adena and the ids in `extensions.json`. On Windows the
+   manifest's path is also registered under the browser's `HKCU` key.
 3. `setup` also adds the server to the AI clients it finds, pinned to the
    release.
 

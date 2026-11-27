@@ -57,8 +57,7 @@ func Of(conn net.Conn) (*Process, error) {
 
 	peer := &Process{PID: int(pid)}
 
-	// With the pid, the creation time identifies this process; Adena refuses
-	// to connect a process without it.
+	// With the pid, the creation time identifies this process.
 	var creation, exit, kernel, user windows.Filetime
 	if timesErr := windows.GetProcessTimes(process, &creation, &exit, &kernel, &user); timesErr == nil {
 		peer.Start = strconv.FormatInt(creation.Nanoseconds(), 10)
@@ -110,6 +109,28 @@ func Executable(pid int) (string, error) {
 	defer windows.CloseHandle(process) //nolint:errcheck // nothing to do if closing a query handle fails
 
 	return imageName(process)
+}
+
+// Parent returns the parent process id of pid.
+func Parent(pid int) (int, error) {
+	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return 0, fmt.Errorf("process snapshot: %w", err)
+	}
+
+	defer windows.CloseHandle(snapshot) //nolint:errcheck // nothing to do if closing a snapshot fails
+
+	var entry windows.ProcessEntry32
+
+	entry.Size = uint32(unsafe.Sizeof(entry))
+
+	for err = windows.Process32First(snapshot, &entry); err == nil; err = windows.Process32Next(snapshot, &entry) {
+		if int(entry.ProcessID) == pid {
+			return int(entry.ParentProcessID), nil
+		}
+	}
+
+	return 0, fmt.Errorf("process %d not found", pid)
 }
 
 func imageName(process windows.Handle) (string, error) {

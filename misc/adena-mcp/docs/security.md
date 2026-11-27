@@ -47,7 +47,7 @@ referred to here.
 | Another extension | | Talk to Adena's background or start the host (native messaging allows only Adena's ids) |
 | An RPC node | Refuse or delay transactions, report wrong data | Forge a signature or alter a signed transaction |
 
-Out of scope: root, the kernel, a compromised browser,
+Out of scope: root or an administrator, the kernel, a compromised browser,
 and a compromised Adena or adena-mcp release.
 
 ## Keys and secrets
@@ -147,7 +147,8 @@ key if its key, scope, budget or expiry differ from the request
 ## Local processes
 
 - The socket and `~/.adena-agent` are owner-only. The host refuses peers of
-  another user (`SO_PEERCRED` on Linux, `LOCAL_PEERCRED` on macOS).
+  another user (`SO_PEERCRED` on Linux, `LOCAL_PEERCRED` on macOS, the
+  peer's token SID on Windows).
 - The host sets each request's `peer` (pid, start time, executable) from the
   OS and replaces whatever the client sent. Adena refuses to connect a process
   without a pid and start time.
@@ -201,17 +202,25 @@ decide what agents may do are therefore stored encrypted and authenticated:
 |---|---|
 | macOS | Core dumps off. `PT_DENY_ATTACH` refuses debuggers. Release binaries are signed with the hardened runtime, which refuses `task_for_pid` and injected libraries. Builds from source are not signed. |
 | Linux | Core dumps off. The dumpable flag is cleared, so other processes of the user cannot ptrace it or read `/proc/<pid>/mem`. Release binaries are built static (`CGO_ENABLED=0`), so `LD_PRELOAD` does not apply. |
+| Windows | `adena-mcp.exe` runs the server in a child process it creates with protected process and thread security descriptors and a restricted token default DACL, then keeps only a wait/query handle. Other processes of the user, the npm launcher included, can only wait for, query and stop it: no memory access, no thread takeover. A DACL set after start could not take back the launcher's full-access handle, which is why the server is relaunched. Two processes appear per server. |
+
+On Windows the agent home and the host's `bin` directory get a protected ACL
+for the user and SYSTEM; a directory owned by another account is taken over
+first, and anything inside owned by another account is removed. The socket is
+a Unix domain socket (Windows 10 1803 or later).
 
 ## Limits
 
-- **Root and the kernel** can read any process's memory, including a key
-  while it signs.
+- **Root, administrators and the kernel** can read any process's memory,
+  including a key while it signs. On Windows, a process with
+  `SeDebugPrivilege` can too, and there is a window of microseconds between
+  creating the protected child and dropping the full handle to it.
 - **The signing library** makes short-lived copies inside the elliptic-curve
   computation.
 - **Files the user owns can be changed by the user's own processes.** AI
   coding agents usually run shell commands as the user, so a prompt-injected
   agent is such a process. It can replace the host in `~/.adena-agent/bin`,
-  edit the browser manifests, or the npx cache. A replaced
+  edit the browser manifests or `HKCU` keys, or the npx cache. A replaced
   host sees every request and could alter one before Adena shows it, and
   could fake the RPC URL that the post-approval check uses. What still holds
   is enforced inside Adena and on chain: the policy, the approval popup, and

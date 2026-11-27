@@ -71,7 +71,7 @@ func TestExtensionsRoundTripAndDropInvalidEntries(t *testing.T) {
 
 	path := filepath.Join(home, ExtensionsFile)
 
-	if runtime.GOOS != "windows" {
+	if runtime.GOOS != goosWindows {
 		info, statErr := os.Stat(path)
 		if statErr != nil || info.Mode().Perm() != extensionsPerm {
 			t.Fatalf("the list must be private, got %v %v", info, statErr)
