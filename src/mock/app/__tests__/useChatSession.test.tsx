@@ -57,6 +57,7 @@ function blockedAgent(session: ChatSession | undefined) {
   const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
   let calls = 0;
   const llm: LLM = {
+    kind: 'local',
     contextTokens: 8192,
     async *generate(_settings, options) {
       signal = options?.signal;
@@ -171,6 +172,7 @@ describe('useChatSession', () => {
       intentReplyText({ kind: 'prepare' }), JSON.stringify({ ...proposal, asset: { kind: 'id', value: candidates[1] } }),
     ];
     const llm: LLM = {
+      kind: 'local',
       contextTokens: 8192,
       async *generate() {
         const text = replies.shift();
@@ -284,7 +286,7 @@ describe('useChatSession', () => {
   it('rejects an agent built with another conversation\'s session', async () => {
     await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.ready).toBe(true);
-    const llm: LLM = { contextTokens: 8192, async *generate() { throw new Error('unreachable'); } };
+    const llm: LLM = { kind: 'local', contextTokens: 8192, async *generate() { throw new Error('unreachable'); } };
     const agent = newAgent(llm, createChatSession());
 
     await expect(consume(current.run(agent, { prompt: 'Hello' }, { account: RECIPIENT }))).rejects.toThrow(

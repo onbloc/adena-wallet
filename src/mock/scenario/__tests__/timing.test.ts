@@ -8,6 +8,7 @@ const done = (outputTokens?: number): GenerateEvent => ({
 /** A model whose every call takes `ms` on the shared clock and ends with `tokens` output tokens. */
 function model(clock: { t: number }, ms: number, tokens?: number, failWith?: Error): LLM {
   return {
+    kind: 'local',
     contextTokens: 8192,
     async *generate() {
       yield { type: 'text', delta: 'x' } as GenerateEvent;

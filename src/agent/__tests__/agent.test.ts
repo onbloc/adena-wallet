@@ -196,6 +196,7 @@ describe('integrated request execution', () => {
     const explanation = 'What is GNOT?';
     const { llm: delegate, harness } = setup([], { intent: { ...native, explanation } });
     const llm: LLM = {
+      kind: delegate.kind,
       contextTokens: delegate.contextTokens,
       async *generate(settings, options) {
         if (settings.outputSchema !== undefined) { yield* delegate.generate(settings, options); return; }

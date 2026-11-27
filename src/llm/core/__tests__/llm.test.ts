@@ -117,4 +117,9 @@ describe('LLMFromModel', () => {
     expect(new LLMFromModel(answering('x')).contextTokens).toBe(8192);
     expect(new LLMFromModel(answering('x'), { contextTokens: 4096 }).contextTokens).toBe(4096);
   });
+
+  it('assumes prompts leave the device unless told the model is local', () => {
+    expect(new LLMFromModel(answering('x')).kind).toBe('remote');
+    expect(new LLMFromModel(answering('x'), { kind: 'local' }).kind).toBe('local');
+  });
 });

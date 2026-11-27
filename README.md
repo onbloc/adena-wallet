@@ -71,6 +71,22 @@ The native subpath requires optional peers `@react-native-ai/llama`, `llama.rn`,
 `createLLMRemote()` instead. Native hosts provide the missing Web APIs before loading the
 library; the playground demonstrates this in `src/mock/app/polyfills.js`.
 
+Choose where the model runs with `createLLM({ kind })`; the agent only receives the result:
+
+```ts
+import { createLLM } from 'adena-ai-llm-poc/llm/device';
+
+const llm = settings.kind === 'local'
+  ? createLLM({ kind: 'local' })                        // LLMOnDevice: await llm.load() first
+  : createLLM({ kind: 'remote', apiKey, fetch: expoFetch });
+const agent = new AIAgent({ llm, harness, wallet, onTransaction, session });
+```
+
+Every `LLM` reports `kind`: `local` runs on the device, `remote` sends prompts, including wallet
+data, to a server. `LLMFromModel` defaults to `remote`; pass `{ kind: 'local' }` for a model known
+to run on the device. An agent keeps its `llm` for life: to switch, build a new `AIAgent` with
+`session: agent.session`. Pending clarifications are not carried over.
+
 
 ## Run
 
@@ -127,7 +143,7 @@ src/llm/                      The language model
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
                                 useLlm(llm) hook; runtime.ts, modelStorage.ts (namespaced native file cache),
                                 config.ts (model, context size); jsonGrammar.ts (structured output without the Jinja grammar)
-    createLlm.ts                native-only createLLM(remote?): on-device or hosted
+    createLlm.ts                native-only createLLM({ kind: 'local' | 'remote', ... })
 src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests

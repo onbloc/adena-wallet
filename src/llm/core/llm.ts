@@ -12,8 +12,13 @@ export type LLMGenerateOptions = {
   onContextCompacted?: (droppedTurns: number) => void;
 };
 
+/** Where the model runs: on this device, or on a server that receives the prompts. */
+export type LLMKind = 'local' | 'remote';
+
 /** What the layers above need from a language model. */
 export interface LLM {
+  /** Where the model runs; `remote` means prompts, including wallet data, leave the device. */
+  readonly kind: LLMKind;
   /** Size of the context window, in tokens. Budgets above the model are derived from it. */
   readonly contextTokens: number;
   /** Streams one generation. Always ends with a 'done' event; any other failure is thrown. */
@@ -29,14 +34,19 @@ export function resolveContextTokens(contextTokens: number | undefined, modelCon
   return effective;
 }
 
-/** An LLM over any AI SDK model, e.g. an OpenAI-compatible server on a desktop. */
+/**
+ * An LLM over any AI SDK model, e.g. an OpenAI-compatible server on a desktop. `kind` defaults to
+ * `remote`: assume prompts leave the device unless the model is known to run on it.
+ */
 export class LLMFromModel implements LLM {
+  readonly kind: LLMKind;
   readonly contextTokens: number;
 
   constructor(
     private readonly model: LanguageModel,
-    { contextTokens = 8192 }: { contextTokens?: number } = {}
+    { contextTokens = 8192, kind = 'remote' }: { contextTokens?: number; kind?: LLMKind } = {}
   ) {
+    this.kind = kind;
     this.contextTokens = resolveContextTokens(contextTokens, contextTokens);
   }
 

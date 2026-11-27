@@ -151,7 +151,7 @@ async function main() {
   };
 
   // Read-only runs need no mock wallet or upfront balance fetch.
-  const llm = new LLMFromModel(model, { contextTokens: SERVER_CONTEXT_TOKENS });
+  const llm = new LLMFromModel(model, { kind: 'local', contextTokens: SERVER_CONTEXT_TOKENS });
   const newSession = async (): Promise<Session> => {
     if (!options.onbloc) return { agent: new AIAgent({ llm, harness: new Harness() }) };
     let sdk: MockWalletSdk | undefined;

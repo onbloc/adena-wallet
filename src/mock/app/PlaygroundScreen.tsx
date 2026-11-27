@@ -24,7 +24,6 @@ import {
 import {
   createLLM,
   DEFAULT_MODEL_ID,
-  LLMOnDevice,
   MAX_OUTPUT_TOKENS_RANGE,
   useLlm,
 } from '../../llm/device';
@@ -60,7 +59,7 @@ function parseBounded(
 const EMPTY_WALLET: WalletState = { balances: {} };
 
 // One on-device model for the app: a loaded model holds its memory. A hosted model is built from Settings.
-const local = new LLMOnDevice();
+const local = createLLM({ kind: 'local' });
 
 // Hosted requests stream through expo/fetch; the key is entered in Settings and kept in memory only.
 const LLM_SETTINGS_ENV = { fetch: expoFetch };
@@ -73,7 +72,7 @@ export default function PlaygroundScreen() {
   const llmSettings = useMemo(() => resolveLlmSettings(llmSource, apiKey, LLM_SETTINGS_ENV), [llmSource, apiKey]);
   const remote = llmSettings.remote;
   const remoteMode = llmSource !== 'device';
-  const llm: LLM = useMemo(() => (remote ? createLLM(remote) : local), [remote]);
+  const llm: LLM = useMemo(() => (remote ? createLLM({ kind: 'remote', ...remote }) : local), [remote]);
   const bench = useBenchmark(llm);
   const [benchRuns, setBenchRuns] = useState(String(DEFAULT_BENCHMARK_RUNS));
   const [benchSet, setBenchSet] = useState<keyof typeof BENCHMARK_SETS>('all');

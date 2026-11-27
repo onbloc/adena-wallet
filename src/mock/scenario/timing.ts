@@ -19,6 +19,10 @@ export class TimingLLM implements LLM {
     private readonly now: () => number = Date.now
   ) {}
 
+  get kind() {
+    return this.inner.kind;
+  }
+
   get contextTokens() {
     return this.inner.contextTokens;
   }

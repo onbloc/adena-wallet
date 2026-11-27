@@ -50,6 +50,7 @@ function heldAnswers() {
   const done = (text: string): GenerateEvent => ({ type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null },
     aborted: false, finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: text }] });
   const llm: LLM = {
+    kind: 'local',
     contextTokens: 8192,
     async *generate() {
       if (calls++ % 2 === 0) {

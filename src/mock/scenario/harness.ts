@@ -39,7 +39,7 @@ export const scenarioTarget = (env = process.env) =>
 async function createScenarioLLM(): Promise<LLM> {
   const remote = remoteOptionsFromEnv(process.env);
   if (remote) return createLLMRemote(remote);
-  return new LLMFromModel(await connectModel(serverUrl(), DEFAULT_MODEL_NAME), { contextTokens: SERVER_CONTEXT_TOKENS });
+  return new LLMFromModel(await connectModel(serverUrl(), DEFAULT_MODEL_NAME), { kind: 'local', contextTokens: SERVER_CONTEXT_TOKENS });
 }
 
 export async function createEnvScenarioRunner(allowTransactionPreparation = true, readsFactory?: ScenarioReadsFactory) {

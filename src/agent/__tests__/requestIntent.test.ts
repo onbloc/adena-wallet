@@ -17,6 +17,7 @@ function classificationEvents(text: string, overrides: Partial<Extract<GenerateE
 function scriptedLlm(events: GenerateEvent[], before?: (options?: LLMGenerateOptions) => void, fit = '{"supported":true}', balanceFit = '{"needsBalance":true}', scope = '{"kind":"all"}') {
   const calls: { settings: GenerateSettings; options?: LLMGenerateOptions }[] = [];
   const llm: LLM = {
+    kind: 'local',
     contextTokens: 8192,
     async *generate(settings, generateOptions) {
       calls.push({ settings, options: generateOptions });

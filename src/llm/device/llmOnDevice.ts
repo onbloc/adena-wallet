@@ -40,6 +40,7 @@ export type RuntimeInfo = {
  * object. Make one per app: each loaded model holds its memory. Needs React Native.
  */
 export class LLMOnDevice implements LLM {
+  readonly kind = 'local' as const;
   readonly contextTokens: number;
   private readonly modelId: string;
   private readonly contextParams: Partial<ContextParams>;
