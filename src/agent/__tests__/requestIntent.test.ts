@@ -640,6 +640,22 @@ describe('preparation argument proposals', () => {
       });
     });
 
+    it.each(['Let carol spend 1 GNOT.', 'Let carol spend 1 GNOT...', 'carol에게 1 GNOT.'])(
+      'recognizes an exact symbol before sentence punctuation: %s', async text => {
+        const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+        await expect(proposePreparation(llm, say(text), known)).resolves.toMatchObject({
+          proposal: { operation: 'transfer', asset: { kind: 'symbol', value: 'GNOT' } },
+        });
+      });
+
+    it.each(['GNOT.other', 'GNOT..other', 'xGNOT', 'GNOT/token'])(
+      'does not treat an embedded identifier as the exact GNOT symbol: %s', async identifier => {
+        const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+        await expect(proposePreparation(llm, say(`Send carol 1 ${identifier}`), known)).resolves.toMatchObject({
+          proposal: { operation: 'clarification' },
+        });
+      });
+
     it('asks about a symbol the wallet does not know, and names the ones it does', async () => {
       const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('foo'))));
       await expect(proposePreparation(llm, say('Send 1 foo to carol'), known)).resolves.toMatchObject({

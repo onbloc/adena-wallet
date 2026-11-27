@@ -513,7 +513,7 @@ const TOKEN_QUESTION = 'Which token? Write its symbol, for example GNOT.';
 /** Whether the user wrote the exact symbol, ignoring case but never repairing a different asset. */
 function symbolWritten(symbol: string, messages: readonly ModelMessage[]): boolean {
   const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(`(?<![\\p{L}\\p{N}._:/-])${escaped}(?![a-zA-Z0-9._:/-])`, 'iu');
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}._:/-])${escaped}(?=$|[^a-zA-Z0-9._:/-]|\\.+(?=$|[^a-zA-Z0-9._:/-]))`, 'iu');
   return messages.some(message => message.role === 'user' && pattern.test(messageText(message)));
 }
 

@@ -43,8 +43,8 @@ export type MockWalletSdkOptions = {
 };
 
 /**
- * Read-only fixture wallet. It validates and builds transactions but never signs or sends one,
- * so balances stay as they were created.
+ * Read-only fixture wallet. Returns plain transaction descriptions, without any wallet SDK,
+ * encoding, signing, or sending. Balances stay as they were created.
  */
 export class MockWalletSdk implements WalletSdk {
   readonly #balances = new Map<string, Map<TokenSymbol, bigint>>();

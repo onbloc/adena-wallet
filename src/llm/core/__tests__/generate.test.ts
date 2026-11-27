@@ -309,6 +309,99 @@ describe('generate', () => {
     expect(caller.signal.aborted).toBe(false);
   });
 
+  it.each(['caller', 'loop', 'undefined loop signal'] as const)(
+    'honors %s cancellation while generation is in flight',
+    async (source) => {
+      const caller = new AbortController();
+      const deadline = new AbortController();
+      const close = jest.fn();
+      const stopped = jest.fn();
+      const model = new MockLanguageModelV4({
+        doStream: async ({ abortSignal }) => ({
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: 'stream-start', warnings: [] });
+              text('partial').forEach((part) => controller.enqueue(part));
+              abortSignal?.addEventListener('abort', () => {
+                stopped();
+                controller.error(new Error('aborted'));
+              }, { once: true });
+            },
+          }) as never,
+        }),
+      });
+      const events: GenerateEvent[] = [];
+
+      for await (const event of generate(model, {
+        prompt: 'hi',
+        signal: caller.signal,
+        loop: {
+          options: { abortSignal: source === 'undefined loop signal' ? undefined : deadline.signal },
+          close,
+        },
+      })) {
+        events.push(event);
+        if (event.type === GenerateEventType.Text) {
+          (source === 'loop' ? deadline : caller).abort();
+        }
+      }
+
+      expect(stopped).toHaveBeenCalledTimes(1);
+      expect(events[events.length - 1]).toMatchObject({
+        type: GenerateEventType.Done,
+        aborted: true,
+        messages: [],
+      });
+      expect(close).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it.each(['completion', 'error', 'return'] as const)(
+    'releases both signal listeners and the loop on %s',
+    async (exit) => {
+      const caller = new AbortController();
+      const deadline = new AbortController();
+      const listeners = [caller.signal, deadline.signal].map((signal) => ({
+        add: jest.spyOn(signal, 'addEventListener'),
+        remove: jest.spyOn(signal, 'removeEventListener'),
+      }));
+      const close = jest.fn();
+      const model = modelFrom(
+        exit === 'error'
+          ? [{ type: 'error', error: new Error('boom') }]
+          : [...text('answer'), finish(2)]
+      );
+      const events = generate(model, {
+        prompt: 'hi',
+        signal: caller.signal,
+        loop: { options: { abortSignal: deadline.signal }, close },
+      });
+
+      if (exit === 'error') {
+        await expect(collect(events)).rejects.toThrow('boom');
+      } else if (exit === 'return') {
+        for await (const event of events) {
+          if (event.type === GenerateEventType.Text) break;
+        }
+      } else {
+        const collected = await collect(events);
+        expect(collected[collected.length - 1]).toMatchObject({
+          type: GenerateEventType.Done,
+          aborted: false,
+          messages: [expect.objectContaining({ role: 'assistant' })],
+        });
+      }
+
+      expect(close).toHaveBeenCalledTimes(1);
+      for (const { add, remove } of listeners) {
+        expect(add).toHaveBeenCalledTimes(1);
+        expect(remove).toHaveBeenCalledWith('abort', add.mock.calls[0][1]);
+        add.mockRestore();
+        remove.mockRestore();
+      }
+    }
+  );
+
   it('surfaces provider warnings in the done event', async () => {
     const model = modelFrom(
       [...text('x'), finish(1)],

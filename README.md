@@ -1,15 +1,76 @@
 # adena-ai
 
-On-device LLM PoC: run a GGUF model (default: Qwen3.5-2B Q4_K_M) in React Native via
-[Callstack React Native AI](https://www.react-native-ai.dev/docs/llama/getting-started)
-(`@react-native-ai/llama` on top of `llama.rn`) and test generation from a playground screen.
-It also checks whether the model turns plain-text wallet requests into the right tool calls:
-reads through the Onbloc MCP; transfer and approve **build a transaction** and hand it to the
-app. Nothing is signed or sent here: the app (the user's wallet) signs it.
+An injectable wallet assistant for browser and Node applications, with an on-device React Native
+playground. `AIAgent` reads through a bounded harness and prepares unsigned transactions through
+the host's `WalletSdk` implementation. It never signs, broadcasts, or handles private keys.
+
+The mock app and CLI are testbeds; neither is part of the library package.
 
 ## Stack
 
-Expo SDK 58 / React Native 0.88 / TypeScript, AI SDK v7, `@react-native-ai/llama`, `llama.rn`.
+Library: TypeScript, AI SDK v7, Zod v4, MCP. Browser builds target ES2022; Node requires 22+.
+The optional native playground uses Expo SDK 58 / React Native 0.88 and llama.rn.
+
+## Use as a library
+
+TypeScript **5.5+** consumers are supported with `skipLibCheck: true`.
+TypeScript 4.9 cannot parse the current AI SDK/Zod declarations even with that
+setting. Checking all upstream declarations instead also requires satisfying their compiler and
+ambient Node/JSON Schema type requirements; that is not covered by the 5.5 compatibility check.
+The package provides ESM, CommonJS, and declarations for `node`, `bundler`, and `NodeNext`
+module resolution. The repository builds with TypeScript 6.0.
+
+```bash
+npm install
+npm run build
+npm pack --pack-destination /tmp
+# In the consuming project:
+npm install /tmp/adena-ai-llm-poc-1.0.0.tgz
+```
+
+The package remains private; packing does not publish it. Only `dist`, the README, and package
+metadata are shipped. Browser consumers do not install Expo, React, React Native, llama, or any
+wallet SDK.
+
+| Import | Public API |
+| --- | --- |
+| `adena-ai-llm-poc` | `AIAgent`, wallet contracts, generation settings/events |
+| `adena-ai-llm-poc/llm` | `LLM`, `LLMFromModel`, generation utilities |
+| `adena-ai-llm-poc/llm/remote` | `createLLMRemote`, hosted OpenAI options |
+| `adena-ai-llm-poc/harness` | `Harness`, budgets and tool-source contracts |
+| `adena-ai-llm-poc/harness/onbloc` | Onbloc mainnet reader/tool source |
+| `adena-ai-llm-poc/llm/device` | Optional native `LLMOnDevice`, `createLLM`, React hook |
+
+```ts
+import { AIAgent } from 'adena-ai-llm-poc';
+import { createLLMRemote } from 'adena-ai-llm-poc/llm/remote';
+import { Harness } from 'adena-ai-llm-poc/harness';
+import { createOnblocToolSource } from 'adena-ai-llm-poc/harness/onbloc';
+
+// The key, context limit, wallet adapter and preparation permission come from the host.
+const llm = createLLMRemote({ apiKey, contextTokens });
+const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
+const agent = new AIAgent({
+  llm, harness, wallet, onTransaction,
+  budget: { maxSteps: 5, timeoutMs: 60_000 },
+});
+for await (const event of agent.run({ prompt }, { account, signal, allowTransactionPreparation })) {
+  console.log(event);
+}
+```
+
+Implement `WalletSdk` in the consuming app and use `onTransaction` to present an unsigned draft
+for approval. Neither the library nor its mock testbeds require a concrete wallet SDK or wallet
+application. `tx` is an opaque host-defined payload, not a required SDK transaction type.
+API keys, provider/browser CORS, approved endpoints, and account/network selection remain the
+host's responsibility. Keep application-owned provider secrets on a backend, not in a
+distributed extension.
+
+The native subpath requires optional peers `@react-native-ai/llama`, `llama.rn`, `react`,
+`react-native`, and `react-native-blob-util`. It is the only entry that exports `createLLM()`; browser code uses
+`createLLMRemote()` instead. Native hosts provide the missing Web APIs before loading the
+library; the playground demonstrates this in `src/mock/app/polyfills.js`.
+
 
 ## Run
 
@@ -18,9 +79,12 @@ llama.rn is a native module, so **Expo Go does not work**. A dev build is requir
 
 ```bash
 npm install
-npm run ios       # expo run:ios     (generates ios/ and builds)
-npm run android   # expo run:android (generates android/ and builds)
+npm run ios       # native playground; generates src/mock/app/ios/ and builds
+npm run android   # native playground; generates src/mock/app/android/ and builds
 ```
+
+`npm start` starts that playground's Metro server. `npm run native:prebuild` generates its native
+projects without launching them; it is separate from `npm run build`, which builds the library.
 
 First launch: tap **Load**. The model (~1.4 GB) is downloaded from Hugging Face once,
 then loaded from local storage (works offline afterwards).
@@ -53,7 +117,7 @@ trust the developer in Settings > General > VPN & Device Management.
 Three libraries, each with one main class, and the test-only code on top of them:
 
 ```
-polyfills.js                  Web APIs the AI SDK needs (imported first in index.ts)
+src/index.ts                  Browser-safe library entry (no app registration or global polyfills)
 src/llm/                      The language model
   core/                         portable, no React Native: LLM (interface), LLMFromModel (any AI SDK
                                 model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
@@ -63,7 +127,7 @@ src/llm/                      The language model
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
                                 useLlm(llm) hook; runtime.ts, modelStorage.ts (namespaced native file cache),
                                 config.ts (model, context size); jsonGrammar.ts (structured output without the Jinja grammar)
-  createLlm.ts                  createLLM(remote?): on-device without options, hosted with them
+    createLlm.ts                native-only createLLM(remote?): on-device or hosted
 src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
@@ -73,29 +137,22 @@ src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
   requestIntent.ts              schema-constrained request classification before wallet execution
   answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
   wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
-src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wallet/sdk (real wallet)
-  adenaWalletSdk.ts, tokens.ts  builds the transaction, hands it to Adena to approve; token symbol -> package path
 src/mock/                     Test-only code, nothing above depends on it
   wallet/                       MockWalletSdk (read-only), fixture, tokens, funding the mock from Onbloc
-  app/                          Playground orchestration, model/settings/transcript components,
-                                prepared-transaction cards, scoped chat persistence and benchmark log
+  app/                          separate Expo project with entry/config, scoped chat persistence,
+                                model/settings/transcript components and benchmark log
   cli/                          make chat (chat.ts), with-server.sh
   scenario/                     scenarios, their check, the runner and the benchmark engine (portable: jest and app)
 ```
 
-```ts
-const llm = createLLM();                              // on-device; call llm.load() first
-// const llm = createLLM({ apiKey });  // hosted OpenAI (gpt-6-luna)
-const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
-const agent = new AIAgent({ llm, harness, wallet, onTransaction });   // owns the conversation
-for await (const event of agent.run({ prompt }, { account, contextTokens: 8192 })) { /* text, tool calls, done */ }
-```
+Browser consumers use `llm/remote` or supply an AI SDK model to `LLMFromModel`. Native consumers
+import `createLLM` from `llm/device` and call `load()` before running an on-device model.
 
-Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything; `agent`
-may use `llm/core` and `harness`, not `mock`, `adena` or `llm/device`; `adena` may use `agent` and
-`harness`, not `mock` or `llm`; `llm` and `harness` never import each other, the agent, adena or
-the mock; `llm/core` runs without React Native; `harness/core` does not know its plugins in
-`harness/mcp`. Every module is imported through its `index.ts`.
+Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything;
+`agent` may use `llm/core` and `harness`, not `mock` or `llm/device`; `llm` and `harness`
+never import each other, the agent, or the mock. `llm/core` and `llm/remote` run without
+React Native; `harness/core` does not know its plugins in `harness/mcp`. Modules are imported
+through their `index.ts`.
 
 ## Conversations and context limits
 
@@ -116,12 +173,12 @@ model input and retained session history. Recent turns stay verbatim; no LLM sum
 performed. The snapshot also retains the existing maximum of 50 completed turns.
 
 The current question is never truncated. If it cannot fit even without history, the request
-fails with `ADENA_CONTEXT_LIMIT`; shorten the question or start a larger supported context.
+fails with `AGENT_CONTEXT_LIMIT`; shorten the question or start a larger supported context.
 If the current tool exchange outgrows the budget, the run also fails rather than cutting tool
 arguments or results. Removed turns are forgotten by subsequent requests.
 
 Independent of the model's context window, a prompt may contain at most 16,384 UTF-16 code
-units; a larger prompt fails with `ADENA_PROMPT_LIMIT` before classification or discovery.
+units; a larger prompt fails with `AGENT_PROMPT_LIMIT` before classification or discovery.
 Snapshots retain answers up to 32,768 code units and compact tool records up to 2,048.
 A completed answer that cannot fit those storage bounds is still shown in full, with an explicit
 warning that this exchange was not retained. Earlier retained turns are not replaced by it.
@@ -177,8 +234,8 @@ or asset ID, and an exact decimal amount or explicit balance fraction. Missing d
 a clarification question without wallet discovery. No address book is supplied to the parser;
 only the wallet adapter resolves the requested alias after parsing.
 
-Malformed, truncated or unrecognized routing/proposal JSON fails with `ADENA_INTENT_INVALID`
-or `ADENA_PREPARATION_INVALID` before discovery/execution; there is no repair or native-call
+Malformed, truncated or unrecognized routing/proposal JSON fails with `AGENT_INTENT_INVALID`
+or `AGENT_PREPARATION_INVALID` before discovery/execution; there is no repair or native-call
 fallback. Caller-supplied answer instructions, tools and output schemas cannot expand this scope.
 The agent dispatches only the selected wallet action through the harness. A plain-text "done"
 does not prove preparation, and approval never exposes transfer as an alternative action.
@@ -233,25 +290,27 @@ structured proposal --> harness dispatch --> adapter (src/agent/wallet/tools.ts)
                        |  injects the user's address as `from`, maps wallet refusals to results,
                        |  turns contact names into addresses, hands each transaction to onTransaction
                        v  WalletSdk methods only: no key ever crosses this line
-                     WalletSdk (src/agent/wallet/port.ts)   implemented over a wallet SDK (the mock: src/mock/wallet; Adena: src/adena)
-                       getContacts?() -> [{ alias, address }]
-                       transfer({from,to,amount,token}) -> { summary, tx }   (builds; signs and sends nothing)
-                       approve?({from,spender,amount,token}) -> { summary, tx }
-                       getAllowances?(owner) -> [{ spender, token, amount }]
+                     WalletSdk (src/agent/wallet/port.ts)   implemented by the host (testbed: src/mock/wallet)
+                       getContacts?(options?) -> [{ alias, address }]
+                       transfer({from,to,amount,token}, options?) -> { summary, tx }
+                       approve?({from,spender,amount,token}, options?) -> { summary, tx }
+                       getAllowances?(owner, options?) -> [{ spender, token, amount }]
 ```
 
 There is no account in the wallet or in the agent: each wallet method builds a transaction from
 the arguments it is given. Each run binds the account selected by the app, and the agent injects
 it as `from`; the model never chooses it. Chat, questions and explanations work without an
-account; a lookup or a preparation without one fails with `ADENA_ACCOUNT_REQUIRED` (link a wallet).
+account; a lookup or a preparation without one fails with `AGENT_ACCOUNT_REQUIRED` (link a wallet).
 Use a separate agent (or `reset()`) when switching accounts.
 
 ```ts
 const agent = new AIAgent({
   llm, harness, wallet,
-  onTransaction: ({ summary, tx }) => { /* sign `tx` in the user's wallet */ },
+  onTransaction: ({ summary, tx }, { signal }) => approvalQueue.enqueue({ summary, tx, signal }),
 });
-agent.run({ prompt }, { account: 'g1...', contextTokens: 8192 });   // later runs retain this chat's context
+for await (const event of agent.run({ prompt }, { account, contextTokens: 8192, allowTransactionPreparation })) {
+  console.log(event); // Later runs retain this agent's completed conversation.
+}
 ```
 
 `?` methods are optional: `approve` is executable only when the wallet implements it;
@@ -264,8 +323,8 @@ case) or package path; the wallet resolves it and returns the canonical symbol.
   Read-only execution can use `get_approvals()` alongside permitted remote reads. No account or
   `from` is ever a model argument.
 - A prepared transaction is `{ summary, tx }`. `summary` is what the wallet resolved (type,
-  chain, from, to or spender, canonical amount and token). `tx` is the wallet SDK's own object
-  (for Adena an `AdenaTransaction`); it goes to `onTransaction` and **never to the model**. The
+  chain, from, to or spender, canonical amount and token). `tx` is an opaque host-owned payload;
+  it goes to `onTransaction` and **never to the model**. The
   agent renders the small preparation result directly; the model receives neither the transaction
   object nor a follow-up opportunity to change the action.
 - A token approval (allowance, ERC-20 style) lets a spender use up to an amount; a new approval
@@ -278,51 +337,69 @@ case) or package path; the wallet resolves it and returns the canonical symbol.
   wrong value shows up as an `error` result with a code instead. If `onTransaction` throws, the
   tool call fails.
 
+### Cancellation and execution limits
+
+Wallet methods may accept `WalletOperationOptions`; the transaction callback receives the
+effective run signal as its second argument. Caller cancellation, deadline and run close stop
+new wallet work and discard late preparations before the callback. Already-invoked callbacks
+cannot be retracted, so asynchronous callback work must honor the signal.
+
+Normal run close also aborts that signal. An approval draft already accepted by the host needs
+its own UI lifetime; successful agent completion is not a user rejection. The host must recheck
+the selected account, network and signing policy before approving a saved draft.
+
+`AIAgentOptions.budget` preserves the following defaults:
+
+| Field | Default | Scope |
+| --- | --- | --- |
+| `maxSteps` | 5 | Harness model-execution steps |
+| `maxToolCalls` | 4 | Harness read and preparation dispatches |
+| `maxTokens` | Twice the model context | Harness execution token budget |
+| `timeoutMs` | 300000 | The complete classified request |
+
+Classification, proposal parsing, catalog selection and conceptual answer calls have separate
+context/output bounds; they do not consume the harness execution-stage counters. They share
+the request cancellation/deadline. Limits are positive safe integers and timer values must fit
+the platform timer range. Requested lookup-loop output reserves above 512 are honored when
+the context and token budget permit. `contextTokens` must match the actual model/server limit.
+
+
 ### The mock wallet (`src/mock/wallet`)
 
-A read-only fixture: it checks the arguments like a wallet would (address, amount, token,
-balance for a transfer) and returns a summary with a copy of it as `tx`. It signs nothing and its
-balances never change. It starts from the account's Onbloc balances; an address with no entry
-has zero. It has no `getAllowances`, so `get_approvals` is not offered. Token decimals, address
-format and chain id are assumptions, not real Gno.land values.
+A read-only fixture: it checks addresses, amounts, tokens and transfer balances, then returns
+`{ summary, tx }` as plain JSON-serializable objects. The testbed payload contains `chainId`,
+unsigned `messages` and an empty `signatures` array, not an SDK instance or protobuf encoding.
+Balances never change. Onbloc only provides the initial balance snapshot; an address with no
+entry has zero. The mock has no `getAllowances`, so `get_approvals` is not offered. Token
+decimals, address format and chain id are testbed assumptions.
 
-### The Adena wallet (`src/adena`)
+### Host wallet integration
 
-`new AdenaWalletSdk({ tokens, chainId? })` builds Adena transactions from its arguments. It has
-no account and no connection to a wallet. `tokens` resolves a token and its owner's balance in
-base units (`ResolvedToken.balance: bigint`). `createOnblocTokenResolver` reads
-`get_native_balance` for GNOT and `get_token_balances` for GRC20 tokens on each resolution.
+The consuming wallet implements `WalletSdk` over its existing token metadata, message builders,
+address book, and allowance support. Methods validate addresses, amounts, decimals, supported
+tokens and applicable balances, then return an unsigned draft. Keep exact amounts as strings or
+base-unit integers; enforce the target chain's numeric limits in that adapter.
 
-- `transfer` builds a bank `MsgSend` (GNOT, in `ugnot`) or a GRC20 `Transfer` realm call;
-  `approve` builds a GRC20 `Approve` call (none for GNOT). The model never chooses the realm,
-  function or arguments: they come from the resolved token and the checked address and amount.
-  `tx` is an unsigned `TransactionBuilder.build()` result: pass it to `adenaSDK.signTransaction`.
-- Amounts are exact base units (`bigint`), at most int64.
-- `transfer` refuses an amount above the sender's resolved balance with `insufficient_balance`;
-  no transaction is built. Amounts equal to the balance are allowed. Fees are **not** included
-  in this check, so a full-balance transfer can still lack funds for gas. `approve` may exceed
-  the token balance because an allowance does not transfer tokens.
-- The balance is a snapshot, not a reservation. The signing wallet must recheck funds and fees
-  before signing or broadcasting; other transactions may have changed the available balance.
-- No `getAllowances` (nothing here can list an owner's allowances), so `get_approvals` is not
-  offered; no contacts.
-- A token must be among the sender's holdings; a symbol shared by several is refused with their
-  package paths.
-- Jest: the SDK's dependencies need `uuid`, `@noble/*` and `@scure/*` transformed, and
-  `@web3auth/no-modal` is stubbed (`package.json` `jest`; `src/adena/testing`), like the SDK's
-  own tests.
-- **Not bundled into the app yet.** Metro cannot bundle `@adena-wallet/sdk` as is: its entry pulls
-  `@web3auth/no-modal` (-> `@metamask/connect-multichain` needs a native `async-storage`) and
-  Node built-ins (`crypto`, `events`, `buffer`, `url`). A probe bundle (702 modules) built with
-  `@web3auth/no-modal` and the Node built-ins replaced by empty modules in `metro.config.js`; it
-  has not run on Hermes. Add that config when the adapter is wired into the app.
+`onTransaction` hands that draft to the host's existing approval/fee/document flow. Preserve
+software, hardware-wallet and session-account signing checks; calling a signing service directly
+must not bypass those policies. The host decides which funding address the run acts for and
+retains any separate signing-account identity.
+
+Onbloc's built-in source supports **Gno mainnet only**. A different `chainId` does not turn it
+into another network's reader: enable the feature only on mainnet, or supply matching tools and
+wallet implementation. Recreate the agent when its configured chain changes and start a fresh
+conversation when the account or network changes.
+
+The MCP adapter and its client use an interpreter-based JSON Schema validator, preserving
+input/output validation without `eval` or `new Function`. This supports MV3 extension CSP;
+the host still controls network permissions and whether local HTTP endpoints are allowed.
 
 ## Free chat (desktop)
 
 To see how far the model gets with plain human language, talk to it yourself. It runs on this
 Mac through llama-server. Every request is classified first, with or without an account: an
 explanation or a clarification is answered without tools, while reading wallet data or preparing a
-transaction needs the account, and without one the agent fails with `ADENA_ACCOUNT_REQUIRED` (link
+transaction needs the account, and without one the agent fails with `AGENT_ACCOUNT_REQUIRED` (link
 a wallet). `--onbloc` gives the chat that account, the app's prompt and its tools. It answers in the
 language you write in (English and Korean both work; the scenarios in
 `src/mock/scenario/scenarios.ts` include Korean prompts, and you can type any language into the chat).
@@ -352,29 +429,28 @@ GNS balances (read once when the wallet is created); `/reset` and the app's Rese
 them again. Defaults are the dev endpoint and account in `src/mock/app/onblocSettings.ts`; for
 the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` / `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both
 fields in Settings leaves the chat without an account: questions are still answered, and wallet
-data or actions fail with `ADENA_ACCOUNT_REQUIRED`.
+data or actions fail with `AGENT_ACCOUNT_REQUIRED`.
 
 ## Scenario tests (real model)
 
 `npm test` scripts the model, so it checks the wiring, not what the model does with a human
 sentence. `make scenario` (jest, `jest.scenario.config.js`, `src/mock/scenario/*.scenario.ts`)
 runs the real agent against llama-server at temperature 0, once per scenario: the Onbloc reads
-are a fixed fake (10 GNOT, 250 GNS). Both the agent and `createOnblocTokenResolver` read that
-same fake MCP; the wallet is `AdenaWalletSdk` with one contact (`carol`).
+are a fixed fake (10 GNOT, 250 GNS). The agent reads that fake MCP; the wallet is the SDK-free
+`MockWalletSdk` with matching fixture balances and one contact (`carol`).
 Each scenario in `scenarios.ts` is a plain-language prompt and what it must produce:
 
-- a transfer or an approval: the prepared transaction's summary **and** its decoded Adena
+- a transfer or an approval: the prepared transaction's summary **and** its plain unsigned
   message (`MsgSend` in ugnot, or a GRC20 `Transfer` / `Approve` call with the exact base-unit
   args) must match, the sender is the account, and nothing is signed;
 - or no transaction at all (missing recipient, unknown token, GNOT approval, zero amount,
   insufficient GNOT or GNS balance).
 
 Besides the English scenarios and their Korean twins, a **typo set** (`TYPO_SCENARIOS`, English and
-Korean) feeds the model requests with mistakes. A letter missing from the verb or the token symbol
-(`Snd 1 GNOT to g1...`, `Send 1 got to g1...`, `... 1 gnot 전ㅅ`, `... 1 got 소금`) is read back and
-the transaction is prepared. What carries the money is never guessed, so nothing is prepared (the
-model should ask) for a misspelled contact (`carl`), an address one character short, or a missing
-token (`... 1 젼숑`).
+Korean) checks the initial request, an explicit correction and a bare `yes` / `네`.
+Clear verb typos may produce the exact requested draft or a clarification. Asset misspellings
+(`got`, `gsn`), contact misspellings (`carl`), incomplete addresses and missing assets require
+clarification; they are never silently replaced. A bare confirmation does not authorize a new draft.
 
 Four more sets test the part before the transaction, each in English with its Korean twin:
 
@@ -387,16 +463,16 @@ Four more sets test the part before the transaction, each in English with its Ko
   nothing; a balance question must call `get_balance` for the right asset and the answer must
   show the amount (`10 GNOT`); a negated request or "should I send?" prepares nothing. The
   `account:` scenarios run **without a linked wallet** (`noAccount`): a question and small talk
-  are still answered, while reading the balance or a transfer must raise `ADENA_ACCOUNT_REQUIRED`
+  are still answered, while reading the balance or a transfer must raise `AGENT_ACCOUNT_REQUIRED`
   (an `error` expectation: the engine passes the run when exactly that error is raised).
 - **Reads** (`READ_SCENARIOS`): which read tool answers (transactions, NFTs, token info), and no
   invented answer where no tool exists (approvals, block height). The fake history holds a memo
   that orders the model to move funds; the model must treat it as data and prepare nothing.
-- **Follow-ups** (`FOLLOW_UP_SCENARIOS`, several turns): a reply that completes an unanswered
-  question is read with it (`Send 1 GNOT` then `to carol`). A prepared transfer is remembered with
-  its tool record, so `now send 2 to the same person`, `do it again` and `ok then send 5` after a
-  refused 100 GNOT work, `What did you just prepare?` is answered without acting, and `thanks`
-  prepares nothing.
+- **Follow-ups** (`FOLLOW_UP_SCENARIOS`, several turns): an explicit missing-field reply may complete
+  an unanswered request (`Send 1 GNOT` then `to carol`). A verified balance lookup may ground a
+  relative amount. Completed or refused transactions do not authorize implicit target or asset reuse:
+  `do it again`, `now send 2 to the same person` and `ok then send 5` require a restatement.
+  Questions about prior preparation are answered without acting, and `thanks` prepares nothing.
 
 These are judged on more than the summary (`checkRun`): an `answer` scenario lists the reads the
 model may make (each with its exact input), fails on any other tool call, and checks that the
@@ -409,17 +485,17 @@ scenario says what it must prepare.
 **Asked, never guessed.** After the model parses a transfer or an approval, code checks it against
 the user's own words, and a doubt becomes a question instead of a transaction:
 
-- the **amount** must be digits the user wrote (`1.5`, `1,000`, `3` next to Korean text) or a share
-  of the balance; `one and a half` or a number the model made up is asked for, and `ugnot` is not
-  converted to GNOT;
-- the **token** must be a symbol the user wrote. A misspelling that is one edit from exactly one
-  symbol the wallet knows (`got`, `gsn`) is read back as it (pass them as `tokenSymbols` to
-  `AIAgent`); a symbol the wallet does not know, or one equally near two known ones, is asked
-  about with the known ones listed;
+- the **amount** must be losslessly supported by the user's digits, unambiguous number words
+  (`one and a half`, `한 개 반`) or an explicit share of a verified balance. Unsupported wording
+  or an amount invented by the model requires clarification; the `ugnot` scenario does not infer
+  a GNOT display amount;
+- the **token** must be the exact symbol or identifier the user supplied. A typo is not authority
+  to choose a known token; `tokenSymbols` helps detect ambiguous or misspelled proposals without
+  silently correcting them;
 - more than one **token** (`1 GNOT and 2 GNS`) or more than one **recipient** (a contact and an
   address, two contacts) in the latest message is asked about, so one of them is not silently dropped.
   The address book is read only after parsing for this check; the model never sees it;
-- an address followed by a particle (`g1...가`) is handed to the wallet as typed.
+- Korean particles are removed from a complete address; invalid checksums are rejected, never repaired.
 
 A read that cannot be matched to a tool the model chose (`AI_ToolChoiceViolationError`) no longer
 fails the run: the answer says the lookup could not be verified.
@@ -485,14 +561,15 @@ It stops with **Stop benchmark**; a stopped run can be copied too.
   transactions it prepared are counted by outcome (`consistent: yes` only if every run prepared the
   same one).
 - **Judged on summaries** (recipient or spender, amount, token, kind of transaction): what the model
-  chose. The transaction builder is deterministic, so the same summary gives the same transaction.
-  The decoded Adena message is checked only by `make scenario`, because the Adena SDK is not
-  bundled into the app.
+  chose. Both CLI scenarios and the app benchmark use SDK-free unsigned mock drafts.
+  `make scenario` additionally checks the actual draft message's destination, integer amount
+  and token path; this does not validate protobuf encoding or perform real signing.
 - **Fixed conditions**, so numbers compare across devices and builds: temperature 0, 512 output
   tokens, no thinking, a fresh conversation per run, a mock wallet (10 GNOT, 250 GNS, contact `carol`)
   and fake Onbloc reads in process. Settings values, the Settings address and the Onbloc and
-  transaction-preparation switches do not apply. No network.
-- **Report:** passes per scenario (or outcomes per prompt), errors by code (`ADENA_INTENT_INVALID`,
+  transaction-preparation switches do not apply. Wallet and MCP reads use no network; a hosted LLM
+  still calls its model provider.
+- **Report:** passes per scenario (or outcomes per prompt), errors by code (`AGENT_INTENT_INVALID`,
   ...), time per run (mean, p50, p95, max) and the first half against the second half, which
   shows thermal throttling. A development build is slower on the JavaScript side than a release
   build; the log says which one ran.
@@ -534,7 +611,7 @@ against any `LLM`; `make scenario` shares the same summary check (`check.ts`).
 
 - Qwen3.5 thinks by default, which adds latency; the **Thinking** switch is off by default
   (`reasoning: 'none'`).
-- `n_ctx` is 8192 (library default 2048). Max output tokens is capped below it. The desktop
+- The configured `n_ctx` defaults to 8192; only the final runtime fallback is 2048. Output tokens must fit below it. The desktop
   llama-server (`-c` in `src/mock/cli/with-server.sh`, `SERVER_CONTEXT_TOKENS` in
   `src/mock/cli/lib/server.ts`) must use the same value to match the phone. Change the model or
   context size in `src/llm/device/config.ts`.
@@ -550,7 +627,7 @@ against any `LLM`; `make scenario` shares the same summary check (`check.ts`).
   prefills the generation prompt. The grammar then asks the model to write the assistant header
   itself and allows a free-text `<think>` block before the JSON: a 2B model fills it with long
   reasoning (~260 tokens, ~10 s on a phone) and the JSON arrives with that text in front, so the
-  request fails with `ADENA_INTENT_INVALID`. `src/llm/device/jsonGrammar.ts` sends `jinja: false`
+  request fails with `AGENT_INTENT_INVALID`. `src/llm/device/jsonGrammar.ts` sends `jinja: false`
   for structured calls, which gives a plain JSON-schema grammar. It relies on the model's legacy
   chat template (ChatML for Qwen); a model whose template is not supported there fails with
   `this custom template is not supported`. The cause is in native code shared with Android, so
@@ -560,6 +637,7 @@ against any `LLM`; `make scenario` shares the same summary check (`check.ts`).
 ## Scripts
 
 ```bash
+npm run build
 npm run typecheck
 npm run lint
 npm run scenario   # needs a running llama-server (make scenario starts one)

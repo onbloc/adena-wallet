@@ -1,6 +1,6 @@
 import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet, type FakeWalletOptions } from '../../testing/fakeWallet';
 import { ToolName, TransactionType, WalletErrorCode, WalletStatus } from '../constants';
-import { WalletError, type PreparedTransaction } from '../port';
+import { WalletError, type PreparedTransaction, type WalletOperationOptions, type WalletSdk } from '../port';
 import { createWalletTools, type ToolResult } from '../tools';
 import { Harness, type PolicyEvent, type WalletTool } from '../../../harness/core';
 
@@ -594,4 +594,91 @@ it('does not call a failed app handoff a cancellation merely because it failed l
   expect(wallet.calls).toHaveLength(1);
   expect(events.map(event => [event.tool, event.decision, event.denial]))
     .toEqual([[ToolName.Transfer, 'denied', 'WALLET_UNAVAILABLE']]);
+});
+
+describe('wallet operation cancellation', () => {
+  it('never starts an operation after its run is cancelled', async () => {
+    const controller = new AbortController();
+    const reason = new Error('run closed');
+    const sdk = { transfer: jest.fn(), approve: jest.fn(), getAllowances: jest.fn() } satisfies WalletSdk;
+    const onTransaction = jest.fn();
+    const tools = createWalletTools({
+      sdk, account: ACCOUNT, contacts: [], userText: RECIPIENT, onTransaction,
+    });
+    controller.abort(reason);
+
+    for (const [name, args] of [
+      [ToolName.Transfer, input],
+      [ToolName.Approve, { spender: RECIPIENT, amount: '1', token: 'GNS' }],
+      [ToolName.GetApprovals, {}],
+    ] as const) {
+      await expect(tools[name]!.execute(args, controller.signal)).resolves.toEqual({ kind: 'denied', code: 'CANCELLED' });
+    }
+
+    expect(sdk.transfer).not.toHaveBeenCalled();
+    expect(sdk.approve).not.toHaveBeenCalled();
+    expect(sdk.getAllowances).not.toHaveBeenCalled();
+    expect(onTransaction).not.toHaveBeenCalled();
+  });
+
+  it('discards an approval prepared after cancellation, even when the abort reason is a wallet refusal', async () => {
+    const controller = new AbortController();
+    const reason = new WalletError(WalletErrorCode.WalletFailed, 'wallet closed');
+    const wallet = fakeWallet();
+    const approve = wallet.approve!.bind(wallet);
+    const onTransaction = jest.fn();
+    wallet.approve = async (params, options) => {
+      expect(options?.signal).toBe(controller.signal);
+      const prepared = await approve(params, options);
+      controller.abort(reason);
+      return prepared;
+    };
+    const tools = createWalletTools({
+      sdk: wallet, account: ACCOUNT, contacts: [], userText: RECIPIENT, onTransaction,
+    });
+
+    await expect(tools[ToolName.Approve]!.execute({ spender: RECIPIENT, amount: '1', token: 'GNS' }, controller.signal))
+      .resolves.toEqual({ kind: 'denied', code: 'CANCELLED' });
+
+    expect(onTransaction).not.toHaveBeenCalled();
+  });
+
+  it('does not return allowances that complete after cancellation', async () => {
+    const controller = new AbortController();
+    const reason = new Error('read cancelled');
+    const wallet: WalletSdk = {
+      ...fakeWallet(),
+      getAllowances: async (_owner, options) => {
+        expect(options?.signal).toBe(controller.signal);
+        controller.abort(reason);
+        return [{ spender: RECIPIENT, token: 'GNS', amount: '1' }];
+      },
+    };
+    const tools = createWalletTools({
+      sdk: wallet, account: ACCOUNT, contacts: [], userText: RECIPIENT, onTransaction: () => {},
+    });
+
+    await expect(tools[ToolName.GetApprovals]!.execute({}, controller.signal))
+      .resolves.toEqual({ kind: 'denied', code: 'CANCELLED' });
+  });
+
+  it('lets an invoked host callback observe cancellation while preserving the accepted handoff', async () => {
+    const controller = new AbortController();
+    const reason = new Error('host stopped');
+    const onTransaction = jest.fn(async (_prepared: PreparedTransaction, { signal }: WalletOperationOptions) => {
+      expect(signal).toBe(controller.signal);
+      expect(signal.aborted).toBe(false);
+      controller.abort(reason);
+      await Promise.resolve();
+      expect(signal.aborted).toBe(true);
+    });
+    const tools = createWalletTools({
+      sdk: fakeWallet(), account: ACCOUNT, contacts: [], userText: RECIPIENT, onTransaction,
+    });
+
+    await expect(tools[ToolName.Transfer].execute(input, controller.signal))
+      .resolves.toEqual({ kind: 'result', value: expect.objectContaining({ status: WalletStatus.Prepared, to: RECIPIENT }) });
+
+    expect(onTransaction).toHaveBeenCalledTimes(1);
+  });
 });

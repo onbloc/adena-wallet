@@ -7,7 +7,7 @@
 # DEVICE=<id> picks the phone when several are connected (iOS: UDID, Android: adb serial).
 set -eu
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../src/mock/app"
 
 fail() {
   echo "mobile: $*" >&2

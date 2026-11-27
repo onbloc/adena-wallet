@@ -1,6 +1,6 @@
 import { simulateStreamingMiddleware, wrapLanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
-import { DEFAULT_BUDGET, Harness, type Budget } from '../../harness/core';
+import { Harness, type Budget, type HarnessRun } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp, type FakeOnblocTool } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { canRememberTurn, LLMFromModel, type GenerateEvent, type LLM } from '../../llm/core';
@@ -9,7 +9,7 @@ import type { BalanceRequest } from '../balanceOperation';
 import type { PreparationProposal, RequestIntent } from '../requestIntent';
 import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet, type FakeWalletOptions } from '../testing/fakeWallet';
 import { intentReplyText } from '../testing/intentReply';
-import { WalletError, type PreparedTransaction } from '../wallet/port';
+import { WalletError, type PreparedTransaction, type TransferSummary, type WalletOperationOptions } from '../wallet/port';
 
 const usage = { inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined }, outputTokens: { total: 5, text: 5, reasoning: undefined } };
 type Content = { type: 'text'; text: string } | { type: 'tool-call'; toolCallId: string; toolName: string; input: string };
@@ -30,9 +30,9 @@ const permission = { account: ACCOUNT, allowTransactionPreparation: true };
 async function collect(events: AsyncIterable<GenerateEvent>) { const out: GenerateEvent[] = []; for await (const event of events) out.push(event); return out; }
 const textOf = (events: GenerateEvent[]) => events.filter(event => event.type === 'text').map(event => event.delta).join('');
 const doneOf = (events: GenerateEvent[]) => events.find(event => event.type === 'done');
-function setup(steps: Step[], { intent = native, selection, fit = true, walletOptions, remote = true, withWallet = true, failAudit = false, classificationText, tools, budget }: {
+function setup(steps: Step[], { intent = native, selection, fit = true, walletOptions, remote = true, withWallet = true, failAudit = false, classificationText, tools, budget, contextTokens }: {
   intent?: RequestIntent; selection?: string[]; fit?: boolean; walletOptions?: FakeWalletOptions; remote?: boolean; withWallet?: boolean; failAudit?: boolean;
-  classificationText?: string; tools?: FakeOnblocTool[]; budget?: Partial<Budget>;
+  classificationText?: string; tools?: FakeOnblocTool[]; budget?: Partial<Budget>; contextTokens?: number;
 } = {}) {
   const mcp = fakeOnblocMcp(tools ?? [
     { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '42000000' } },
@@ -52,11 +52,11 @@ function setup(steps: Step[], { intent = native, selection, fit = true, walletOp
       ? [answer('{"kind":"all"}')] : []),
     ...(selection === undefined ? [] : [answer(JSON.stringify({ toolNames: selection })),
       ...(selection.length ? [answer(JSON.stringify({ supported: fit }))] : [])]), ...steps] });
-  const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-  const harness = new Harness({ budget: { ...DEFAULT_BUDGET, ...budget }, audit: () => { if (failAudit) throw new Error('Audit storage failed'); },
+  const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }), { contextTokens });
+  const harness = new Harness({ audit: () => { if (failAudit) throw new Error('Audit storage failed'); },
     toolSources: remote ? [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher })] : [] });
-  const agent = withWallet ? new AIAgent({ llm, harness, wallet, onTransaction: transaction => { prepared.push(transaction); } })
-    : new AIAgent({ llm, harness });
+  const agent = withWallet ? new AIAgent({ llm, harness, wallet, budget, onTransaction: transaction => { prepared.push(transaction); } })
+    : new AIAgent({ llm, harness, budget });
   return { agent, model, wallet, prepared, mcp, fetcher, llm, harness };
 }
 
@@ -186,11 +186,10 @@ describe('integrated request execution', () => {
   it.each(['length', 'throw', 'missing-terminal'] as const)('preserves facts but not a compound answer when its explanation ends with %s', async ending => {
     const explanation = 'What is GNOT?';
     const { llm: delegate, harness } = setup([], { intent: { ...native, explanation } });
-    let calls = 0;
     const llm: LLM = {
       contextTokens: delegate.contextTokens,
       async *generate(settings, options) {
-        if (calls++ === 0) { yield* delegate.generate(settings, options); return; }
+        if (settings.outputSchema !== undefined) { yield* delegate.generate(settings, options); return; }
         yield { type: 'text', delta: 'GNOT is the native' };
         if (ending === 'throw') throw new Error('Explanation interrupted');
         if (ending === 'length') yield { type: 'done', aborted: false, finishReason: 'length',
@@ -347,6 +346,8 @@ describe('integrated request execution', () => {
     }));
     expect(wallet.calls).toEqual([]);
     expect(prepared).toEqual([]);
+    expect(textOf(events)).toMatch(/recipient|받는/iu);
+    expect(agent.turns.at(-1)?.answer).toBe(textOf(events));
   });
   it('prepares once without external reads or a fallible post-preparation model call', async () => {
     const { agent, model, prepared, wallet, fetcher } = setup([send], { intent: prepare, remote: false });
@@ -742,5 +743,176 @@ describe('indexed source evidence', () => {
     expect(textOf(events)).toContain(`${path}/vault.gno:3`);
     expect(textOf(events)).toContain('return amount');
     expect(agent.turns[0].answer).toBe(textOf(events));
+  });
+});
+
+describe('library execution policy and cancellation', () => {
+  it.each(['caller', 'deadline', 'close'] as const)('discards a transfer prepared after %s cancellation', async cancellation => {
+    const { agent, harness, wallet, prepared } = setup([send], {
+      intent: prepare, budget: { timeoutMs: cancellation === 'deadline' ? 1000 : 300_000 },
+    });
+    const startRun = jest.spyOn(harness, 'startRun');
+    const started = Promise.withResolvers<AbortSignal>();
+    const preparation = Promise.withResolvers<PreparedTransaction<TransferSummary>>();
+    const transaction = await fakeWallet().transfer({ from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' });
+    wallet.transfer = (_params, options) => {
+      started.resolve(options!.signal);
+      return preparation.promise;
+    };
+    const controller = new AbortController();
+    const events = collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, { ...permission, signal: controller.signal }));
+    const signal = await started.promise;
+    const stopped = Promise.withResolvers<void>();
+    signal.addEventListener('abort', () => stopped.resolve(), { once: true });
+    if (cancellation === 'caller') controller.abort();
+    if (cancellation === 'close') {
+      const run: HarnessRun = await startRun.mock.results[0].value;
+      run.close();
+    }
+    await stopped.promise;
+    preparation.resolve(transaction);
+    expect(doneOf(await events)).toMatchObject({ aborted: true });
+    expect(prepared).toEqual([]);
+    expect(agent.turns).toEqual([]);
+  });
+
+  it('closes the effective wallet operation signal after successful preparation', async () => {
+    const { agent, wallet, prepared } = setup([send], { intent: prepare });
+    const transfer = wallet.transfer.bind(wallet);
+    let operation: WalletOperationOptions | undefined;
+    wallet.transfer = (params, options) => {
+      operation = options;
+      expect(options?.signal.aborted).toBe(false);
+      return transfer(params, options);
+    };
+    await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
+    expect(prepared).toHaveLength(1);
+    expect(operation?.signal.aborted).toBe(true);
+  });
+
+  it('closes the run when contact setup fails after planning', async () => {
+    const { agent, wallet, model } = setup([send], { intent: prepare });
+    let signal: AbortSignal | undefined;
+    wallet.getContacts = async options => {
+      signal = options?.signal;
+      throw new Error('contacts unavailable');
+    };
+    await expect(collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission))).rejects.toThrow('contacts unavailable');
+    expect(signal?.aborted).toBe(true);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+
+  it.each(['caller', 'close'] as const)('cancels uncooperative contact setup on %s cancellation', async cancellation => {
+    const { agent, harness, wallet, model } = setup([send], { intent: prepare });
+    const startRun = jest.spyOn(harness, 'startRun');
+    const started = Promise.withResolvers<AbortSignal>();
+    const contacts = Promise.withResolvers<[]>();
+    wallet.getContacts = options => {
+      started.resolve(options!.signal);
+      return contacts.promise;
+    };
+    const controller = new AbortController();
+    const completion = collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, { ...permission, signal: controller.signal }));
+    const signal = await started.promise;
+    if (cancellation === 'caller') controller.abort();
+    else (await startRun.mock.results[0].value as HarnessRun).close();
+    expect(doneOf(await completion)).toMatchObject({ aborted: true });
+    contacts.resolve([]);
+    expect(signal.aborted).toBe(true);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+
+  it('does not discover tools or load contacts when already cancelled', async () => {
+    const { agent, harness, wallet, model } = setup([send], { intent: prepare });
+    const startRun = jest.spyOn(harness, 'startRun');
+    const contacts = jest.spyOn(wallet, 'getContacts');
+    const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, { ...permission, signal: AbortSignal.abort() }));
+    expect(doneOf(events)).toMatchObject({ aborted: true });
+    expect(startRun).not.toHaveBeenCalled();
+    expect(contacts).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  const history: RequestIntent = { kind: 'lookup', requests: [{ target: 'other', query: 'Show my recent transactions.' }] };
+  it.each([1, 2])('bounds lookup execution by %s configured steps, not generation maxSteps', async maxSteps => {
+    const { agent, model, mcp } = setup([
+      call('list_account_transactions', { limit: 'invalid' }), call('list_account_transactions', { limit: 5 }), answer('unused'),
+    ], { intent: history, selection: ['list_account_transactions'],
+      budget: { maxSteps, maxToolCalls: undefined, maxTokens: undefined, timeoutMs: undefined } });
+    const events = await collect(agent.run({ prompt: 'Show my recent transactions.', maxSteps: 4 }, { account: ACCOUNT }));
+    expect(model.doGenerateCalls).toHaveLength(3 + maxSteps);
+    expect(mcp.calls).toHaveLength(maxSteps === 2 ? 1 : 0);
+    expect(doneOf(events)?.verifiedAnswer).toBe(maxSteps === 2 ? true : undefined);
+  });
+
+  it('preserves an output reserve above 512 for the lookup model step', async () => {
+    const { agent, model } = setup([call('list_account_transactions', { limit: 5 })],
+      { intent: history, selection: ['list_account_transactions'] });
+    await collect(agent.run({ prompt: 'Show my recent transactions.', maxOutputTokens: 1024 }, { account: ACCOUNT }));
+    expect(model.doGenerateCalls.map(call => call.maxOutputTokens)).toEqual([512, 512, 512, 1024]);
+  });
+
+  it('refuses a lookup whose full output reserve leaves no context for input', async () => {
+    const { agent, model, mcp } = setup([call('list_account_transactions', { limit: 5 })],
+      { intent: history, selection: ['list_account_transactions'], contextTokens: 8192 });
+    await expect(collect(agent.run({ prompt: 'Show my recent transactions.', maxOutputTokens: 8192 }, { account: ACCOUNT })))
+      .rejects.toThrow(Error);
+    expect(model.doGenerateCalls).toHaveLength(3);
+    expect(mcp.calls).toEqual([]);
+  });
+
+  it('enforces the harness token budget before lookup execution, after separate routing', async () => {
+    const { agent, model, mcp } = setup([call('list_account_transactions', { limit: 5 })],
+      { intent: history, selection: ['list_account_transactions'], budget: { maxTokens: 1 } });
+    await expect(collect(agent.run({ prompt: 'Show my recent transactions.' }, { account: ACCOUNT }))).rejects.toThrow(Error);
+    expect(model.doGenerateCalls).toHaveLength(3);
+    expect(mcp.calls).toEqual([]);
+  });
+
+  it.each([
+    { maxSteps: 0 }, { maxToolCalls: -1 }, { maxTokens: Number.MAX_SAFE_INTEGER + 1 },
+    { timeoutMs: 2_147_483_648 }, { maxSteps: 1.5 },
+  ])('rejects invalid execution policy before model or wallet access: %j', async budget => {
+    const { agent, wallet, model } = setup([send], { intent: prepare, budget });
+    const contacts = jest.spyOn(wallet, 'getContacts');
+    await expect(collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission))).rejects.toThrow(RangeError);
+    expect(contacts).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1, 8193])('rejects an invalid output reserve: %s', async maxOutputTokens => {
+    const { agent, model } = setup([], { contextTokens: 8192 });
+    await expect(collect(agent.run({ prompt: 'Hello.', maxOutputTokens }))).rejects.toThrow(RangeError);
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('rejects overflow in the default derived token budget before starting a run', async () => {
+    const { agent, harness, model } = setup([], { contextTokens: Number.MAX_SAFE_INTEGER });
+    const startRun = jest.spyOn(harness, 'startRun');
+    await expect(collect(agent.run({ prompt: 'Hello.' }))).rejects.toThrow(RangeError);
+    expect(startRun).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('lets a cooperative wallet stop preparation on caller abort', async () => {
+    const { agent, wallet, prepared } = setup([send], { intent: prepare });
+    const started = Promise.withResolvers<void>();
+    let stopped = false;
+    wallet.transfer = (_params, options) => {
+      const preparation = Promise.withResolvers<PreparedTransaction<TransferSummary>>();
+      options!.signal.addEventListener('abort', () => {
+        stopped = true;
+        preparation.reject(options!.signal.reason);
+      }, { once: true });
+      started.resolve();
+      return preparation.promise;
+    };
+    const controller = new AbortController();
+    const completion = collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, { ...permission, signal: controller.signal }));
+    await started.promise;
+    controller.abort();
+    expect(doneOf(await completion)).toMatchObject({ aborted: true });
+    expect(stopped).toBe(true);
+    expect(prepared).toEqual([]);
   });
 });

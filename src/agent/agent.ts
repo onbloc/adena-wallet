@@ -10,10 +10,10 @@ import { buildWalletPrompt } from './prompts';
 import { realmEvidence } from './realmEvidence';
 import type { RealmEvidence } from './realmEvidence';
 import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, type LookupToolSelection, type PreparationProposal, type RequestIntent } from './requestIntent';
-import type { TransactionHandler, WalletSdk } from './wallet/port';
+import type { Contact, TransactionHandler, WalletSdk } from './wallet/port';
 import { fromBaseUnits } from './wallet/amount';
 import { createWalletTools } from './wallet/tools';
-import type { Decision, Harness, HarnessRun } from '../harness/core';
+import type { Budget, Decision, Harness, HarnessRun } from '../harness/core';
 import { GNO_MAINNET_CHAIN, isValidGnoAddress } from '../harness/mcp';
 import { onblocBalanceAdapter } from './onblocBalanceAdapter';
 import {
@@ -32,6 +32,29 @@ import {
   type ToolLoop,
 } from '../llm/core';
 
+async function loadContacts(wallet: WalletSdk, signal: AbortSignal): Promise<Contact[]> {
+  signal.throwIfAborted();
+  if (!wallet.getContacts) return [];
+  let cancel!: () => void;
+  const cancelled = new Promise<never>((_, reject) => {
+    cancel = () => reject(signal.reason);
+    signal.addEventListener('abort', cancel, { once: true });
+  });
+  try {
+    const contacts = await Promise.race([
+      cancelled,
+      Promise.resolve().then(() => {
+        signal.throwIfAborted();
+        return wallet.getContacts?.({ signal }) ?? [];
+      }),
+    ]);
+    signal.throwIfAborted();
+    return contacts;
+  } finally {
+    signal.removeEventListener('abort', cancel);
+  }
+}
+
 export type AIAgentOptions = {
   llm: LLM;
   harness: Harness;
@@ -41,6 +64,12 @@ export type AIAgentOptions = {
   balanceAdapter?: BalanceAdapter;
   /** The token symbols the wallet can prepare; unknown symbols require clarification. */
   tokenSymbols?: readonly string[];
+  /**
+   * Limits harness execution: 5 model steps, 4 underlying read calls, twice the context in
+   * tokens, and 300000 ms by default. Routing, planning and tool-free answers are separate;
+   * timeoutMs bounds the entire turn. Wallet preparations do not consume maxToolCalls.
+   */
+  budget?: Partial<Budget>;
 } & (
   | { wallet?: undefined; onTransaction?: undefined }
   | { wallet: WalletSdk; onTransaction: TransactionHandler }
@@ -68,6 +97,7 @@ export type AgentSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { pr
 type RunOptions = AgentRunOptions & {
   contextTokens: number;
   signal: AbortSignal;
+  budget: Budget;
   pendingClarification?: PendingClarification;
   onPreparationClarification?: (userText: string, slot?: ClarificationSlot) => void;
   balanceReferent?: BalanceReferent;
@@ -176,12 +206,13 @@ export class AIAgent {
   private readonly chainId: string;
   private readonly balanceAdapter: BalanceAdapter;
   private readonly tokenSymbols: readonly string[];
+  private readonly budget: Partial<Budget>;
   private active?: AbortController;
   private continuation?: { account?: string; clarification?: PendingClarification; balance?: BalanceReferent };
   private revision = 0;
   private runs = 0;
 
-  constructor({ llm, harness, wallet, onTransaction, session, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter, tokenSymbols = [] }: AIAgentOptions) {
+  constructor({ llm, harness, wallet, onTransaction, session, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter, tokenSymbols = [], budget = {} }: AIAgentOptions) {
     this.llm = llm;
     this.harness = harness;
     this.wallet = wallet;
@@ -190,6 +221,7 @@ export class AIAgent {
     this.chainId = chainId;
     this.balanceAdapter = balanceAdapter;
     this.tokenSymbols = tokenSymbols;
+    this.budget = { ...budget };
   }
 
   get turns() {
@@ -208,10 +240,25 @@ export class AIAgent {
     this.session.reset();
   }
 
+  private executionBudget(contextTokens: number): Budget {
+    if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0) throw new RangeError('Invalid model context token limit.');
+    if (this.budget.maxTokens === undefined && contextTokens > Math.floor(Number.MAX_SAFE_INTEGER / 2)) {
+      throw new RangeError('Default token budget exceeds safe integer range.');
+    }
+    const budget = { maxSteps: this.budget.maxSteps ?? 5, maxToolCalls: this.budget.maxToolCalls ?? 4,
+      maxTokens: this.budget.maxTokens ?? contextTokens * 2, timeoutMs: this.budget.timeoutMs ?? REQUEST_TIMEOUT_MS };
+    for (const limit of [budget.maxSteps, budget.maxToolCalls, budget.maxTokens, budget.timeoutMs]) {
+      if (!Number.isSafeInteger(limit) || limit <= 0) throw new RangeError('Invalid execution budget.');
+    }
+    if (budget.timeoutMs > 2_147_483_647) throw new RangeError('Timeout exceeds timer range.');
+    return budget;
+  }
+
   /** Structured queries need no model; every provider call stays in the same run. */
   async getBalance(request: BalanceRequest, { account, signal }: { account: string; signal?: AbortSignal }): Promise<BalanceResult> {
     const parsed = balanceRequestSchema.parse(request);
-    const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `balance-${++this.runs}`, scope: 'read-only', purpose: 'mainnet-read', signal });
+    const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `balance-${++this.runs}`,
+      scope: 'read-only', purpose: 'mainnet-read', signal, budget: this.executionBudget(this.llm.contextTokens) });
     try {
       return await readBalance(run, parsed, { account, chainId: this.chainId, adapter: this.balanceAdapter });
     } finally {
@@ -226,6 +273,7 @@ export class AIAgent {
   async *run(settings: AgentSettings, options: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
     const { signal, contextTokens = this.llm.contextTokens, onContextCompacted } = options;
     if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
+    const budget = this.executionBudget(contextTokens);
     if (this.active) throw new Error('A conversation already has an active turn.');
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
     if (settings.prompt.length > CHAT_PROMPT_MAX_LENGTH) {
@@ -233,6 +281,7 @@ export class AIAgent {
     }
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
+    if (outputTokens > contextTokens) throw new RangeError('maxOutputTokens exceeds the model context.');
     // Every turn starts with the structured classification call, which is capped at 512 tokens.
     const reservedOutput = Math.min(outputTokens, 512);
     // Reject an oversized current request unchanged, before discovery or wallet access.
@@ -259,6 +308,7 @@ export class AIAgent {
         ...options,
         signal: controller.signal,
         contextTokens,
+        budget,
         pendingClarification: options.allowTransactionPreparation ? continuation?.clarification : undefined,
         onPreparationClarification: (text, slot) => { nextClarification = { text, slot }; },
         balanceReferent: continuation?.balance,
@@ -301,13 +351,13 @@ export class AIAgent {
 
   /** Classifies the request on the history in `settings.messages`, then answers it by its route. */
   private async *execute(settings: GenerateSettings, {
-    account, signal, contextTokens, onContextCompacted, allowTransactionPreparation = false,
+    account, signal, contextTokens, budget, onContextCompacted, allowTransactionPreparation = false,
     pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent,
   }: RunOptions): AsyncGenerator<GenerateEvent> {
     const started = Date.now();
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);
-    const timer = setTimeout(() => controller.abort(new Error('Wallet request timed out.')), REQUEST_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(new Error('Wallet request timed out.')), budget.timeoutMs);
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) abort();
     let firstVisibleAt: number | undefined;
@@ -338,7 +388,7 @@ export class AIAgent {
         yield { ...this.done(controller.signal), warnings: classified.warnings, metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
         return;
       }
-      const options: RunOptions = activeOptions = { account, signal: controller.signal, contextTokens, onContextCompacted: compact, allowTransactionPreparation,
+      const options: RunOptions = activeOptions = { account, signal: controller.signal, contextTokens, budget, onContextCompacted: compact, allowTransactionPreparation,
         pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent };
       const { prompt: _prompt, ...answerSettings } = settings;
       const intent = pendingClarification?.slot && isClarificationReply(reply)
@@ -449,7 +499,9 @@ export class AIAgent {
           token: proposal.asset.value };
         yield { type: 'tool-call', id, name: proposal.operation, input, invalid: false };
         yield { type: 'tool-result', id, name: proposal.operation, output: { kind: 'denied', code: 'TARGET_CHANGED' } };
-        yield completion;
+        const question = restatementQuestion(current);
+        yield { type: 'text', delta: question };
+        yield { ...completion, messages: [{ role: 'assistant', content: question }] };
         return;
       }
       const evidence = preparationEvidence(authorizedText, proposal);
@@ -495,27 +547,30 @@ export class AIAgent {
         return;
       }
       const action = proposal.operation;
-      // Only now is the address book read; the model never sees it.
-      const contacts = (await this.wallet.getContacts?.()) ?? [];
-      const whom = askWhichRecipient(messages, contacts);
-      if (whom !== undefined) {
-        options.onPreparationClarification?.(current);
-        yield { type: 'text', delta: whom };
-        yield { ...completion, messages: [{ role: 'assistant', content: whom }] };
-        return;
-      }
+      // Only now may the address book be read; the model never sees it.
+      const contacts: Contact[] = [];
       const all = createWalletTools({ sdk: this.wallet, account, contacts, userText: current,
-        authorizedRecipient: continuation ? contacts.find(contact => contact.alias.toLowerCase() === proposal.recipient.trim().toLowerCase())?.address ?? proposal.recipient : undefined,
-        onTransaction: this.onTransaction });
+        authorizedRecipient: continuation ? proposal.recipient : undefined, onTransaction: this.onTransaction });
       if (!Object.hasOwn(all, action)) {
         yield { type: 'text', delta: `The wallet does not support ${action}. No transaction was prepared.` };
         yield completion;
         return;
       }
       const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `prepare-${++this.runs}`,
-        scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [action]: all[action] }, signal: options.signal });
+        scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [action]: all[action] }, signal: options.signal, budget: options.budget });
       try {
+        for (const contact of await loadContacts(this.wallet, run.signal)) contacts.push(contact);
+        const whom = askWhichRecipient(messages, contacts);
+        if (whom !== undefined) {
+          options.onPreparationClarification?.(current);
+          yield { type: 'text', delta: whom };
+          yield { ...completion, messages: [{ role: 'assistant', content: whom }] };
+          return;
+        }
         yield* this.prepareEvents(proposal, run, completion, current, options.onPreparationClarification);
+      } catch (error) {
+        if (!run.signal.aborted) throw error;
+        yield { ...completion, aborted: true };
       } finally { run.close(); }
     }
   }
@@ -592,7 +647,7 @@ export class AIAgent {
     const walletTools = this.wallet && this.onTransaction && other && options.account === activeAccount
       ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], userText: this.userText(settings), onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
     const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `lookup-${++this.runs}`,
-      scope: 'read-only', purpose: 'mainnet-read', walletTools, signal: options.signal });
+      scope: 'read-only', purpose: 'mainnet-read', walletTools, signal: options.signal, budget: options.budget });
     try {
       const hidden = new Set([...onblocBalanceAdapter.toolNames, ...this.balanceAdapter.toolNames]);
       const catalog = run.tools.filter(tool => !hidden.has(tool.name));
@@ -721,7 +776,7 @@ export class AIAgent {
     stopAfterResult(name: string, decision: Decision): boolean;
     nextTool(): string | undefined;
   }): ToolLoop {
-    const sdk = createAiSdkRun({ run, maxOutputTokens: Math.min(settings.maxOutputTokens ?? 512, 512), budget: { kind: 'local' },
+    const sdk = createAiSdkRun({ run, maxOutputTokens: settings.maxOutputTokens ?? 512, budget: { kind: 'local' },
       contextWindow: options.contextTokens, onContextCompacted: options.onContextCompacted,
       estimateInputTokens: ({ instructions, messages, tools }) => estimateContextInput([instructions, messages, tools]),
       hideTools: policy.hideTools, evidence: policy.evidence, stopAfterResult: policy.stopAfterResult, onInterrupt: () => run.close(),

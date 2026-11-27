@@ -167,6 +167,7 @@ describe('createRemoteModel', () => {
   it.each(['', '   '])('rejects an empty apiKey (%j) instead of going keyless', (apiKey) => {
     expect(() => createRemoteModel(options({ apiKey }))).toThrow('apiKey is empty');
   });
+
 });
 
 describe('createLLMRemote', () => {

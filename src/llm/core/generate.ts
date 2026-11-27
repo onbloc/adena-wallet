@@ -34,6 +34,7 @@ export type GenerateSettings = GenerateInput & {
 };
 
 export type GenerateOptions = GenerateSettings & {
+  /** Cancels alongside any abort signal supplied by the loop. */
   signal?: AbortSignal;
   /** Tools and per-step hooks from the layer above; closed when the generation ends. */
   loop?: ToolLoop;

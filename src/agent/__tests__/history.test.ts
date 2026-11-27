@@ -91,19 +91,20 @@ describe('agent history', () => {
     session.complete('obsolete topic', 'x'.repeat(20000));
     session.complete('The recipient is Carol.', 'I will use Carol.');
     const agent = agentOver(llm, session);
-    const options = { account: ACCOUNT, contextTokens: 6144 };
+    const compacted = jest.fn();
+    const options = { account: ACCOUNT, contextTokens: 8192, onContextCompacted: compacted };
     const current = 'Which recipient did I just name?';
 
     await collect(agent.run({ prompt: current, maxOutputTokens: 128 }, options));
 
-    const firstPrompt = JSON.stringify(model.doGenerateCalls[1].prompt);
-    expect(firstPrompt).not.toContain('obsolete topic');
-    expect(firstPrompt).toContain('The recipient is Carol.');
-    expect(firstPrompt).toContain(current);
+    const prompts = model.doGenerateCalls.map(call => JSON.stringify(call.prompt));
+    expect(prompts.every(prompt => !prompt.includes('obsolete topic'))).toBe(true);
+    expect(prompts.some(prompt => prompt.includes('The recipient is Carol.') && prompt.includes(current))).toBe(true);
+    expect(compacted).toHaveBeenCalledWith(1);
     expect(agent.turns.map((turn) => turn.prompt)).toEqual(['The recipient is Carol.', current]);
     expect(agent.serialize()).not.toContain('obsolete topic');
     await collect(agent.run({ prompt: 'Continue.', maxOutputTokens: 128 }, options));
-    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).not.toContain('obsolete topic');
+    expect(model.doGenerateCalls.every(call => !JSON.stringify(call.prompt).includes('obsolete topic'))).toBe(true);
   });
 
   it('rejects an oversized current request before any model or wallet access, without deleting history', async () => {
@@ -165,6 +166,7 @@ describe('agent history', () => {
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Inspect NFTs and recent transactions.' }] })),
       reply(JSON.stringify({ toolNames: ['get_nfts_balance', 'list_account_transactions'] })),
+      reply('{"supported":true}'),
       {
         content: [{ type: 'tool-call', toolCallId: 'current-read', toolName: 'get_nfts_balance', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
@@ -189,7 +191,9 @@ describe('agent history', () => {
 
     await collect(agent.run({ prompt: 'Please inspect my funds.', maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens: 8192 }));
 
-    const prompt = JSON.stringify(model.doGenerateCalls[3].prompt);
+    const continuation = model.doGenerateCalls.find(call => JSON.stringify(call.prompt).includes('nft-1'));
+    expect(continuation).toBeDefined();
+    const prompt = JSON.stringify(continuation?.prompt);
     expect(prompt).not.toContain('obsolete topic');
     expect(prompt).toContain('Send one to Carol.');
     expect(prompt).toContain('current-read');
@@ -208,6 +212,7 @@ describe('agent history', () => {
     const correction = 'GNOT is the native token; ugnot is its base unit.';
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] })),
+      reply('{"kind":"all"}'),
       reply(intentReplyText({ kind: 'explanation' })),
       reply(correction),
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } } }] })),
@@ -231,7 +236,8 @@ describe('agent history', () => {
     const fresh = await collect(agent.run({ prompt: 'Look up that native balance again.' }, options));
 
     expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: expect.stringContaining('2 GNOT') });
-    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain(correction);
+    const freshRequest = model.doGenerateCalls.find(call => JSON.stringify(call.prompt).includes('Look up that native balance again.'));
+    expect(JSON.stringify(freshRequest?.prompt)).toContain(correction);
     expect(mcp.calls.filter((call) => call.name === 'get_native_balance')).toHaveLength(2);
     expect(agent.turns).toHaveLength(3);
     expect(wallet.calls).toEqual([]);
@@ -242,6 +248,7 @@ describe('agent history', () => {
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Look up current data and its status.' }] })),
       reply(JSON.stringify({ toolNames: ['lookup', 'status'] })),
+      reply('{"supported":true}'),
       {
         content: [{ type: 'tool-call', toolCallId: 'lookup-now', toolName: 'lookup', input: '{}' }],
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
@@ -272,8 +279,12 @@ describe('agent history', () => {
 
     await collect(agent.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens: 8192 }));
 
-    expect(JSON.stringify(model.doGenerateCalls[2].prompt)).toContain('recent topic');
-    const continuation = JSON.stringify(model.doGenerateCalls[3].prompt);
+    const firstLookup = model.doGenerateCalls.find(call => call.tools?.some(tool => tool.type === 'function' && tool.name === 'lookup'));
+    const statusLookup = model.doGenerateCalls.find(call => call.tools?.some(tool => tool.type === 'function' && tool.name === 'status'));
+    expect(firstLookup).toBeDefined();
+    expect(statusLookup).toBeDefined();
+    expect(JSON.stringify(firstLookup?.prompt)).toContain('recent topic');
+    const continuation = JSON.stringify(statusLookup?.prompt);
     expect(continuation).not.toContain('recent topic');
     expect(continuation).toContain('lookup-now');
     expect(continuation).toContain('data'.repeat(3000));

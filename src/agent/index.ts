@@ -20,5 +20,6 @@ export type {
   TransactionHandler,
   TransferParams,
   TransferSummary,
+  WalletOperationOptions,
   WalletSdk,
 } from './wallet/port';

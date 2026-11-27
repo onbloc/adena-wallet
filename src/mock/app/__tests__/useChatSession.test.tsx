@@ -164,9 +164,10 @@ describe('useChatSession', () => {
   });
 
   it('persists compacted history and restores it without the discarded turn', async () => {
+    const contextTokens = 8192;
     const recent: ChatTurn = { prompt: 'The recipient is Carol.', answer: 'I will use Carol.' };
     await Storage.setItem(chatSessionKey(other), JSON.stringify({
-      version: 1, turns: [{ prompt: 'Obsolete topic', answer: 'x'.repeat(6000) }, recent],
+      version: 1, turns: [{ prompt: 'Obsolete topic', answer: 'x'.repeat(contextTokens * 2) }, recent],
     }));
     await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.turns).toHaveLength(2);
@@ -187,7 +188,7 @@ describe('useChatSession', () => {
     const prompt = 'Which recipient did I just name?';
 
     await act(async () => {
-      await consume(current.run(agent, { prompt, maxOutputTokens: 128 }, { contextTokens: 6144, account: RECIPIENT }));
+      await consume(current.run(agent, { prompt, maxOutputTokens: 128 }, { contextTokens, account: RECIPIENT }));
     });
 
     const expected = [recent, { prompt, answer: 'Carol is the recipient.' }];
