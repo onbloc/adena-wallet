@@ -45,3 +45,7 @@ allowBuilds:
   protobufjs: false
   # Native addon build; the browser field maps the package to its pure-JS version.
   tiny-secp256k1: false
+
+# Drops the formSheet fallback that forces a nested ScrollView to the whole sheet frame (iOS).
+patchedDependencies:
+  react-native-screens@4.30.1: patches/react-native-screens@4.30.1.patch

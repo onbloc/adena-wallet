@@ -21,7 +21,9 @@ export const SheetFrame = ({ title, description, onClose, children }: PropsWithC
   const nativeGrabber = Platform.OS === 'ios';
 
   return (
+    // Not flattened: react-native-screens resizes a ScrollView it finds as a direct child of the sheet's content.
     <View
+      collapsable={false}
       style={[
         styles.sheet,
         { paddingTop: nativeGrabber ? spacing.space20 : spacing.space8, paddingBottom: (nativeGrabber ? 0 : insets.bottom) + spacing.space20 },
@@ -33,7 +35,7 @@ export const SheetFrame = ({ title, description, onClose, children }: PropsWithC
         {onClose && <IconButton icon='close' variant='primary' accessibilityLabel='Close' onPress={onClose} />}
       </View>
       {description && <Text variant='body' color='secondary'>{description}</Text>}
-      <View style={styles.content}>{children}</View>
+      <View collapsable={false} style={styles.content}>{children}</View>
     </View>
   );
 };

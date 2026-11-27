@@ -1,0 +1,38 @@
+diff --git a/ios/RNSScreen.mm b/ios/RNSScreen.mm
+index 049fd22427b2bde17fd7ca59b8de65d0ee07b4b5..ae45c172e6a6b13084aeaf827a631bbb795b0295 100644
+--- a/ios/RNSScreen.mm
++++ b/ios/RNSScreen.mm
+@@ -228,12 +228,11 @@ RNS_IGNORE_SUPER_CALL_END
+                     withHeader:(nullable UIView *)headerView
+ {
+   RNSScreenContentWrapper *_Nullable contentWrapper = _contentWrapperBox.contentWrapper;
+-  if (contentWrapper != nil && [contentWrapper coerceChildScrollViewComponentSizeToSize:self.frame.size]) {
+-    return;
++  // Adena: no legacy fallback. Forcing a nested ScrollView to the sheet's frame drew it over the sheet's
++  // header and footer; such a ScrollView keeps its own React layout instead.
++  if (contentWrapper != nil) {
++    [contentWrapper coerceChildScrollViewComponentSizeToSize:self.frame.size];
+   }
+-
+-  // Fallback: legacy behavior
+-  [scrollViewComponent setFrame:self.frame];
+ }
+ 
+ - (void)observeValueForKeyPath:(NSString *)keyPath
+@@ -258,13 +257,9 @@ RNS_IGNORE_SUPER_CALL_END
+   }
+ 
+   RNSScreenContentWrapper *_Nullable contentWrapper = _contentWrapperBox.contentWrapper;
+-  if (contentWrapper != nil && [contentWrapper coerceChildScrollViewComponentSizeToSize:self.frame.size]) {
+-    return;
+-  }
+-
+-  // Fallback: legacy behavior
+-  if (!CGRectEqualToRect(scrollView.frame, self.frame)) {
+-    [scrollView setFrame:self.frame];
++  // Adena: no legacy fallback (see correctScrollViewFrame:withHeader:).
++  if (contentWrapper != nil) {
++    [contentWrapper coerceChildScrollViewComponentSizeToSize:self.frame.size];
+   }
+ }
+ 
