@@ -32,7 +32,7 @@ class SceneDelegate: RCTDefaultReactNativeFactoryDelegate, UIWindowSceneDelegate
     #endif
     
     reactNativeFactory?.startReactNative(
-      withModuleName: "AdenaMobile",
+      withModuleName: "Adena",
       in: window,
       connectionOptions: connectionOptions
     )
