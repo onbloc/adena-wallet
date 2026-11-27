@@ -96,6 +96,7 @@ export enum RoutePath {
   RemoveAccount = '/settings/security-privacy/remove-account',
   ResetWallet = '/settings/security-privacy/reset-wallet',
   SettingAutoLockTimer = '/settings/security-privacy/auto-lock-timer',
+  SettingAgentConnection = '/settings/security-privacy/agent-connection',
 
   // web
   WebNotFound = '/web/not-found',
@@ -301,6 +302,7 @@ export type RouteParams = {
     from: 'forgot-password';
   } | null;
   [RoutePath.SettingAutoLockTimer]: null;
+  [RoutePath.SettingAgentConnection]: null;
 
   [RoutePath.WebNotFound]: null;
   [RoutePath.WebConnectLedger]: null;

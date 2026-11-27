@@ -1,5 +1,6 @@
 import { WalletResponseFailureType } from '@adena-wallet/sdk';
 import { encodeParameter, getSiteName } from '@common/utils/client-utils';
+import { AGENT_REQUEST_PROTOCOL } from '@inject/agent-host/agent-host-protocol';
 
 import { InjectionMessage, InjectionMessageInstance } from '../message';
 import { InjectCore } from './core';
@@ -10,11 +11,30 @@ import { InjectCore } from './core';
 // and respond with UNEXPECTED_ERROR instead of a user-rejection message.
 const programmaticallyClosedPopups = new Set<number>();
 
+// Only Adena's own pages may answer an approval; a content script (or the
+// page behind it) must not be able to resolve one. An agent approval must
+// also come from the popup window it opened, since it can issue a token.
+export const isPopupResponseSender = (
+  sender: chrome.runtime.MessageSender | undefined,
+  extensionOrigin: string,
+  popupWindowId: number | undefined,
+  requireSameWindow: boolean,
+): boolean => {
+  if (!sender || !(sender.url ?? '').startsWith(extensionOrigin)) {
+    return false;
+  }
+  if (!requireSameWindow) {
+    return true;
+  }
+  return popupWindowId !== undefined && sender.tab?.windowId === popupWindowId;
+};
+
 export const createPopup = async (
   popupPath: string,
   message: InjectionMessage,
   closeMessage: InjectionMessage,
   sendResponse: (response: any) => void,
+  onWindowCreated?: (windowId: number) => void,
 ): Promise<void> => {
   const popupOption: chrome.windows.CreateData = {
     url: chrome.runtime.getURL(
@@ -33,7 +53,18 @@ export const createPopup = async (
 
   chrome.windows.create(popupOption, async (windowResponse) => {
     if (!windowResponse) {
+      // Settle the request; otherwise its caller waits forever.
+      sendResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.UNEXPECTED_ERROR,
+          {},
+          message.key,
+        ),
+      );
       return;
+    }
+    if (windowResponse.id !== undefined) {
+      onWindowCreated?.(windowResponse.id);
     }
 
     // Guard: ensure sendResponse fires at most once. Without this, a successful
@@ -72,7 +103,20 @@ export const createPopup = async (
       cleanup();
     };
 
-    const onMessageListener = (popupMessage: InjectionMessage): void => {
+    const onMessageListener = (
+      popupMessage: InjectionMessage,
+      sender: chrome.runtime.MessageSender,
+    ): void => {
+      if (
+        !isPopupResponseSender(
+          sender,
+          chrome.runtime.getURL(''),
+          windowResponse.id,
+          message.protocol === AGENT_REQUEST_PROTOCOL,
+        )
+      ) {
+        return;
+      }
       popupMessageListener(windowResponse.id, message, popupMessage, sendResponseOnce, cleanup);
     };
 

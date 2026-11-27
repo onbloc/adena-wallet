@@ -5,6 +5,7 @@ import { AlarmKey, SCHEDULE_ALARMS } from '@common/constants/alarm-key.constant'
 import { TransactionEventStore } from '@common/event-store';
 import { MemoryProvider } from '@common/provider/memory/memory-provider';
 import { AUTO_LOCK_TRIGGERED_MESSAGE } from '@common/utils/auto-lock-timer';
+import { initAgentHostBridge } from '@inject/agent-host/agent-host-bridge';
 import { CommandHandler } from '@inject/message/command-handler';
 import {
   CommandMessage,
@@ -31,6 +32,7 @@ import { InjectionMessage, MessageHandler } from './inject/message';
 
 const inMemoryProvider = new MemoryProvider();
 inMemoryProvider.init();
+initAgentHostBridge(inMemoryProvider);
 
 const transactionEventStore = new TransactionEventStore();
 

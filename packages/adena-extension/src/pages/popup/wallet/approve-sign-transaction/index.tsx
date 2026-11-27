@@ -124,6 +124,30 @@ const ApproveSignTransactionContainer: React.FC = () => {
   const { openScannerLink } = useLink();
   const { data: currentBalance = null } = useGetGnotBalance();
 
+  // Requests that pin an account and network (agent requests) are never
+  // signed for another one.
+  const pinnedContextError = useMemo((): string | null => {
+    const pinnedAccountId = requestData?.data?.signerAccountId;
+    const pinnedNetwork = requestData?.data?.networkInfo;
+    if (
+      typeof pinnedAccountId === 'string'
+      && pinnedAccountId.length > 0
+      && currentAccount
+      && currentAccount.id !== pinnedAccountId
+    ) {
+      return 'The current account is not the one this request was made for.';
+    }
+    if (
+      pinnedNetwork?.chainId
+      && currentNetwork
+      && (currentNetwork.chainId !== pinnedNetwork.chainId
+        || (!!pinnedNetwork.rpcUrl && currentNetwork.rpcUrl !== pinnedNetwork.rpcUrl))
+    ) {
+      return 'The current network is not the one this request was made for.';
+    }
+    return null;
+  }, [currentAccount, currentNetwork, requestData]);
+
   const useNetworkFeeReturn = useNetworkFee(document, true);
   const networkFee = useNetworkFeeReturn.networkFee;
 
@@ -201,6 +225,17 @@ const ApproveSignTransactionContainer: React.FC = () => {
         return;
       }
 
+      if (pinnedContextError) {
+        chrome.runtime.sendMessage(
+          InjectionMessageInstance.failure(
+            WalletResponseFailureType.ACCOUNT_MISMATCH,
+            { error: pinnedContextError },
+            requestData.key,
+          ),
+        );
+        return;
+      }
+
       validate(currentAccount, requestData).then((validated) => {
         if (validated) {
           initFavicon();
@@ -208,7 +243,7 @@ const ApproveSignTransactionContainer: React.FC = () => {
         }
       });
     }
-  }, [currentAccount, requestData, gnoProvider]);
+  }, [currentAccount, requestData, gnoProvider, pinnedContextError]);
 
   const validate = async (
     currentAccount: Account,
@@ -333,6 +368,16 @@ const ApproveSignTransactionContainer: React.FC = () => {
   };
 
   const signTransaction = async (): Promise<boolean> => {
+    if (pinnedContextError) {
+      setResponse(
+        InjectionMessageInstance.failure(
+          WalletResponseFailureType.ACCOUNT_MISMATCH,
+          { error: pinnedContextError },
+          requestData?.key,
+        ),
+      );
+      return false;
+    }
     if (!document || !currentAccount || !wallet) {
       setResponse(
         InjectionMessageInstance.failure(

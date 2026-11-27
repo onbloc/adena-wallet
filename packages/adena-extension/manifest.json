@@ -27,6 +27,7 @@
     "alarms",
     "notifications"
   ],
+  "optional_permissions": ["nativeMessaging"],
   "content_scripts": [
     {
       "matches": [

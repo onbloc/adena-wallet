@@ -1,0 +1,20 @@
+{
+  "name": "@adena-wallet/mcp",
+  "version": "0.0.0",
+  "description": "MCP server that lets AI agents act on gno.land as an Adena user through session accounts",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onbloc/adena-wallet.git",
+    "directory": "misc/adena-mcp"
+  },
+  "keywords": ["mcp", "adena", "gno", "gno.land", "wallet", "ai-agent"],
+  "bin": {
+    "adena-mcp": "bin/adena-mcp.js"
+  },
+  "files": ["bin", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {}
+}
