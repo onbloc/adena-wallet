@@ -43,14 +43,20 @@ export const useAutoLock = (): (() => void) => {
     return (): void => subscription.remove();
   }, [lockIfExpired]);
 
-  // JS timers pause in the background; the AppState check above covers that period.
+  // JS timers pause in the background and may fire before the app is active again; the AppState check covers that period.
   useEffect(() => {
     if (status !== SessionStatus.UNLOCKED) {
       return;
     }
 
+    // A new session must not be judged by a background stay from before it was unlocked.
+    backgroundedAtRef.current = null;
     lastActiveAtRef.current = Date.now();
-    const timer = setInterval(() => lockIfExpired(lastActiveAtRef.current), IDLE_CHECK_INTERVAL_MS);
+    const timer = setInterval(() => {
+      if (backgroundedAtRef.current === null) {
+        lockIfExpired(lastActiveAtRef.current);
+      }
+    }, IDLE_CHECK_INTERVAL_MS);
 
     return (): void => clearInterval(timer);
   }, [lockIfExpired, status]);

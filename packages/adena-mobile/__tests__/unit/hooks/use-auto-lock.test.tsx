@@ -143,6 +143,27 @@ describe('useAutoLock', () => {
     expect(lock).not.toHaveBeenCalled();
   });
 
+  it('leaves an overdue idle check to the activation handler while backgrounded', async () => {
+    await setup();
+    await changeAppState('background');
+    await act(async () => {
+      jest.advanceTimersByTime(APP_CONFIG.autoLockMs * 2);
+    });
+    expect(lock).not.toHaveBeenCalled();
+    await changeAppState('active');
+    expect(lock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not lock again for a background stay that ended before the unlock', async () => {
+    await setup();
+    await changeAppState('background');
+    jest.setSystemTime(Date.now() + APP_CONFIG.autoLockMs * 2);
+    await act(async () => useSessionStore.setState({ status: SessionStatus.LOCKED }));
+    await act(async () => useSessionStore.setState({ status: SessionStatus.UNLOCKED }));
+    await changeAppState('active');
+    expect(lock).not.toHaveBeenCalled();
+  });
+
   it('removes the AppState subscription on unmount', async () => {
     const { unmount } = await setup();
 
