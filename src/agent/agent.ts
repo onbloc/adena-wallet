@@ -187,7 +187,9 @@ function lookupAccount(intent: Extract<RequestIntent, { kind: 'lookup' }>, messa
   const users = messages.filter(message => message.role === 'user').map(userMessageText);
   const latest = users.at(-1) ?? '';
   const candidates = addressCandidates(latest);
-  const reference = /\b(?:that|this|same|previous|above|the)\s+(?:wallet|account|address)\b|(?:그|해당|위|이전|같은)\s*(?:주소|계정|지갑)/i.test(latest);
+  const backReference = /\b(?:that|same|previous|above)\s+(?:wallet|account|address)\b|(?:그|해당|위|이전|같은)\s*(?:주소|계정|지갑)/i.test(latest);
+  // "this/the wallet" may just mean the active account; only a prior address can make it a reference.
+  const reference = backReference || /\b(?:this|the)\s+(?:wallet|account|address)\b/i.test(latest);
   const earlier = reference ? users.slice(0, -1).reverse().find(text => addressCandidates(text).length > 0) : undefined;
   const relevant = candidates.length ? candidates : earlier ? addressCandidates(earlier) : [];
   if (new Set(relevant.map(value => value.toLowerCase())).size > 1) return null;
@@ -210,7 +212,7 @@ function lookupAccount(intent: Extract<RequestIntent, { kind: 'lookup' }>, messa
     && (/(?:주소|계정|지갑)|\b(?:address|account|wallet)\b/i.test(latest))
     && (candidates.length > 0 || reference)) return relevant[0];
   // An unclassified address must not silently fall back to the active account.
-  if (relevant.length || reference) return null;
+  if (relevant.length || backReference) return null;
   if (/(?:address|주소)\s*(?:[:=]|\bis\b)\s*\S+/i.test(latest)) return null;
   return undefined;
 }
@@ -389,7 +391,10 @@ export class AIAgent {
     const started = Date.now();
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);
-    const timer = setTimeout(() => controller.abort(new Error('Wallet request timed out.')), budget.timeoutMs);
+    let timedOut = false;
+    const timer = setTimeout(() => { timedOut = true; controller.abort(new Error('Wallet request timed out.')); }, budget.timeoutMs);
+    // A deadline stops the turn like a cancellation; the warning tells the host which one it was.
+    const timeoutWarnings = () => timedOut && !signal?.aborted ? [`The request timed out after ${budget.timeoutMs} ms.`] : [];
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) abort();
     let firstVisibleAt: number | undefined;
@@ -406,7 +411,7 @@ export class AIAgent {
       onContextCompacted?.(count);
     };
     try {
-      if (controller.signal.aborted) { yield this.done(controller.signal); return; }
+      if (controller.signal.aborted) { yield { ...this.done(controller.signal), warnings: timeoutWarnings() }; return; }
       const messages: ModelMessage[] = settings.messages ?? [{ role: 'user', content: settings.prompt }];
       const latest = messages.at(-1);
       const choice = latest?.role === 'user' && typeof latest.content === 'string' ? latest.content.trim() : '';
@@ -424,7 +429,7 @@ export class AIAgent {
           metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 }, warnings: [] as string[] }
         : await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted: compact });
       if (classified.aborted || controller.signal.aborted) {
-        yield { ...this.done(controller.signal), warnings: classified.warnings, metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
+        yield { ...this.done(controller.signal), warnings: [...classified.warnings, ...timeoutWarnings()], metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
         return;
       }
       const options: RunOptions = activeOptions = { account, signal: controller.signal, contextTokens, budget, onContextCompacted: compact, allowTransactionPreparation,
@@ -438,14 +443,14 @@ export class AIAgent {
         if (event.type !== 'done') { yield event; continue; }
         const outputTokens = classified.metrics.outputTokens !== undefined && event.metrics.outputTokens !== undefined
           ? classified.metrics.outputTokens + event.metrics.outputTokens : undefined;
-        yield { ...event, warnings: [...classified.warnings, ...event.warnings], metrics: {
+        yield { ...event, warnings: [...classified.warnings, ...event.warnings, ...timeoutWarnings()], metrics: {
           ...event.metrics, totalMs: Date.now() - started, ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started,
           outputTokens, tokensPerSec: undefined,
         } };
       }
     } catch (error) {
       if (!controller.signal.aborted) throw error;
-      yield { ...this.done(controller.signal), metrics: { totalMs: Date.now() - started, ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started } };
+      yield { ...this.done(controller.signal), warnings: timeoutWarnings(), metrics: { totalMs: Date.now() - started, ttftMs: firstVisibleAt === undefined ? null : firstVisibleAt - started } };
     } finally {
       clearTimeout(timer);
       signal?.removeEventListener('abort', abort);

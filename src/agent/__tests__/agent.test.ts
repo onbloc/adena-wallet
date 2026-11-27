@@ -288,6 +288,21 @@ describe('integrated request execution', () => {
     expect(textOf(events)).toContain(ACCOUNT);
     expect(textOf(events)).toContain('tx-123');
   });
+  it.each(['Show the wallet transactions.', 'Show transactions of this account.'])('uses the active account when "the/this wallet" has no earlier address: %s', async prompt => {
+    const { agent, mcp } = setup([call('list_account_transactions', { limit: 5 })], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
+    });
+    await collect(agent.run({ prompt }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([{ name: 'list_account_transactions', arguments: { address: ACCOUNT, limit: 5 } }]);
+  });
+  it('asks for an address when "that wallet" refers to nothing', async () => {
+    const { agent, mcp } = setup([], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
+    });
+    const events = await collect(agent.run({ prompt: 'Show transactions of that wallet.' }, { account: ACCOUNT }));
+    expect(mcp.calls).toEqual([]);
+    expect(textOf(events)).toContain('valid Gno public address');
+  });
   it('asks for clarification before reading history for multiple addresses', async () => {
     const { agent, mcp } = setup([], {
       intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] },
@@ -964,7 +979,9 @@ describe('library execution policy and cancellation', () => {
     }
     await stopped.promise;
     preparation.resolve(transaction);
-    expect(doneOf(await events)).toMatchObject({ aborted: true });
+    const done = doneOf(await events);
+    expect(done).toMatchObject({ aborted: true });
+    expect(done?.warnings.some(warning => warning.includes('timed out'))).toBe(cancellation === 'deadline');
     expect(prepared).toEqual([]);
     expect(agent.turns).toEqual([]);
   });
