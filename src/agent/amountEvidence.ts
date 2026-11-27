@@ -13,6 +13,16 @@ const hasShare = (text: string) => [...text.matchAll(ratio)].length > 0
   || [...text.matchAll(englishShare)].length > 0 || [...text.matchAll(koreanShare)].length > 0;
 const englishBalanceShare = /(?:\b(?:half|quarter|third|all)\b|\d+\s*\/\s*\d+|\d+(?:\.\d+)?\s*%)\s+(?:of\s+)?(?:my\b|the\s+(?:balance|holdings)\b)/iu;
 const koreanBalanceShare = /(?<![가-힣])(?:내|나의|제)\s*[\p{L}\p{N}._/-]+(?:의)?\s*(?:절반|전부|모두|전체|반|\d+\s*분의\s*\d+|\d+(?:\.\d+)?\s*%)/u;
+// Scale words, magnitude suffixes, fiat and percent wording change the quantity; never ground them as a plain count.
+const unsupportedAmount = new RegExp([
+  String.raw`[$€£¥₩]\s*\d|\d\s*[$€£¥₩]`,
+  String.raw`(?<=\d)\s*(?:만|천|백|억|조|원|달러|불|퍼센트|프로)`,
+  String.raw`(?<=\d)\s*(?:k|m|b|bn|mm|pct)(?![\p{L}\p{N}_])`,
+  String.raw`(?<![\p{L}\p{N}_])(?:hundred|thousand|million|billion|trillion|dozen|point|percent|per\s*cent|dollars?|bucks?|usd|eur|euros?|krw|won|cents?|worth)(?![\p{L}\p{N}_])`,
+].join('|'), 'iu');
+// The asset's own name (e.g. USD) is not fiat wording.
+const unsupportedWording = (text: string, asset: string) =>
+  unsupportedAmount.test(asset ? text.replace(new RegExp(escapeRegex(asset), 'giu'), ' ') : text);
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const englishNumbers: Record<string, number> = {
@@ -53,7 +63,7 @@ function paired(text: string, amount: WordAmount, asset: string): boolean {
   if (!asset) return false;
   const escaped = escapeRegex(asset);
   const before = new RegExp(`(?:^|[^\\p{L}\\p{N}_/.-])${escaped}\\s*$`, 'iu');
-  const after = new RegExp(`^\\s+${escaped}(?=$|[^\\p{L}\\p{N}_/]|\\p{Script=Hangul})`, 'iu');
+  const after = new RegExp(`^\\s+(?:of\\s+(?:the\\s+token\\s+at\\s+)?)?${escaped}(?=$|[^\\p{L}\\p{N}_/]|\\p{Script=Hangul})`, 'iu');
   return before.test(text.slice(0, amount.start)) || after.test(text.slice(amount.end));
 }
 
@@ -89,7 +99,8 @@ export function balanceShareEvidence(text: string): { numerator: string; denomin
     shares.push([1n, match[0] === '절반' || match[0] === '반' ? 2n : 1n]);
   }
   remainder = remainder.replace(koreanShare, ' ');
-  if (shares.length !== 1 || shares[0][1] === 0n || [...remainder.matchAll(number)].length) return undefined;
+  if (shares.length !== 1 || shares[0][1] === 0n || shares[0][0] === 0n || shares[0][0] > shares[0][1]
+    || [...remainder.matchAll(number)].length) return undefined;
   return { numerator: shares[0][0].toString(), denominator: shares[0][1].toString() };
 }
 
@@ -112,7 +123,8 @@ function correctedAmountText(text: string): string {
 }
 
 export function exactAmountEvidence(text: string, value: string, asset = ''): boolean {
-  if (signedAmount.test(text) || normalizeDecimal(value) === null) return false;
+  if (signedAmount.test(text) || normalizeDecimal(value) === null || unsupportedWording(text, asset)) return false;
+  const original = text;
   text = correctedAmountText(text);
   const amounts = wordAmounts(text);
   const remainder = withoutMixedNumbers(text, amounts);
@@ -123,11 +135,21 @@ export function exactAmountEvidence(text: string, value: string, asset = ''): bo
       && normalizeDecimal(value) === words[0].value;
   }
   const numbers = [...remainder.matchAll(number)];
-  return numbers.length > 0 && numbers.every(match => match[0] === value);
+  // An explicit self-correction or a bare amount reply on its own line names its own number;
+  // otherwise each number must sit next to the asset.
+  const bareLine = (match: RegExpMatchArray) => {
+    const end = match.index! + match[0].length;
+    const line = remainder.slice(remainder.lastIndexOf('\n', match.index! - 1) + 1, remainder.indexOf('\n', end) === -1 ? undefined : remainder.indexOf('\n', end));
+    return /^\s*\d+(?:\.\d+)?\s*(?:개)?\s*[.!]?\s*$/u.test(line);
+  };
+  const grounded = (match: RegExpMatchArray) => match[0] === value
+    && (!asset || text !== original || bareLine(match)
+      || paired(remainder, { start: match.index!, end: match.index! + match[0].length, value, mixed: false }, asset));
+  return numbers.length > 0 && numbers.every(grounded);
 }
 
 export function pairedDecimalAmount(text: string, asset: string): string | undefined {
-  if (signedAmount.test(text)) return undefined;
+  if (signedAmount.test(text) || unsupportedWording(text, asset)) return undefined;
   const amounts = wordAmounts(text);
   const remainder = withoutMixedNumbers(text, amounts);
   if (hasShare(remainder)) return undefined;
