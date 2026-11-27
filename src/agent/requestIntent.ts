@@ -570,7 +570,8 @@ export async function selectLookupTools(
   llm: LLM,
   query: string,
   tools: readonly { name: string; description: string }[],
-  options: { signal?: AbortSignal; contextTokens: number },
+  options: { signal?: AbortSignal; contextTokens: number;
+    diagnostics?: { selection?: 'catalog_empty' | 'selection_empty' | 'fit_rejected' | 'selected' } },
 ): Promise<LookupToolSelection> {
   const names = new Set(tools.map(tool => tool.name));
   const schema = z.strictObject({
@@ -582,9 +583,13 @@ export async function selectLookupTools(
     system: SELECTOR_PROMPT,
   }, schema, { signal: options.signal, contextTokens: options.contextTokens }, invalidSelection);
   if (result.aborted) return result;
-  if (!result.value.toolNames.length) return { aborted: false, toolNames: [], metrics: result.metrics, warnings: result.warnings };
+  if (!result.value.toolNames.length) {
+    if (options.diagnostics && tools.length) options.diagnostics.selection = 'selection_empty';
+    return { aborted: false, toolNames: [], metrics: result.metrics, warnings: result.warnings };
+  }
   const fit = await verifyLookupTools(llm, query, result.value.toolNames.map(name => tools.find(tool => tool.name === name)!), options);
   if (fit.aborted) return fit;
+  if (options.diagnostics) options.diagnostics.selection = fit.toolNames.length ? 'selected' : 'fit_rejected';
   return { aborted: false, toolNames: fit.toolNames,
     metrics: { ...result.metrics, totalMs: result.metrics.totalMs + fit.metrics.totalMs,
       outputTokens: result.metrics.outputTokens !== undefined && fit.metrics.outputTokens !== undefined

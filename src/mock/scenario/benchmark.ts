@@ -1,5 +1,6 @@
 // Runs scenarios or one prompt many times. Scenario verdicts check prepared transactions, calls,
 // and responses. Portable across app and CLI runners.
+import type { TurnDiagnostic } from '../../agent';
 import { checkScenarioRun, describeSummaries, explainNothing, judgeToolCalling, type ToolCalling, type Verdict } from './check';
 import type { ScenarioRunner } from './runner';
 import type { Scenario } from './scenarios';
@@ -38,6 +39,9 @@ export type BenchmarkReport = {
   outsideModelMs?: number;
   /** Scenarios only: how often the right tool was chosen, and its arguments filled right. */
   toolCalling?: { tool: Rate; args: Rate };
+  /** Observed turns, including follow-ups and failures; no tool names or arguments are retained. */
+  diagnostics?: { turns: number; toolCalls: number; toolErrors: number;
+    outcomes: { text: string; count: number }[]; noToolCalls: { text: string; count: number }[] };
 };
 
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
@@ -176,6 +180,18 @@ export async function runBenchmark({
   const reasons = items.map(() => new Map<string, number>());
   const outcomes = new Map<string, number>();
   const errors = new Map<string, number>();
+  const diagnosticOutcomes = new Map<string, number>();
+  const noToolCalls = new Map<string, number>();
+  let diagnosticTurns = 0;
+  let diagnosticCalls = 0;
+  let diagnosticErrors = 0;
+  const onDiagnostic = (diagnostic: TurnDiagnostic) => {
+    diagnosticTurns++;
+    diagnosticCalls += diagnostic.toolCalls;
+    diagnosticErrors += diagnostic.toolErrors;
+    bump(diagnosticOutcomes, diagnostic.outcome);
+    if (diagnostic.toolCalls === 0) bump(noToolCalls, diagnostic.outcome);
+  };
   let aborted = false;
   let roundPassed = 0;
 
@@ -188,7 +204,7 @@ export async function runBenchmark({
       const record: RunRecord = { ms: 0 };
       try {
         // A follow-up replays its earlier turns first; the verdict is on the last turn, the time on all.
-        const runOptions = { signal, account: !scenario?.noAccount };
+        const runOptions = { signal, account: !scenario?.noAccount, onDiagnostic };
         const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], runOptions) : [await runner.ask(prompt, runOptions)];
         if (signal?.aborted) { aborted = true; break rounds; }
         const result = turns[turns.length - 1];
@@ -277,6 +293,8 @@ export async function runBenchmark({
     errors: ranked(errors).map(({ text, count }) => ({ code: text, count })),
     timing: { meanMs: mean(times), p50Ms: percentile(sorted, 50), p95Ms: percentile(sorted, 95), maxMs: sorted.at(-1) ?? 0 },
     ...(times.length >= 4 && { halves: { firstMs: mean(times.slice(0, half)), secondMs: mean(times.slice(times.length - half)) } }),
+    ...(diagnosticTurns > 0 && { diagnostics: { turns: diagnosticTurns, toolCalls: diagnosticCalls, toolErrors: diagnosticErrors,
+      outcomes: ranked(diagnosticOutcomes), noToolCalls: ranked(noToolCalls) } }),
     ...(toolCalling && { toolCalling }),
     ...summarizeStages(records),
   };
@@ -319,6 +337,15 @@ export function formatReport(report: BenchmarkReport): string[] {
       );
     }
     if (report.outsideModelMs !== undefined) lines.push(`outside the model: mean ${seconds(report.outsideModelMs)} per run`);
+  }
+  if (report.diagnostics) {
+    const { turns, toolCalls, toolErrors, outcomes, noToolCalls } = report.diagnostics;
+    lines.push('', '-- turn diagnostics --', `turns ${turns}, tool-call events ${toolCalls}, tool errors ${toolErrors}`);
+    for (const outcome of outcomes) lines.push(`${outcome.count}x ${outcome.text}`);
+    if (noToolCalls.length) {
+      lines.push('no tool-call events:');
+      for (const outcome of noToolCalls) lines.push(`  ${outcome.count}x ${outcome.text}`);
+    }
   }
 
   if (report.target === 'scenarios') {

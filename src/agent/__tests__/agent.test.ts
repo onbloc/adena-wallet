@@ -4,7 +4,7 @@ import { Harness, type Budget, type HarnessRun } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp, type FakeOnblocTool } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { canRememberTurn, createChatSession, LLMFromModel, type GenerateEvent, type LLM } from '../../llm/core';
-import { AIAgent } from '../agent';
+import { AIAgent, type TurnDiagnostic } from '../agent';
 import type { BalanceRequest } from '../balanceOperation';
 import type { PreparationProposal, RequestIntent } from '../requestIntent';
 import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet, type FakeWalletOptions } from '../testing/fakeWallet';
@@ -62,6 +62,116 @@ function setup(steps: Step[], { intent = native, selection, fit = true, fallback
 }
 
 describe('integrated request execution', () => {
+  it.each([
+    { prompt: 'What is the current height?', remote: false, selection: [], expected: 'catalog_empty' },
+    { prompt: '지금 블록 높이 알려줘', remote: true, selection: [], expected: 'selection_empty' },
+    { prompt: 'Show my approvals.', remote: true, selection: ['list_account_transactions'], expected: 'fit_rejected' },
+  ] as const)('reports why a lookup made no calls without exposing its input: $expected', async ({ prompt, remote, selection, expected }) => {
+    const diagnostics: TurnDiagnostic[] = [];
+    const { agent, mcp } = setup([], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'Read the requested fact.' }] },
+      selection: [...selection], fit: false, remote, withWallet: false,
+    });
+    const events = await collect(agent.run({ prompt }, { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
+    expect(mcp.calls).toEqual([]);
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(diagnostics).toHaveLength(1);
+    expect(diagnostics[0]).toMatchObject({ route: 'lookup', outcome: expected, selection: expected,
+      selectedTools: 0, toolCalls: 0, invalidToolCalls: 0, toolErrors: 0,
+      catalogTools: expect.any(Number), selectionMs: expect.any(Number), totalMs: expect.any(Number) });
+    expect(JSON.stringify(diagnostics)).not.toContain(prompt);
+    expect(JSON.stringify(diagnostics)).not.toContain(ACCOUNT);
+    expect(JSON.stringify(diagnostics)).not.toContain('list_account_transactions');
+  });
+  it('reports an incomplete lookup separately from a rejected selection', async () => {
+    const diagnostics: TurnDiagnostic[] = [];
+    const { agent, mcp } = setup([answer('I cannot call the tool.')], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] },
+      selection: ['list_account_transactions'],
+    });
+    const events = await collect(agent.run({ prompt: 'List my recent transactions.' },
+      { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
+    expect(mcp.calls).toEqual([]);
+    expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(diagnostics).toEqual([expect.objectContaining({ route: 'lookup', outcome: 'evidence_incomplete', selection: 'selected', toolCalls: 0 })]);
+  });
+  it('reports an unsuccessful tool result without recording its contents', async () => {
+    const diagnostics: TurnDiagnostic[] = [];
+    const { agent } = setup([], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List my NFTs.' }] },
+      selection: ['get_nfts_balance'], tools: [{ name: 'get_nfts_balance', isError: true, content: [{ type: 'text', text: 'private error' }] }],
+    });
+    await collect(agent.run({ prompt: 'List my NFTs.' }, { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
+    expect(diagnostics).toEqual([expect.objectContaining({ route: 'lookup', outcome: 'tool_error', toolCalls: 1, toolErrors: 1 })]);
+    expect(JSON.stringify(diagnostics)).not.toContain('private error');
+  });
+  it('reports cancellation and propagated classification errors without exposing error text', async () => {
+    const diagnostics: TurnDiagnostic[] = [];
+    const cancelled = setup([]);
+    await collect(cancelled.agent.run({ prompt: 'Read data.' }, {
+      account: ACCOUNT, signal: AbortSignal.abort(), onDiagnostic: diagnostic => { diagnostics.push(diagnostic); },
+    }));
+    const invalid = setup([], { classificationText: 'not JSON' });
+    await expect(collect(invalid.agent.run({ prompt: 'Read data.' },
+      { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }))).rejects.toThrow('AGENT_INTENT_INVALID');
+    expect(diagnostics).toEqual([
+      expect.objectContaining({ route: 'unknown', outcome: 'cancelled', toolCalls: 0 }),
+      expect.objectContaining({ route: 'unknown', outcome: 'error', toolCalls: 0 }),
+    ]);
+    expect(JSON.stringify(diagnostics)).not.toContain('not JSON');
+  });
+  it('reports a selector cancellation even when the host signal was not aborted', async () => {
+    const diagnostics: TurnDiagnostic[] = [];
+    const { llm: delegate, harness } = setup([], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List my recent transactions.' }] },
+    });
+    const llm: LLM = {
+      kind: delegate.kind, contextTokens: delegate.contextTokens,
+      async *generate(settings, options) {
+        if (settings.system?.startsWith('Select the exact necessary read-only tools')) {
+          yield { type: 'done', aborted: true, warnings: [], messages: [], metrics: { totalMs: 1, ttftMs: null } };
+        } else yield* delegate.generate(settings, options);
+      },
+    };
+    const agent = new AIAgent({ llm, harness });
+    await collect(agent.run({ prompt: 'List my recent transactions.' },
+      { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
+    expect(diagnostics).toEqual([expect.objectContaining({ route: 'lookup', outcome: 'cancelled', toolCalls: 0 })]);
+  });
+  it.each(['throw', 'reject'] as const)('keeps the result when the diagnostic observer fails: %s', async failure => {
+    const control = setup([]);
+    const observed = setup([]);
+    const expected = await collect(control.agent.run({ prompt: 'My GNOT balance?' }, { account: ACCOUNT }));
+    const actual = await collect(observed.agent.run({ prompt: 'My GNOT balance?' }, {
+      account: ACCOUNT,
+      onDiagnostic: () => {
+        if (failure === 'throw') throw new Error('Observer failed');
+        return Promise.reject(new Error('Observer rejected'));
+      },
+    }));
+    expect(textOf(actual)).toBe(textOf(expected));
+    expect(doneOf(actual)?.verifiedAnswer).toBe(doneOf(expected)?.verifiedAnswer);
+    expect(observed.mcp.calls).toEqual(control.mcp.calls);
+  });
+  it('reports a visible budget denial separately from incomplete evidence', async () => {
+    const diagnostics: TurnDiagnostic[] = [];
+    const { agent } = setup([
+      call('get_nfts_balance'), call('list_account_transactions', { limit: 5 }), answer('The lookup stopped.'),
+    ], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List my NFTs and recent transactions.' }] },
+      selection: ['get_nfts_balance', 'list_account_transactions'], budget: { maxToolCalls: 1 },
+      tools: [
+        { name: 'get_nfts_balance', output: { address: ACCOUNT, items: [] } },
+        { name: 'list_account_transactions', output: { address: ACCOUNT, items: [] } },
+      ],
+    });
+    const events = await collect(agent.run({ prompt: 'List my NFTs and recent transactions.' },
+      { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
+    expect(events).toContainEqual(expect.objectContaining({
+      type: 'tool-result', output: expect.objectContaining({ kind: 'denied', code: 'BUDGET_EXHAUSTED' }),
+    }));
+    expect(diagnostics).toEqual([expect.objectContaining({ route: 'lookup', outcome: 'budget_exhausted', selection: 'selected' })]);
+  });
   it.each([
     ['Send 1 MYST to carol.', 'MYST', 'unknown_token'],
     ['carol에게 MYST 1개 보내줘', 'MYST', 'unknown_token'],
@@ -221,10 +331,13 @@ describe('integrated request execution', () => {
       call('list_account_transactions', { limit: 5 }, 'corrected'),
     ], { intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] },
       selection: ['list_account_transactions'] });
-    const events = await collect(agent.run({ prompt: 'List my recent transactions.' }, { account: ACCOUNT }));
+    const diagnostics: TurnDiagnostic[] = [];
+    const events = await collect(agent.run({ prompt: 'List my recent transactions.' },
+      { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
     expect(mcp.calls).toEqual([{ name: 'list_account_transactions', arguments: { address: ACCOUNT, limit: 5 } }]);
     expect(textOf(events)).toContain('tx-123');
     expect(doneOf(events)?.verifiedAnswer).toBe(true);
+    expect(diagnostics).toEqual([expect.objectContaining({ outcome: 'complete', selection: 'selected', toolErrors: 1 })]);
     expect(agent.turns[0].answer).toContain('list_account_transactions result omitted from history.');
     expect(agent.turns[0].answer).not.toContain('tx-123');
   });
@@ -320,10 +433,13 @@ describe('integrated request execution', () => {
   });
   it('does not commit the available part when another requested capability is unavailable', async () => {
     const { agent } = setup([], { intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNOT') }, { target: 'other', query: 'List sessions.' }] }, selection: [] });
-    const events = await collect(agent.run({ prompt: 'Balance and sessions.' }, { account: ACCOUNT }));
+    const diagnostics: TurnDiagnostic[] = [];
+    const events = await collect(agent.run({ prompt: 'Balance and sessions.' },
+      { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
     expect(textOf(events)).toContain('42 GNOT');
     expect(agent.turns).toEqual([]);
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
+    expect(diagnostics).toEqual([expect.objectContaining({ outcome: 'selection_empty', selection: 'selection_empty', toolCalls: 1 })]);
   });
   it('uses the classified self-contained query for selection', async () => {
     const { agent, model } = setup([], {
@@ -964,13 +1080,15 @@ describe('indexed source evidence', () => {
     const { agent, mcp } = setup([], { withWallet: false, intent, selection: [], fallbackFit: true, tools: [info,
       { name: 'get_realm_source', output: { path, filename: 'vault.gno', content: `package vault\n// Deposit adds funds.\n${signature} { return amount }` } },
     ] });
-    const events = await collect(agent.run({ prompt }, { account: ACCOUNT }));
+    const diagnostics: TurnDiagnostic[] = [];
+    const events = await collect(agent.run({ prompt }, { account: ACCOUNT, onDiagnostic: diagnostic => { diagnostics.push(diagnostic); } }));
     expect(mcp.calls).toEqual([
       { name: 'get_realm_info', arguments: { path } },
       { name: 'get_realm_source', arguments: { path, filename: 'vault.gno' } },
     ]);
     expect(textOf(events)).toContain('return amount');
     expect(doneOf(events)?.verifiedAnswer).toBe(true);
+    expect(diagnostics).toEqual([expect.objectContaining({ outcome: 'complete', selection: 'selected', selectedTools: 2 })]);
   });
   it('uses the indexed file for another realm and a lowercase function', async () => {
     const otherPath = 'gno.land/r/example/registry';

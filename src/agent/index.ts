@@ -1,6 +1,6 @@
 // Public API of agent: an LLM, a harness and a wallet wired into one assistant.
 export { AIAgent } from './agent';
-export type { AIAgentOptions, AgentRunOptions, AgentSettings } from './agent';
+export type { AIAgentOptions, AgentRunOptions, AgentSettings, TurnDiagnostic } from './agent';
 export { AgentError } from './errors';
 export type { AgentErrorCode } from './errors';
 export { formatBalance } from './balanceOperation';

@@ -105,6 +105,44 @@ function sameHistory(left: ChatSession['turns'], right: ChatSession['turns']): b
   return left === right || (left.length === right.length && left.every((turn, index) => turn === right[index]));
 }
 
+/** Privacy-preserving summary of one accepted turn; no prompt, account, arguments, tool names or errors are included. */
+export type TurnDiagnostic = Readonly<{
+  route: RequestIntent['kind'] | 'unknown';
+  /** A completed lookup is verified; other routes report terminal completion, not task success. */
+  outcome: 'complete' | 'catalog_empty' | 'selection_empty' | 'fit_rejected' | 'tool_error'
+    | 'evidence_incomplete' | 'cancelled' | 'timeout' | 'budget_exhausted' | 'step_unavailable' | 'error' | 'interrupted';
+  /** Applies only to an "other" lookup; an empty selection can coexist with structured balance calls. */
+  selection?: 'catalog_empty' | 'selection_empty' | 'fit_rejected' | 'selected';
+  catalogTools?: number;
+  selectedTools?: number;
+  /** The existing model-reported selection and fit time, when available. */
+  selectionMs?: number;
+  /** Public tool-call events, including invalid and synthetic calls, not provider dispatches. */
+  toolCalls: number;
+  /** Invalid tool-call events (also included in toolCalls). */
+  invalidToolCalls: number;
+  /** Tool-error events plus denied or error-status tool-result events; retries may be counted separately. */
+  toolErrors: number;
+  /** Wall time after turn validation, including time the consumer takes between events. */
+  totalMs: number;
+}>;
+
+type TurnDiagnosticState = {
+  route: TurnDiagnostic['route'];
+  selection?: TurnDiagnostic['selection'];
+  catalogTools?: number;
+  selectedTools?: number;
+  selectionMs?: number;
+  toolCalls: number;
+  invalidToolCalls: number;
+  toolErrors: number;
+  verified?: boolean;
+  aborted?: boolean;
+  timedOut?: boolean;
+  budgetDenied?: boolean;
+  failure?: 'cancelled' | 'budget_exhausted' | 'step_unavailable' | 'error';
+};
+
 export type AgentRunOptions = {
   account?: string;
   signal?: AbortSignal;
@@ -112,6 +150,8 @@ export type AgentRunOptions = {
   /** Host permission, independent of the model's classification. Defaults to false. */
   allowTransactionPreparation?: boolean;
   onContextCompacted?: (droppedTurns: number) => void;
+  /** Called once after an accepted turn finishes, fails, or is closed; observer failures are ignored. */
+  onDiagnostic?: (diagnostic: TurnDiagnostic) => void | Promise<void>;
 };
 /** What one turn needs from the host: the prompt, and how the model should answer it. */
 export type AgentSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { prompt: string };
@@ -126,6 +166,7 @@ type RunOptions = AgentRunOptions & {
   /** Host-owned, one-turn state from a prior SDK ambiguity; never derived from model text. */
   pendingPreparation?: PendingPreparation;
   onAmbiguousPreparation?: (pending: PendingPreparation) => void;
+  diagnostics?: TurnDiagnosticState;
 };
 type AccountRunOptions = RunOptions & { account: string };
 type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
@@ -367,6 +408,9 @@ export class AIAgent {
     let answer = '';
     let calls: CallRecord[] = [];
     let completed = false;
+    const diagnostics: TurnDiagnosticState | undefined = options.onDiagnostic
+      ? { route: 'unknown', toolCalls: 0, invalidToolCalls: 0, toolErrors: 0 } : undefined;
+    const diagnosticStarted = diagnostics ? Date.now() : 0;
     let history = this.session.turns;
     const saved = this.continuation;
     const continuation = saved && saved.account === options.account && sameHistory(saved.history, history) ? saved : undefined;
@@ -381,6 +425,7 @@ export class AIAgent {
         signal: controller.signal,
         contextTokens,
         budget,
+        diagnostics,
         pendingPreparation: options.allowTransactionPreparation ? preparation : undefined,
         onAmbiguousPreparation: (pending) => { nextPreparation = pending; },
         pendingClarification: options.allowTransactionPreparation ? continuation?.clarification : undefined,
@@ -399,6 +444,24 @@ export class AIAgent {
         },
       });
       for await (const event of events) {
+        if (diagnostics) {
+          if (event.type === GenerateEventType.ToolCall) {
+            diagnostics.toolCalls++;
+            if (event.invalid) diagnostics.invalidToolCalls++;
+          } else if (event.type === GenerateEventType.ToolError) diagnostics.toolErrors++;
+          else if (event.type === GenerateEventType.ToolResult && typeof event.output === 'object' && event.output !== null) {
+            const output = event.output;
+            if ('kind' in output && output.kind === 'denied') {
+              diagnostics.toolErrors++;
+              if ('code' in output && output.code === 'BUDGET_EXHAUSTED') diagnostics.budgetDenied = true;
+            } else if ('kind' in output && output.kind === 'result' && 'value' in output
+              && typeof output.value === 'object' && output.value !== null
+              && 'status' in output.value && output.value.status === 'error') diagnostics.toolErrors++;
+          } else if (event.type === GenerateEventType.Done) {
+            if (event.aborted) diagnostics.aborted = true;
+            diagnostics.verified = event.verifiedAnswer === true;
+          }
+        }
         if (event.type === GenerateEventType.Text) answer += event.delta;
         else if (event.type === GenerateEventType.ToolCall || event.type === GenerateEventType.ToolResult || event.type === GenerateEventType.ToolError) {
           calls = applyToolEvent(calls, event);
@@ -423,11 +486,39 @@ export class AIAgent {
         }
         yield event;
       }
+    } catch (error) {
+      if (diagnostics) diagnostics.failure = isAgentError(error, 'AGENT_RUN_CANCELLED') ? 'cancelled'
+        : isAgentError(error, 'AGENT_CLOUD_BUDGET_EXHAUSTED') ? 'budget_exhausted'
+          : isAgentError(error, 'AGENT_RUN_CANNOT_START_STEP') ? 'step_unavailable' : 'error';
+      throw error;
     } finally {
+      const wasAborted = controller.signal.aborted;
       if (revision === this.revision && (controller.signal.aborted || !completed)) this.continuation = undefined;
       controller.abort();
       signal?.removeEventListener('abort', abort);
       if (this.active?.controller === controller) this.active = undefined;
+      if (diagnostics && options.onDiagnostic) {
+        const { route, selection, catalogTools, selectedTools, selectionMs, toolCalls, invalidToolCalls, toolErrors } = diagnostics;
+        const outcome: TurnDiagnostic['outcome'] = diagnostics.timedOut && !signal?.aborted ? 'timeout'
+          : wasAborted || diagnostics.aborted || diagnostics.failure === 'cancelled' ? 'cancelled'
+            : diagnostics.failure ?? (!completed ? 'interrupted'
+              : route === 'lookup' && !diagnostics.verified
+                ? diagnostics.budgetDenied ? 'budget_exhausted'
+                  : toolErrors || invalidToolCalls ? 'tool_error'
+                    : selection && selection !== 'selected' ? selection : 'evidence_incomplete'
+                : diagnostics.budgetDenied ? 'budget_exhausted'
+                  : !diagnostics.verified && (toolErrors || invalidToolCalls) ? 'tool_error' : 'complete');
+        const diagnostic: TurnDiagnostic = { route, outcome, toolCalls, invalidToolCalls, toolErrors,
+          totalMs: Date.now() - diagnosticStarted,
+          ...(selection === undefined ? {} : { selection }),
+          ...(catalogTools === undefined ? {} : { catalogTools }),
+          ...(selectedTools === undefined ? {} : { selectedTools }),
+          ...(selectionMs === undefined ? {} : { selectionMs }) };
+        try {
+          const result = options.onDiagnostic(diagnostic);
+          if (result) void Promise.resolve(result).catch(() => {});
+        } catch { /* Diagnostics must not change the turn. */ }
+      }
     }
   }
 
@@ -435,13 +526,17 @@ export class AIAgent {
   private async *execute(settings: GenerateSettings, {
     account, signal, contextTokens, budget, onContextCompacted, allowTransactionPreparation = false,
     pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent,
-    pendingPreparation, onAmbiguousPreparation,
+    pendingPreparation, onAmbiguousPreparation, diagnostics,
   }: RunOptions): AsyncGenerator<GenerateEvent> {
     const started = Date.now();
     const controller = new AbortController();
     const abort = () => controller.abort(signal?.reason);
     let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; controller.abort(new Error('Wallet request timed out.')); }, budget.timeoutMs);
+    const timer = setTimeout(() => {
+      timedOut = true;
+      if (diagnostics) diagnostics.timedOut = true;
+      controller.abort(new Error('Wallet request timed out.'));
+    }, budget.timeoutMs);
     // A deadline stops the turn like a cancellation; the warning tells the host which one it was.
     const timeoutWarnings = () => timedOut && !signal?.aborted ? [`The request timed out after ${budget.timeoutMs} ms.`] : [];
     signal?.addEventListener('abort', abort, { once: true });
@@ -478,16 +573,18 @@ export class AIAgent {
           metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 }, warnings: [] as string[] }
         : await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted: compact });
       if (classified.aborted || controller.signal.aborted) {
+        if (diagnostics) diagnostics.aborted = true;
         yield { ...this.done(controller.signal), warnings: [...classified.warnings, ...timeoutWarnings()], metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
         return;
       }
       const options: RunOptions = activeOptions = { account, signal: controller.signal, contextTokens, budget, onContextCompacted: compact, allowTransactionPreparation,
         onAmbiguousPreparation, pendingPreparation: selected ? pendingPreparation : undefined,
-        pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent };
+        pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent, diagnostics };
       const { prompt: _prompt, ...answerSettings } = settings;
       // A short reply continues a clarification, unless the classifier read it as a new lookup.
       const intent = pendingClarification?.slot && classified.intent.kind !== 'lookup' && isClarificationReply(choice)
         ? { kind: 'prepare' as const } : classified.intent;
+      if (diagnostics) diagnostics.route = intent.kind;
       const events = this.answerRequest(intent, { ...answerSettings, messages: classified.messages }, options);
       for await (const event of events) {
         if (firstVisibleAt === undefined && (event.type === 'text' || event.type === 'reasoning' || event.type === 'tool-call')) firstVisibleAt = Date.now();
@@ -804,21 +901,39 @@ export class AIAgent {
       const hidden = new Set([...onblocBalanceAdapter.toolNames, ...this.balanceAdapter.toolNames]);
       const catalog = run.tools.filter(tool => !hidden.has(tool.name));
       const query = other?.query;
-      let selection = query ? await selectLookupTools(this.llm, query, catalog, { signal: run.signal, contextTokens: options.contextTokens }) : undefined;
-      if (selection?.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: selection?.warnings ?? [] }; return; }
+      if (query && options.diagnostics) {
+        options.diagnostics.catalogTools = catalog.length;
+        if (!catalog.length) options.diagnostics.selection = 'catalog_empty';
+      }
+      let selection = query ? await selectLookupTools(this.llm, query, catalog,
+        { signal: run.signal, contextTokens: options.contextTokens, diagnostics: options.diagnostics }) : undefined;
+      if (selection?.aborted || run.signal.aborted) {
+        if (options.diagnostics) options.diagnostics.aborted = true;
+        yield { ...this.done(run.signal), warnings: selection?.warnings ?? [] };
+        return;
+      }
       const evidence = realmEvidence(this.userText(settings), run, query);
       let realmPath = query && catalog.some(tool => tool.name === 'get_realm_info') ? evidence.requestedPath() : undefined;
       if (realmPath && query && !selection?.toolNames.includes('get_realm_info') && catalog.some(tool => tool.name === 'get_realm_source')) {
         const names = new Set(['get_realm_info', 'get_realm_source', ...(selection?.toolNames ?? [])]);
         const fit = await verifyLookupTools(this.llm, query, catalog.filter(tool => names.has(tool.name)),
           { signal: run.signal, contextTokens: options.contextTokens });
-        if (fit.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: fit.warnings }; return; }
+        if (fit.aborted || run.signal.aborted) {
+          if (options.diagnostics) options.diagnostics.aborted = true;
+          yield { ...this.done(run.signal), warnings: fit.warnings };
+          return;
+        }
+        if (options.diagnostics) options.diagnostics.selection = fit.toolNames.length ? 'selected' : 'fit_rejected';
         const prior = selection;
         selection = { ...fit, metrics: { ...fit.metrics, totalMs: (prior?.metrics.totalMs ?? 0) + fit.metrics.totalMs,
           outputTokens: prior?.metrics.outputTokens !== undefined && fit.metrics.outputTokens !== undefined
             ? prior.metrics.outputTokens + fit.metrics.outputTokens : undefined },
           warnings: [...(prior?.warnings ?? []), ...fit.warnings] };
         if (!fit.toolNames.length) realmPath = undefined;
+      }
+      if (selection && !selection.aborted && options.diagnostics) {
+        options.diagnostics.selectedTools = selection.toolNames.length;
+        options.diagnostics.selectionMs = selection.metrics.totalMs;
       }
       const requiredReads = realmPath
         ? ['get_realm_info', ...(selection?.toolNames ?? []).filter(name => name !== 'get_realm_info' && name !== 'get_realm_source')]

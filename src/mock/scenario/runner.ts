@@ -1,6 +1,6 @@
 // Runs requests through a stateful agent over fixed Onbloc reads. The caller supplies the model
 // and wallet, so jest and the native benchmark share the same runner.
-import { AIAgent, type PreparedTransaction, type WalletSdk } from '../../agent';
+import { AIAgent, type PreparedTransaction, type TurnDiagnostic, type WalletSdk } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, type OnblocMcpConfig } from '../../harness/mcp';
 import { GenerateEventType, type LLM } from '../../llm/core';
@@ -21,6 +21,7 @@ export type ScenarioOptions = {
   signal?: AbortSignal;
   /** False: no wallet is linked, so the agent has no account. Defaults to true. */
   account?: boolean;
+  onDiagnostic?: (diagnostic: TurnDiagnostic) => void | Promise<void>;
 };
 
 export type ScenarioRunner = {
@@ -43,12 +44,12 @@ async function collectTurn(
   prompt: string,
   settings: ScenarioSettings,
   allowTransactionPreparation: boolean,
-  { signal, account = true }: ScenarioOptions
+  { signal, account = true, onDiagnostic }: ScenarioOptions
 ) {
   const start = transactions.length;
   const run: ScenarioRun = { prepared: [], calls: [], results: [], text: '', stages: [] };
   timing.take();
-  const runOptions = { account: account ? ACCOUNT : undefined, allowTransactionPreparation, signal };
+  const runOptions = { account: account ? ACCOUNT : undefined, allowTransactionPreparation, signal, onDiagnostic };
   for await (const event of agent.run({ prompt, ...settings }, runOptions)) {
     if (event.type === GenerateEventType.ToolCall) {
       run.calls.push({ name: event.name, input: event.input, invalid: Boolean(event.invalid) });

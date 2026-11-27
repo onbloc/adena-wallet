@@ -1,7 +1,9 @@
 import { TransactionType, type PreparedTransaction } from '../../../agent';
+import { fakeWallet } from '../../../agent/testing/fakeWallet';
+import type { LLM } from '../../../llm/core';
 import { formatReport, runBenchmark } from '../benchmark';
 import { ACCOUNT, CAROL, RECIPIENT } from '../fixture';
-import type { ScenarioRun, ScenarioRunner } from '../runner';
+import { createScenarioRunner, type ScenarioRun, type ScenarioRunner } from '../runner';
 import type { Scenario } from '../scenarios';
 import type { Stage } from '../timing';
 
@@ -46,6 +48,60 @@ const collect = () => {
   const lines: string[] = [];
   return { lines, onLog: (line: string) => { lines.push(line); } };
 };
+
+describe('turn diagnostic aggregation', () => {
+  it('collects lookup diagnostics through the real scenario runner', async () => {
+    const llm: LLM = {
+      kind: 'local', contextTokens: 8192,
+      async *generate(settings) {
+        const text = settings.system?.startsWith('Route every task')
+          ? JSON.stringify({ route: 'lookup', requests: [{ target: 'other', query: 'What is the current block height?' }] })
+          : '{"toolNames":[]}';
+        yield { type: 'text', delta: text };
+        yield { type: 'done', aborted: false, finishReason: 'stop', warnings: [], messages: [],
+          metrics: { totalMs: 1, ttftMs: 1, outputTokens: 1 } };
+      },
+    };
+    const wallet = fakeWallet();
+    const runner = createScenarioRunner({ llm, createWallet: () => wallet, allowTransactionPreparation: false });
+    const { onLog } = collect();
+    const report = await bench({ runner, target: { kind: 'prompt', prompt: '지금 블록 높이 알려줘' }, runs: 1, onLog });
+    expect(report.diagnostics).toMatchObject({ turns: 1, toolCalls: 0, toolErrors: 0,
+      outcomes: [{ text: 'selection_empty', count: 1 }], noToolCalls: [{ text: 'selection_empty', count: 1 }] });
+    expect(wallet.calls).toEqual([]);
+  });
+  it('counts no-call reasons and retains diagnostics from runs that throw', async () => {
+    let index = 0;
+    const diagnostics = [
+      { route: 'lookup', outcome: 'catalog_empty', toolCalls: 0, invalidToolCalls: 0, toolErrors: 0, totalMs: 5 },
+      { route: 'lookup', outcome: 'selection_empty', toolCalls: 0, invalidToolCalls: 0, toolErrors: 0, totalMs: 5 },
+      { route: 'lookup', outcome: 'fit_rejected', toolCalls: 0, invalidToolCalls: 0, toolErrors: 0, totalMs: 5 },
+      { route: 'lookup', outcome: 'error', toolCalls: 1, invalidToolCalls: 0, toolErrors: 1, totalMs: 5 },
+    ] as const;
+    const runner: ScenarioRunner = {
+      async ask(_prompt, options) {
+        const diagnostic = diagnostics[index++];
+        await options?.onDiagnostic?.(diagnostic);
+        if (diagnostic.outcome === 'error') throw new Error('provider failure');
+        return run();
+      },
+      async chat() { return []; },
+    };
+    const { onLog } = collect();
+    const report = await bench({ runner, target: { kind: 'prompt', prompt: 'A private prompt' }, runs: 4, onLog });
+    expect(report.diagnostics).toMatchObject({ turns: 4, toolCalls: 1, toolErrors: 1,
+      outcomes: expect.arrayContaining([
+        { text: 'catalog_empty', count: 1 }, { text: 'selection_empty', count: 1 },
+        { text: 'fit_rejected', count: 1 }, { text: 'error', count: 1 },
+      ]),
+      noToolCalls: expect.arrayContaining([
+        { text: 'catalog_empty', count: 1 }, { text: 'selection_empty', count: 1 }, { text: 'fit_rejected', count: 1 },
+      ]) });
+    expect(report.diagnostics?.noToolCalls).toHaveLength(3);
+    expect(JSON.stringify(report.diagnostics)).not.toContain('A private prompt');
+    expect(formatReport(report)).toContain('no tool-call events:');
+  });
+});
 
 describe('runBenchmark over scenarios', () => {
   it('runs round by round, so every scenario is spread over the whole benchmark', async () => {
