@@ -100,6 +100,9 @@ describe('amount evidence', () => {
     ['Send 5 of GNOT to carol', '5', 'GNOT'],
     ['Send GNOT to carol\n2', '2', 'GNOT'],
     ['Send 5 of the token at gno.land/r/x/y to carol', '5', 'gno.land/r/x/y'],
+    ['Allow carol to use up to 100 of my GNS', '100', 'GNS'],
+    ['carol이 GNS를 10개까지 쓸 수 있게 승인해줘', '10', 'GNS'],
+    ['안녕, 지금 carol한테 2 GNOT만 좀 보내줄 수 있을까?? 고마워!!', '2', 'GNOT'],
   ])('still grounds a quantity next to its asset: %s', (text, amount, asset) => {
     expect(exactAmountEvidence(text, amount, asset)).toBe(true);
   });

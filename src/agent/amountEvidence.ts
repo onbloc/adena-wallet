@@ -21,9 +21,9 @@ const unsupportedAmount = new RegExp([
   String.raw`(?<=\d)\s*(?:k|m|b|bn|mm|pct)(?![\p{L}\p{N}_])`,
   String.raw`(?<![\p{L}\p{N}_])(?:hundred|thousand|million|billion|trillion|dozen|point|percent|per\s*cent|dollars?|bucks?|usd|eur|euros?|krw|won|cents?|worth)(?![\p{L}\p{N}_])`,
 ].join('|'), 'iu');
-// The asset's own name (e.g. USD) is not fiat wording.
+// The asset's own name (e.g. USD) is not fiat wording. Mask it, so text around it never joins into a unit ("2 GNOT만").
 const unsupportedWording = (text: string, asset: string) =>
-  unsupportedAmount.test(asset ? text.replace(new RegExp(escapeRegex(asset), 'giu'), ' ') : text);
+  unsupportedAmount.test(asset ? text.replace(new RegExp(escapeRegex(asset), 'giu'), '\u2063') : text);
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const englishNumbers: Record<string, number> = {
@@ -63,8 +63,9 @@ function wordAmounts(text: string): WordAmount[] {
 function paired(text: string, amount: WordAmount, asset: string): boolean {
   if (!asset) return false;
   const escaped = escapeRegex(asset);
-  const before = new RegExp(`(?:^|[^\\p{L}\\p{N}_/.-])${escaped}\\s*$`, 'iu');
-  const after = new RegExp(`^\\s+(?:of\\s+(?:the\\s+token\\s+at\\s+)?)?${escaped}(?=$|[^\\p{L}\\p{N}_/]|\\p{Script=Hangul})`, 'iu');
+  // "GNS를 10개" (particle between asset and number) and "100 of my GNS" still name the asset.
+  const before = new RegExp(`(?:^|[^\\p{L}\\p{N}_/.-])${escaped}(?:을|를|은|는|이|가|의)?\\s*[:=]?\\s*$`, 'iu');
+  const after = new RegExp(`^\\s+(?:of\\s+(?:(?:the|my)\\s+)?(?:token\\s+at\\s+)?)?${escaped}(?=$|[^\\p{L}\\p{N}_/]|\\p{Script=Hangul})`, 'iu');
   return before.test(text.slice(0, amount.start)) || after.test(text.slice(amount.end));
 }
 
