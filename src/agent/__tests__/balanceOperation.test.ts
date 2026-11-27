@@ -89,6 +89,13 @@ describe('structured balance operations', () => {
     expect(result).toMatchObject({ status: 'partial', missing: ['tokens'], assets: [{ symbol: 'GNOT' }] });
   });
 
+  it('keeps valid tokens and flags the scope partial when one item is malformed', async () => {
+    const odd = { ...token, tokenId: 'gno.land/r/odd.GNS', symbol: '$GNS' };
+    const { result } = await query(server(tokens([odd, { ...token, tokenId: 'gno.land/r/ok.OK', symbol: 'OK' }])), all);
+    expect(result).toMatchObject({ status: 'partial', missing: ['tokens'] });
+    expect(result.assets.map(asset => asset.symbol)).toEqual(['GNOT', 'OK']);
+  });
+
   it('does not turn an unstructured balance claim into a verified balance', async () => {
     const { result, audit } = await query([
       { name: 'get_native_balance', content: [{ type: 'text', text: '100 GNOT' }] },
@@ -117,7 +124,7 @@ describe('structured balance operations', () => {
   it('rejects an account or chain different from the bound harness run before calling the adapter', async () => {
     const run = await new Harness().startRun({ account: ACCOUNT, chainId: GNO_MAINNET_CHAIN, operationId: 'scope-test', scope: 'read-only' });
     const read = jest.fn(async () => ({ assets: [], missing: [] }));
-    const adapter: BalanceAdapter = { toolNames: [], isAvailable: () => true, read };
+    const adapter: BalanceAdapter = { toolNames: [], read };
     try {
       await expect(getBalance(run, all, { account: 'another-account', chainId: GNO_MAINNET_CHAIN, adapter })).rejects.toThrow('Balance context does not match');
       await expect(getBalance(run, all, { account: ACCOUNT, chainId: 'another-chain', adapter })).rejects.toThrow('Balance context does not match');
@@ -139,7 +146,6 @@ describe('structured balance operations', () => {
     });
     const adapter: BalanceAdapter = {
       toolNames: ['custom_balance'],
-      isAvailable: tools => tools.some(tool => tool.name === 'custom_balance'),
       async read(run) {
         const value = await run.dispatch({ name: 'custom_balance', input: {} });
         if (value.kind !== 'result' || !value.value || typeof value.value !== 'object' ||

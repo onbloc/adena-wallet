@@ -4,7 +4,8 @@ type Operation = Exclude<PreparationProposal, { operation: 'clarification' }>['o
 
 const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const identifier = String.raw`[\p{L}\p{N}][\p{L}\p{N}._:/-]*`;
-const separator = String.raw`(?:,|&|\b(?:and|or)\b|이랑|랑|하고|와|과|및|또는|이나|나)`;
+const separator = String.raw`(?:,|&|\b(?:and|or|plus)\b|\bas\s+well\s+as\b|이랑|랑|하고|와|과|및|또는|이나|나)`;
+const recipientSeparator = String.raw`(?:,\s*(?:and|or)\b|,|&|\b(?:and|or|plus)\b|\bas\s+well\s+as\b)`;
 const quantity = String.raw`(?:\d+(?:\.\d+)?%?|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter|all)`;
 const assetWord = String.raw`[\p{L}][\p{L}\p{N}._:/-]*`;
 const assetItem = String.raw`(?:${quantity}\s*(?:of\s+(?:the\s+)?(?:token\s+at\s+)?)?${assetWord}|${assetWord}\s*${quantity}\s*(?:개|개씩)?)`;
@@ -44,7 +45,7 @@ function englishActions(text: string, proposal: Exclude<PreparationProposal, { o
       && /^(?:send|transfer|pay|remit)$/u.test(verb)
       && /^[\s.!?]*$/u.test(text.slice(match.index + match[0].length))
       && new RegExp(String.raw`^\s*${escapeRegex(proposal.recipient)}\s+${escapeRegex(proposal.amount.value)}\s+${escapeRegex(proposal.asset.value)}\s*$`, 'iu').test(before);
-    if (!/^(?:(?:hey|hi|okay|ok|well|please|kindly|just|now)\s*)*$/iu.test(clause)
+    if (!/^(?:(?:hey|hi|okay|ok|well|please|kindly|just|now|also|additionally|next)\s*)*$/iu.test(clause)
       && !/\b(?:(?:can|could|will|would)\s+you(?:\s+(?:please|kindly|just))?|you\s+to(?:\s+(?:please|kindly))?|let['’]s)\s*$/iu.test(clause)
       && !/^(?:(?:please|kindly|just)\s+)*(?:prepare|draft|create)(?:\s+an?)?$/iu.test(clause)
       && !trailingTransfer) continue;
@@ -58,7 +59,7 @@ function englishActions(text: string, proposal: Exclude<PreparationProposal, { o
 function koreanActions(text: string): Operation[] {
   const result: Operation[] = [];
   const expressions: [Operation, RegExp][] = [
-    ['transfer', /(?:보내\s*(?:줘|주세요|줄|라|세요|(?=$|[.!?]))|(?:송금|전송|이체)\s*(?:해|하(?:세요|여|라)|(?=$|[.!?])))/gu],
+    ['transfer', /(?:보내\s*(?:줘|주세요|주시겠|주실래|주실\s*수|줄|라|세요|요(?=$|[.!?])|자(?=$|[.!?])|(?=$|[.!?]))|(?:송금|전송|이체)\s*(?:해|하(?:세요|여|라)|(?=$|[.!?])))/gu],
     ['approve', /(?:(?:승인|허용)\s*(?:해|하(?:세요|여|라)|(?=$|[.!?]))|(?:쓸|사용할|쓰도록|사용하도록)\s*(?:수\s*(?:있게|있도록)\s*)?(?:해줘|해주세요|해줄|해\s*(?=$|[.!?])))/gu],
   ];
   for (const [operation, expression] of expressions) {
@@ -85,6 +86,11 @@ function negatesAction(text: string, operation: Operation): boolean {
     || /(?:안|못)\s*(?:승인|허용)|(?:승인|허용).{0,8}(?:지\s*(?:마|말|않)|하지\s*(?:마|말|않))/u.test(text);
 }
 
+// A later retraction or condition withdraws an otherwise explicit request.
+function retractsAction(text: string): boolean {
+  return /\bnever\s*mind\b|\bunless\b|\bactually,?\s*(?:don['’]?t|do\s+not|cancel|forget|stop)|\b(?:cancel|forget|scratch|ignore)\s+(?:that|it|this)\b/iu.test(text);
+}
+
 
 function coordinatedAssets(text: string, asset: string): boolean {
   if (coordinatedAmounts.test(text) || separatedAmounts.test(text)) return true;
@@ -99,8 +105,8 @@ function coordinatedAssets(text: string, asset: string): boolean {
 function coordinatedRecipients(text: string, recipient: string): boolean {
   const name = escapeRegex(recipient);
   const expressions = [
-    new RegExp(String.raw`(?<![\p{L}\p{N}_])${name}\s*(?:,|&|\b(?:and|or)\b)\s*(?:to\s+)?(${identifier})`, 'iu'),
-    new RegExp(String.raw`(?<![\p{L}\p{N}_])(${identifier})\s*(?:,|&|\b(?:and|or)\b)\s*(?:to\s+)?${name}(?![\p{L}\p{N}_])`, 'iu'),
+    new RegExp(String.raw`(?<![\p{L}\p{N}_])${name}\s*${recipientSeparator}\s*(?:to\s+)?(${identifier})`, 'iu'),
+    new RegExp(String.raw`(?<![\p{L}\p{N}_])(${identifier})\s*${recipientSeparator}\s*(?:to\s+)?${name}(?![\p{L}\p{N}_])`, 'iu'),
     new RegExp(String.raw`(?<![\p{L}\p{N}_])${name}(?:이랑|랑|하고|와|과)\s*(${identifier})(?:에게|한테|께|\s*(?:주소)?로)`, 'iu'),
     new RegExp(String.raw`(?<![\p{L}\p{N}_])(${identifier})(?:이랑|랑|하고|와|과)\s*${name}(?:에게|한테|께|\s*(?:주소)?로)`, 'iu'),
     new RegExp(String.raw`(?<![\p{L}\p{N}_])${name}(?:에게|한테|께)\s*(?:및|그리고|또는)\s*(${identifier})(?:에게|한테|께)`, 'iu'),
@@ -117,7 +123,7 @@ export function preparationEvidence(text: string, proposal: Exclude<PreparationP
   const request = withoutQuotations(text);
   if (asksAboutAction(request)) return 'action';
   const actions = [...englishActions(request, proposal), ...koreanActions(request)];
-  if (!actions.includes(proposal.operation) || negatesAction(request, proposal.operation)) return 'action';
+  if (!actions.includes(proposal.operation) || negatesAction(request, proposal.operation) || retractsAction(request)) return 'action';
   // Quoted identifiers can still name additional recipients/assets, even though quoted
   // instructions alone are never evidence that an action was requested.
   let identifiers = text.replace(/["'“”‘’`]/gu, '')

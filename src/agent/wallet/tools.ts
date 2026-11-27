@@ -4,6 +4,7 @@ import { fromBaseUnits } from './amount';
 import { ToolName, WalletErrorCode, WalletStatus } from './constants';
 import { WalletError, type Contact, type PreparedTransaction, type TransactionHandler, type WalletSdk } from './port';
 import type { WalletTool } from '../../harness/core';
+import { KOREAN_PARTICLE } from '../koreanParticle';
 
 // The adapter is the only code between the model and the wallet SDK. It calls
 // the SDK's public methods and hands the model small results: no keys, no raw
@@ -99,7 +100,7 @@ function mentions(text: string, value: string): boolean {
     const before = index === 0 ? '' : String.fromCodePoint(text.codePointAt(previousIndex)!);
     const afterIndex = index + needle.length;
     const after = afterIndex === text.length ? '' : String.fromCodePoint(text.codePointAt(afterIndex)!);
-    const suffix = /^(?:에게로|한테로|께서는|에게|한테|으로|께서|에서|부터|까지|은|는|이|가|을|를|에|로|와|과|께|도|만)(?![\p{L}\p{M}\p{N}_])/u.test(text.slice(afterIndex));
+    const suffix = KOREAN_PARTICLE.test(text.slice(afterIndex));
     if (!word.test(before) && (!word.test(after) || suffix)) return true;
   }
   return false;

@@ -132,7 +132,7 @@ describe('agent history', () => {
     session.complete('kept question', 'kept answer');
     const agent = new AIAgent({ llm, harness: new Harness({ toolSources: [source] }), session });
 
-    await expect(collect(agent.run({ prompt: 'x'.repeat(16_385) }))).rejects.toThrow(RangeError);
+    await expect(collect(agent.run({ prompt: 'x'.repeat(16_385) }))).rejects.toMatchObject({ code: 'AGENT_PROMPT_LIMIT' });
 
     expect(model.doGenerateCalls).toEqual([]);
     expect(source).not.toHaveBeenCalled();

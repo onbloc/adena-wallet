@@ -211,7 +211,12 @@ through their `index.ts`.
 a question in the middle of a chat can read the wallet or prepare a transaction. `turns` exposes
 the retained turns, `serialize()` saves a snapshot, `reset()` aborts the active turn and clears
 the history, and `new AIAgent({ ..., session: createChatSession(saved) })` continues a saved
-conversation. Concurrent turns on one agent are rejected.
+conversation. Concurrent turns on one agent are rejected with `AGENT_TURN_ACTIVE`; a turn whose
+generator was abandoned instead of drained frees the agent once its deadline has passed.
+A turn stopped by `budget.timeoutMs` ends with `aborted: true` and a timeout warning, which tells
+it apart from a cancellation. Failures of the agent itself are `AgentError`s: branch on `error.code`
+(`AGENT_TURN_ACTIVE`, `AGENT_ACCOUNT_REQUIRED`, `AGENT_PROMPT_LIMIT`, `AGENT_CONTEXT_LIMIT`, ...), not
+on the message. Fixed replies follow the user's language (Korean when the text has Hangul).
 
 Reuse the same agent while its model, wallet and scope are unchanged. `clearPending()` aborts an
 active turn and forgets volatile clarification, token-choice and balance-reference state without
@@ -258,7 +263,8 @@ never repeated: remembering a transfer is not permission to prepare it again, an
 objects and signing authority are never restored. A prior balance answer is conversation context,
 not proof of the current balance. Balance amounts are formatted by code even when NFT or other
 reads succeed in the same run; those extra reads must not cause a raw base-unit model summary to
-replace the formatted balances.
+replace the formatted balances. The user sees raw read results, but the remembered answer replaces
+each with `<tool> result omitted from history.`, so untrusted tool data is never replayed to the model.
 
 The app restores chats separately for each endpoint, chain and account; switching scopes
 aborts the old turn and clears pending choices. Keep the same separation when using `saved`

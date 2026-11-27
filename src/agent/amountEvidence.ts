@@ -1,7 +1,8 @@
 // Parse only explicit, lossless amount evidence. Ambiguous or unsupported wording fails closed.
 import { normalizeDecimal } from './wallet/amount';
 
-const signedAmount = /(?:\b(?:minus|negative|plus)\s+|(?:마이너스|음수)\s*|(?<![\p{L}\p{N}_])[-+−]\s*)(?:\d|[a-z]+|[가-힣]+)/iu;
+// A spaced dash before an ordinary word (e.g. " - thanks") is punctuation, not a sign.
+const signedAmount = /(?:\b(?:minus|negative|plus)\s+|(?:마이너스|음수)\s*)(?:\d|[a-z]+|[가-힣]+)|(?<![\p{L}\p{N}_])(?:[-+−]\s*\d|[-+−](?:[a-z]+|[가-힣]+)|[-+−]\s+(?:(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter|third|all)\b|(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉|열)(?![가-힣])))/iu;
 const number = /(?<![\p{L}\p{N}_./+-])\d+(?:\.\d+)?(?=$|[^\p{L}\p{N}_./%]|\p{Script=Hangul})/gu;
 const ratio = /(?<![\p{L}\p{N}_./-])(\d{1,78})\s*\/\s*(\d{1,78})(?![\p{L}\p{N}_./-])/gu;
 const koreanRatio = /(?<![\p{L}\p{N}_./+-])(\d{1,78})\s*분의\s*(\d{1,78})(?=$|[^\p{L}\p{N}_./%]|\p{Script=Hangul})/gu;

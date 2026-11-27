@@ -44,6 +44,9 @@ describe('transaction preparation authorization', () => {
     ['carol이 GNOT 1개 쓰게 승인해주지 마', plan('approve')],
     ["Don't send 1 GNOT to carol.", plan('transfer')],
     ['carol에게 1 GNOT 보내지 마', plan('transfer')],
+    ["Send 5 GNOT to carol. Actually, don't.", plan('transfer', FRIEND.alias, 'GNOT', '5')],
+    ['Send 5 GNOT to carol. Never mind.', plan('transfer', FRIEND.alias, 'GNOT', '5')],
+    ['Send 5 GNOT to carol unless bob says no', plan('transfer', FRIEND.alias, 'GNOT', '5')],
   ] as const)('prepares nothing for advice, information, quotations or prohibitions: %s', async (prompt, proposal) => {
     const { events, wallet, prepared } = await run(prompt, proposal);
     expect(wallet.calls).toEqual([]);
@@ -84,6 +87,10 @@ describe('transaction preparation authorization', () => {
     ['Send 1 GNOT to carol and approve carol to spend 1 GNOT.', plan('transfer')],
     ['Send 1 GNOT to carol and approve carol to spend 1 GNOT.', plan('approve')],
     ['Send 1 GNOT to carol and send 1 GNOT to carol again.', plan('transfer')],
+    ['Send 5 GNOT to carol. Also send 5 GNOT to bob.', plan('transfer', FRIEND.alias, 'GNOT', '5')],
+    ['Send 5 GNOT to carol, and to bob', plan('transfer', FRIEND.alias, 'GNOT', '5')],
+    ['Send 5 GNOT to carol as well as bob', plan('transfer', FRIEND.alias, 'GNOT', '5')],
+    ['Send 5 GNOT to carol plus bob', plan('transfer', FRIEND.alias, 'GNOT', '5')],
   ] as const)('does not select only one part of a multi-action request: %s', async (prompt, proposal) => {
     const { events, wallet, prepared } = await run(prompt, proposal);
     expect(wallet.calls).toEqual([]);
@@ -115,6 +122,10 @@ describe('transaction preparation authorization', () => {
     ['Send 1 GNOT to carol, but do not approve spending.', plan('transfer'), 'transfer'],
     ['Approve carol to spend 1 GNOT, but do not transfer it.', plan('approve'), 'approve'],
     ['carol에게 1 GNOT 보내줄 수 있어?', plan('transfer'), 'transfer'],
+    ['carol에게 1 GNOT 보내주시겠어요?', plan('transfer'), 'transfer'],
+    ['carol에게 1 GNOT 보내 주실래요', plan('transfer'), 'transfer'],
+    ['carol에게 1 GNOT 보내요', plan('transfer'), 'transfer'],
+    ['carol에게 1 GNOT 보내자', plan('transfer'), 'transfer'],
     ['carol이 GNOT 1개를 쓸 수 있게 해줘', plan('approve'), 'approve'],
   ] as const)('accepts an explicit single request without conflating politeness or a negative alternative: %s', async (prompt, proposal, method) => {
     const { wallet, prepared } = await run(prompt, proposal);

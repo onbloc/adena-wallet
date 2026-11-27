@@ -92,6 +92,7 @@ describe('amount evidence', () => {
   });
 
   it.each([
+    ['Send 5 GNOT to Mina - thanks', '5', 'GNOT'],
     ['Send 5 USDC to carol', '5', 'USDC'],
     ['Send 5 USD to carol', '5', 'USD'],
     ['Send GNOT 5 to carol', '5', 'GNOT'],

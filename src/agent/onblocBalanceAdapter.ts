@@ -18,7 +18,7 @@ const entry = z.object({
   amount: units,
   decimals: z.number().int().min(0).max(255),
 }).refine(item => item.packagePath !== undefined || item.tokenId !== undefined);
-const tokens = identity.extend({ items: z.array(entry).max(500).nullable() });
+const tokens = identity.extend({ items: z.array(z.unknown()).max(500).nullable() });
 const envelope = z.object({
   kind: z.literal('result'),
   value: z.object({ chainId: z.string(), untrustedData: z.unknown() }),
@@ -67,7 +67,6 @@ function sources(request: BalanceRequest): BalanceScope[] {
 /** Provider-specific normalization; policy and call accounting remain in run.dispatch. */
 export const onblocBalanceAdapter: BalanceAdapter = {
   toolNames,
-  isAvailable: tools => tools.some(tool => toolNames.some(name => name === tool.name)),
   async read(run, request) {
     const assets: BalanceAsset[] = [];
     const missing: BalanceScope[] = [];
@@ -99,20 +98,21 @@ export const onblocBalanceAdapter: BalanceAdapter = {
         assets.push({ kind: 'native', assetId: parsed.data.denom, symbol: 'GNOT', amount: parsed.data.balance, decimals: 6 });
       } else {
         const parsed = tokens.safeParse(data);
-        if (!parsed.success || (parsed.data.items ?? []).some(item => item.address !== undefined && item.address !== run.context.account)) {
+        if (!parsed.success) {
           missing.push(scope);
           continue;
         }
-        const items = parsed.data.items ?? [];
-        for (const item of items) {
-          const assetId = item.tokenId ?? item.packagePath;
-          if (assetId === undefined) {
-            missing.push(scope);
-            break;
-          }
-          assets.push({ kind: 'token', assetId, symbol: item.symbol, amount: item.amount, decimals: item.decimals });
+        const rawItems = parsed.data.items ?? [];
+        const items = rawItems.flatMap(raw => { const item = entry.safeParse(raw); return item.success ? [item.data] : []; });
+        if (items.some(item => item.address !== undefined && item.address !== run.context.account)) {
+          missing.push(scope);
+          continue;
         }
-        if (!pageIsComplete(data, items.length) && !missing.includes(scope)) missing.push(scope);
+        for (const item of items) {
+          assets.push({ kind: 'token', assetId: (item.tokenId ?? item.packagePath)!, symbol: item.symbol, amount: item.amount, decimals: item.decimals });
+        }
+        // A dropped item means the portfolio is incomplete.
+        if (items.length !== rawItems.length || !pageIsComplete(data, rawItems.length)) missing.push(scope);
       }
     }
     return { assets, missing };

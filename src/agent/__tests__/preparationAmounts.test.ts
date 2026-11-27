@@ -60,6 +60,14 @@ describe('grounded preparation amounts', () => {
     expect(result.events).toContainEqual(expect.objectContaining({ type: 'text', delta: expect.stringContaining('smallest unit') }));
   });
 
+  it('resolves a share of an id-kind ugnot asset in base units', async () => {
+    const proposal: PreparationProposal = {
+      operation: 'transfer', recipient: FRIEND.alias, asset: { kind: 'id', value: 'ugnot' }, amount: { kind: 'fraction', numerator: '1', denominator: '2' },
+    };
+    const result = await run('send half my ugnot to carol', proposal);
+    expect(result.wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: FRIEND.address, amount: '21', token: 'GNOT' } }]);
+  });
+
   it('does not replace an unknown token with a known asset', async () => {
     const result = await run('Send 1 got to carol', transfer('got', { kind: 'exact', value: '1' }), {
       failWith: new WalletError('unknown_token', 'Unknown token got'),

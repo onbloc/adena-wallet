@@ -2,6 +2,7 @@ import { asSchema, jsonSchema, tool } from 'ai';
 import type { GenerateTextOnStepEndCallback, Instructions, JSONSchema7, LanguageModel, ModelMessage, PrepareStepFunction, StopCondition, ToolSet } from 'ai';
 import type { Decision, HarnessRun, ToolDefinition } from '../harness/core';
 import { compactContext } from '../llm/core';
+import { AgentError } from './errors';
 
 export type Interruption = Extract<Decision, { kind: 'clarify' | 'approval-required' }>;
 export type AiSdkBudget =
@@ -101,16 +102,16 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
     const estimate = (candidate: ModelMessage[]) => estimateInputTokens({ model, messages: candidate, instructions, tools: schemas });
     const context = contextWindow === undefined ? messages
       : compactContext(messages, candidate => estimate(candidate) + maxOutputTokens <= contextWindow);
-    if (!context) throw new Error(`AGENT_CONTEXT_LIMIT: step=${stepNumber}, window=${contextWindow}, inputEstimate=${estimate(messages)}, outputReserve=${maxOutputTokens}; message sizes=${messages.map(m => `${m.role}:${JSON.stringify(m).length}`).join(',')}`);
+    if (!context) throw new AgentError('AGENT_CONTEXT_LIMIT', `step=${stepNumber}, window=${contextWindow}, inputEstimate=${estimate(messages)}, outputReserve=${maxOutputTokens}; message sizes=${messages.map(m => `${m.role}:${JSON.stringify(m).length}`).join(',')}`);
     if (context.length < messages.length) onContextCompacted?.((messages.length - context.length) / 2);
     const inputTokenUpperBound = estimate(context);
     const limit = run.beginStep(maxOutputTokens, inputTokenUpperBound);
-    if (limit === undefined) throw new Error('AGENT_RUN_CANNOT_START_STEP');
+    if (limit === undefined) throw new AgentError('AGENT_RUN_CANNOT_START_STEP');
     if (budget.kind === 'cloud' && !await budget.reserveStep({ operationId: run.operationId, stepNumber, inputTokenUpperBound, maxOutputTokens: limit, signal: run.signal })) {
       run.close();
-      throw new Error('AGENT_CLOUD_BUDGET_EXHAUSTED');
+      throw new AgentError('AGENT_CLOUD_BUDGET_EXHAUSTED');
     }
-    if (run.signal.aborted) throw new Error('AGENT_RUN_CANCELLED');
+    if (run.signal.aborted) throw new AgentError('AGENT_RUN_CANCELLED');
     return { messages: context, maxOutputTokens: limit };
   };
   const onStepEnd: GenerateTextOnStepEndCallback<ToolSet> = ({ usage }) => {

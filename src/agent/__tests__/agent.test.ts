@@ -225,7 +225,8 @@ describe('integrated request execution', () => {
     expect(mcp.calls).toEqual([{ name: 'list_account_transactions', arguments: { address: ACCOUNT, limit: 5 } }]);
     expect(textOf(events)).toContain('tx-123');
     expect(doneOf(events)?.verifiedAnswer).toBe(true);
-    expect(agent.turns[0].answer).toBe(textOf(events));
+    expect(agent.turns[0].answer).toContain('list_account_transactions result omitted from history.');
+    expect(agent.turns[0].answer).not.toContain('tx-123');
   });
   it('preserves approval data next to normalized balances', async () => {
     const { agent } = setup([call('get_approvals')], { intent: { kind: 'lookup', requests: [
@@ -235,7 +236,10 @@ describe('integrated request execution', () => {
     expect(textOf(events)).toContain('42 GNOT');
     expect(textOf(events)).toContain(RECIPIENT);
     expect(textOf(events)).toContain('"amount": "10"');
-    expect(agent.turns[0].answer).toBe(textOf(events));
+    // The user sees the data; the conversation keeps only that it was read.
+    expect(agent.turns[0].answer).toContain('get_approvals result omitted from history.');
+    expect(agent.turns[0].answer).not.toContain(RECIPIENT);
+    expect(agent.turns[0].answer).toContain('42 GNOT');
   });
   it('executes an argument-free selected NFT read without asking the model to invent arguments', async () => {
     const { agent, mcp } = setup([], {
@@ -328,7 +332,7 @@ describe('integrated request execution', () => {
     });
     const events = await collect(agent.run({ prompt: '지금 블록 높이 알려줘' }, { account: ACCOUNT }));
     expect(JSON.stringify(model.doGenerateCalls[1])).toContain('What is the current block height?');
-    expect(textOf(events)).toContain('Unable to complete');
+    expect(textOf(events)).toContain('요청한 조회를 완료하지 못했습니다');
     expect(doneOf(events)?.verifiedAnswer).toBeUndefined();
   });
   it.each(['List my approvals.', 'What is the current block height?'])('does not execute a selected history tool when capability fit rejects %s', async query => {
@@ -1293,5 +1297,84 @@ describe('stateful SDK token selection', () => {
     await collect(agent.run({ prompt: '3' }, permission));
     expect(wallet.calls).toEqual([]);
     expect(prepared).toEqual([]);
+  });
+});
+
+describe('conversation continuity and library contract', () => {
+  it('reads a new lookup instead of re-asking after a clarification', async () => {
+    const { agent, prepared } = setup([
+      proposal({ operation: 'clarification', question: 'What amount?' }), answer(intentReplyText(native)),
+    ], { intent: prepare });
+    await collect(agent.run({ prompt: `Send GNOT to ${RECIPIENT}` }, permission));
+    const events = await collect(agent.run({ prompt: 'show my GNOT balance' }, permission));
+    expect(textOf(events)).toContain('42 GNOT');
+    expect(prepared).toEqual([]);
+  });
+  it('keeps a cancel word from answering a pending clarification', async () => {
+    const { agent, wallet } = setup([
+      proposal({ operation: 'clarification', question: 'What amount?' }), answer(intentReplyText({ kind: 'chat' })), answer('Okay.'),
+    ], { intent: prepare });
+    await collect(agent.run({ prompt: `Send GNOT to ${RECIPIENT}` }, permission));
+    const events = await collect(agent.run({ prompt: '취소' }, permission));
+    expect(textOf(events)).toContain('Okay.');
+    expect(wallet.calls).toEqual([]);
+  });
+  it('matches a Korean contact name followed by a particle', async () => {
+    const { agent, prepared, wallet } = setup([proposal({ ...transferProposal, recipient: '민수' })], { intent: prepare });
+    wallet.getContacts = async () => [{ alias: '민수', address: FRIEND.address }];
+    await collect(agent.run({ prompt: '민수에게 1 GNOT 보내줘' }, permission));
+    expect(prepared).toHaveLength(1);
+  });
+  it('fails early and clearly when the window cannot hold the routing instructions', async () => {
+    const { agent, model } = setup([], { contextTokens: 4096 });
+    await expect(collect(agent.run({ prompt: 'hi' }, { account: ACCOUNT }))).rejects.toMatchObject({ code: 'AGENT_CONTEXT_LIMIT' });
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+  it('rejects a second turn while one runs, then lets go of an abandoned one after its deadline', async () => {
+    const { agent } = setup([answer(intentReplyText(native))], { budget: { timeoutMs: 30 } });
+    const abandoned = agent.run({ prompt: 'Balance?' }, { account: ACCOUNT });
+    await abandoned.next();
+    await expect(collect(agent.run({ prompt: 'Again?' }, { account: ACCOUNT }))).rejects.toMatchObject({ code: 'AGENT_TURN_ACTIVE' });
+    // Move the clock past the deadline instead of waiting for it.
+    const now = Date.now();
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(now + 60_000);
+    try {
+      expect(textOf(await collect(agent.run({ prompt: 'Again?' }, { account: ACCOUNT })))).toContain('42 GNOT');
+    } finally {
+      clock.mockRestore();
+    }
+  });
+  it('gives every agent its own operation ids', async () => {
+    const ids: string[] = [];
+    for (let index = 0; index < 2; index++) {
+      const { agent, harness } = setup([]);
+      const startRun = harness.startRun.bind(harness);
+      jest.spyOn(harness, 'startRun').mockImplementation(options => { ids.push(options.operationId); return startRun(options); });
+      await collect(agent.run({ prompt: 'Balance?' }, { account: ACCOUNT }));
+    }
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+  });
+  it('hands the model only generation options, not host or agent state', async () => {
+    const { agent, llm } = setup([answer('Hello!')], { intent: { kind: 'chat' } });
+    const generate = jest.spyOn(llm, 'generate');
+    await collect(agent.run({ prompt: 'Hi' }, { account: ACCOUNT, allowTransactionPreparation: true }));
+    for (const [, options] of generate.mock.calls) {
+      expect(Object.keys(options ?? {}).filter(key => !['signal', 'contextTokens', 'onContextCompacted', 'loop'].includes(key))).toEqual([]);
+    }
+  });
+});
+
+describe('negative amount refusal', () => {
+  it.each([
+    ['Send -5 GNOT to carol', true],
+    ['Show my transfer history from block 100 - 200', false],
+  ])('%s', async (prompt, refused) => {
+    const { agent, mcp } = setup([call('list_account_transactions', { limit: 5 })], {
+      intent: { kind: 'lookup', requests: [{ target: 'other', query: 'List recent transactions.' }] }, selection: ['list_account_transactions'],
+    });
+    const events = await collect(agent.run({ prompt }, permission));
+    expect(textOf(events).includes('cannot be negative')).toBe(refused);
+    expect(mcp.calls).toHaveLength(refused ? 0 : 1);
   });
 });

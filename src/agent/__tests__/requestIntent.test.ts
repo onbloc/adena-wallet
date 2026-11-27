@@ -917,7 +917,8 @@ describe('askWhichRecipient', () => {
 
   it('asks which person when it names two contacts, in any script around the names', () => {
     const dave = { alias: 'dave', address: 'g1davedavedavedavedavedavedavedavedave00' };
-    expect(askWhichRecipient(say('carol이랑 Dave에게 1 GNOT 보내줘'), [carol, dave])).toBe('Who should receive it: carol or dave?');
+    expect(askWhichRecipient(say('carol이랑 Dave에게 1 GNOT 보내줘'), [carol, dave])).toBe('누구에게 보낼까요: carol 또는 dave?');
+    expect(askWhichRecipient(say('Send 1 GNOT to carol and Dave'), [carol, dave])).toBe('Who should receive it: carol or dave?');
   });
 
   it('does not ask when a contact is named along with that contact\'s own address', () => {

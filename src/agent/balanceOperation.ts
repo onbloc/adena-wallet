@@ -44,7 +44,6 @@ type BalanceRun = Pick<HarnessRun, 'dispatch' | 'signal' | 'context'>;
 export type BalanceAdapter = Readonly<{
   /** Provider-specific raw tools hidden from the model in favor of get_balance. */
   toolNames: readonly string[];
-  isAvailable(tools: readonly ToolDefinition[]): boolean;
   read(run: BalanceRun, request: BalanceRequest): Promise<BalanceRead>;
 }>;
 

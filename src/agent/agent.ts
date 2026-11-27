@@ -2,16 +2,19 @@ import { ToolChoiceViolationError, type ModelMessage } from 'ai';
 import { balanceShareEvidence, exactAmountEvidence, fractionEvidence, pairedDecimalAmount } from './amountEvidence';
 import { preparationEvidence } from './preparationEvidence';
 import { createAiSdkRun } from './aiSdkBridge';
-import { guardAnswer } from './answerGuard';
+import { guardAnswer, withoutToolData } from './answerGuard';
 import { balanceRequestSchema, balanceResultSchema, balanceToolDefinition, getBalance as readBalance } from './balanceOperation';
 import type { BalanceAdapter, BalanceRequest, BalanceResult } from './balanceOperation';
 import { describeToolRecord } from './toolRecord';
 import { buildWalletPrompt } from './prompts';
 import { realmEvidence } from './realmEvidence';
 import type { RealmEvidence } from './realmEvidence';
-import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, verifyLookupTools, type LookupToolSelection, type PreparationPlanning, type PreparationProposal, type RequestIntent } from './requestIntent';
+import { askWhichRecipient, CLASSIFIER_PROMPT, classifyRequest, proposePreparation, selectLookupTools, verifyLookupTools, type LookupToolSelection, type PreparationPlanning, type PreparationProposal, type RequestIntent } from './requestIntent';
 import type { Contact, TransactionHandler, WalletSdk } from './wallet/port';
 import { fromBaseUnits } from './wallet/amount';
+import { KOREAN_PARTICLE } from './koreanParticle';
+import { AgentError, isAgentError } from './errors';
+import { localized } from './localized';
 import { createWalletTools } from './wallet/tools';
 import type { Budget, Decision, Harness, HarnessRun } from '../harness/core';
 import { GNO_MAINNET_CHAIN, isValidGnoAddress } from '../harness/mcp';
@@ -29,6 +32,7 @@ import {
   type GenerateEvent,
   type GenerateSettings,
   type LLM,
+  type LLMGenerateOptions,
   type ToolLoop,
 } from '../llm/core';
 
@@ -114,6 +118,9 @@ type RunOptions = AgentRunOptions & {
 };
 type AccountRunOptions = RunOptions & { account: string };
 type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
+// Only these reach the LLM; the rest of RunOptions is host and agent state.
+const llmOptions = ({ signal, contextTokens, onContextCompacted }: RunOptions): LLMGenerateOptions =>
+  ({ signal, contextTokens, onContextCompacted });
 type DoneEvent = Extract<GenerateEvent, { type: 'done' }>;
 const REQUEST_TIMEOUT_MS = 5 * 60_000;
 const ANSWER_INSTRUCTIONS = {
@@ -147,7 +154,8 @@ function mentionsIdentifier(text: string, value: string, exact = false, minimum 
   for (let index = source.indexOf(needle); needle && index !== -1; index = source.indexOf(needle, index + 1)) {
     const before = Array.from(source.slice(0, index)).at(-1) ?? '';
     const after = Array.from(source.slice(index + needle.length))[0] ?? '';
-    const koreanParticle = !exact && /^[a-z0-9.]+$/i.test(needle) && /^\p{Script=Hangul}$/u.test(after);
+    const koreanParticle = !exact && (/^[a-z0-9.]+$/i.test(needle)
+      ? /^\p{Script=Hangul}$/u.test(after) : KOREAN_PARTICLE.test(source.slice(index + needle.length)));
     const punctuation = /^\.+(?:$|[^\p{L}\p{M}\p{N}_/:.-])/u.test(source.slice(index + needle.length));
     if (!identifier.test(before) && (!identifier.test(after) || koreanParticle || punctuation) && ++matches >= minimum) return true;
   }
@@ -164,12 +172,12 @@ function restatementQuestion(text: string): string {
 function isClarificationReply(text: string): boolean {
   return text.length > 0 && text.length <= 100
     && !bareConfirmation.test(text.trim())
-    && !/[?!;]|(?:\b(?:send|transfer|pay|approve|allow|if|not|never|instead|actually)\b)|(?:보내|송금|전송|승인|허용|하지|아니|만약)/iu.test(text);
+    && !/[?!;]|(?:\b(?:send|transfer|pay|approve|allow|if|not|never|instead|actually|cancel|stop|forget)\b)|(?:보내|송금|전송|승인|허용|하지|아니|만약|취소|그만|됐)/iu.test(text);
 }
 
 /** A wallet action acts for an account: without one the host has to link a wallet first. */
 function requireAccount(options: RunOptions): AccountRunOptions {
-  if (!options.account) throw new Error('AGENT_ACCOUNT_REQUIRED: Link a wallet to read wallet data or prepare transactions.');
+  if (!options.account) throw new AgentError('AGENT_ACCOUNT_REQUIRED', 'Link a wallet to read wallet data or prepare transactions.');
   return { ...options, account: options.account };
 }
 
@@ -229,10 +237,16 @@ export class AIAgent {
   private readonly balanceAdapter: BalanceAdapter;
   private readonly tokenSymbols: readonly string[];
   private readonly budget: Partial<Budget>;
-  private active?: AbortController;
+  private active?: { controller: AbortController; expiresAt: number };
   private continuation?: { account?: string; clarification?: PendingClarification; balance?: BalanceReferent; preparation?: PendingPreparation };
   private revision = 0;
   private runs = 0;
+  // Operation ids reach audit logs and budget reservations shared across agents and restarts.
+  private readonly instance = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
+  private operationId(kind: 'balance' | 'prepare' | 'lookup') {
+    return `${kind}-${this.instance}-${++this.runs}`;
+  }
 
   constructor({ llm, harness, wallet, onTransaction, session, chainId = GNO_MAINNET_CHAIN, balanceAdapter = onblocBalanceAdapter, tokenSymbols = [], budget = {} }: AIAgentOptions) {
     this.llm = llm;
@@ -264,7 +278,7 @@ export class AIAgent {
   clearPending(): void {
     this.revision++;
     this.continuation = undefined;
-    this.active?.abort();
+    this.active?.controller.abort();
     this.active = undefined;
   }
 
@@ -285,7 +299,7 @@ export class AIAgent {
   /** Structured queries need no model; every provider call stays in the same run. */
   async getBalance(request: BalanceRequest, { account, signal }: { account: string; signal?: AbortSignal }): Promise<BalanceResult> {
     const parsed = balanceRequestSchema.parse(request);
-    const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `balance-${++this.runs}`,
+    const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: this.operationId('balance'),
       scope: 'read-only', purpose: 'mainnet-read', signal, budget: this.executionBudget(this.llm.contextTokens) });
     try {
       return await readBalance(run, parsed, { account, chainId: this.chainId, adapter: this.balanceAdapter });
@@ -302,10 +316,14 @@ export class AIAgent {
     const { signal, contextTokens = this.llm.contextTokens, onContextCompacted } = options;
     if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0 || contextTokens > this.llm.contextTokens) throw new RangeError('contextTokens must be a positive integer within the model context.');
     const budget = this.executionBudget(contextTokens);
-    if (this.active) throw new Error('A conversation already has an active turn.');
+    if (this.active) {
+      if (Date.now() < this.active.expiresAt) throw new AgentError('AGENT_TURN_ACTIVE', 'A conversation already has an active turn.');
+      // The turn outlived its deadline: its generator was abandoned, not drained. Evict it.
+      this.clearPending();
+    }
     if (!settings.prompt.trim()) throw new TypeError('A conversation prompt must not be empty.');
     if (settings.prompt.length > CHAT_PROMPT_MAX_LENGTH) {
-      throw new RangeError(`AGENT_PROMPT_LIMIT: Prompts must not exceed ${CHAT_PROMPT_MAX_LENGTH} characters; shorten the request.`);
+      throw new AgentError('AGENT_PROMPT_LIMIT', `Prompts must not exceed ${CHAT_PROMPT_MAX_LENGTH} characters; shorten the request.`);
     }
     const outputTokens = settings.maxOutputTokens ?? DEFAULT_GENERATE_SETTINGS.maxOutputTokens;
     if (!Number.isSafeInteger(outputTokens) || outputTokens <= 0) throw new RangeError('maxOutputTokens must be a positive integer.');
@@ -313,13 +331,18 @@ export class AIAgent {
     // Every turn starts with the structured classification call, which is capped at 512 tokens.
     const reservedOutput = Math.min(outputTokens, 512);
     // Reject an oversized current request unchanged, before discovery or wallet access.
-    if (estimateContextInput([settings.system, [{ role: 'user', content: settings.prompt }]]) + reservedOutput > contextTokens) {
-      throw new Error('AGENT_CONTEXT_LIMIT: Current request exceeds the conversation context; shorten it.');
+    const current = [{ role: 'user' as const, content: settings.prompt }];
+    if (estimateContextInput([settings.system, current]) + reservedOutput > contextTokens) {
+      throw new AgentError('AGENT_CONTEXT_LIMIT', 'Current request exceeds the conversation context; shorten it.');
+    }
+    // Classification runs first with the agent's own fixed instructions, so a small window fails here, clearly.
+    if (estimateContextInput([CLASSIFIER_PROMPT, current]) + reservedOutput > contextTokens) {
+      throw new AgentError('AGENT_CONTEXT_LIMIT', 'The context window cannot hold the agent’s routing instructions and this request; raise contextTokens.');
     }
 
     const revision = this.revision;
     const controller = new AbortController();
-    this.active = controller;
+    this.active = { controller, expiresAt: Date.now() + budget.timeoutMs };
     const abort = () => controller.abort(signal?.reason);
     signal?.addEventListener('abort', abort, { once: true });
     if (signal?.aborted) abort();
@@ -366,7 +389,7 @@ export class AIAgent {
                 clarification: options.allowTransactionPreparation ? nextClarification : undefined, balance: nextBalanceReferent,
                 preparation: options.allowTransactionPreparation ? nextPreparation : undefined };
             }
-            if (canRememberTurn(event) && !this.session.complete(prompt, answer, describeToolRecord(calls))) {
+            if (canRememberTurn(event) && !this.session.complete(prompt, withoutToolData(answer), describeToolRecord(calls))) {
               yield { ...event, warnings: [...event.warnings, 'This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.'] };
               continue;
             }
@@ -378,7 +401,7 @@ export class AIAgent {
       if (revision === this.revision && (controller.signal.aborted || !completed)) this.continuation = undefined;
       controller.abort();
       signal?.removeEventListener('abort', abort);
-      if (this.active === controller) this.active = undefined;
+      if (this.active?.controller === controller) this.active = undefined;
     }
   }
 
@@ -436,7 +459,9 @@ export class AIAgent {
         onAmbiguousPreparation, pendingPreparation: selected ? pendingPreparation : undefined,
         pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent };
       const { prompt: _prompt, ...answerSettings } = settings;
-      const intent = pendingClarification?.slot && isClarificationReply(choice) ? { kind: 'prepare' as const } : classified.intent;
+      // A short reply continues a clarification, unless the classifier read it as a new lookup.
+      const intent = pendingClarification?.slot && classified.intent.kind !== 'lookup' && isClarificationReply(choice)
+        ? { kind: 'prepare' as const } : classified.intent;
       const events = this.answerRequest(intent, { ...answerSettings, messages: classified.messages }, options);
       for await (const event of events) {
         if (firstVisibleAt === undefined && (event.type === 'text' || event.type === 'reasoning' || event.type === 'tool-call')) firstVisibleAt = Date.now();
@@ -460,7 +485,8 @@ export class AIAgent {
 
   private async *answerRequest(intent: RequestIntent, settings: AnswerSettings, options: RunOptions): AsyncGenerator<GenerateEvent> {
     const text = this.userText(settings);
-    if (options.allowTransactionPreparation && /(?:^|[^\p{L}\p{N}])[-−]\s*\d/u.test(text)
+    // A dash after a number is a range (block 100 - 200), not a sign.
+    if (options.allowTransactionPreparation && /(?<!\d\s*)(?:^|[^\p{L}\p{N}])[-−]\s*\d/u.test(text)
       && /(?:\b(?:send|transfer|pay|approve|allow)\b|보내|송금|전송|승인|허용)/iu.test(text)) {
       const question = /[\uac00-\ud7a3]/u.test(text)
         ? '거래 금액은 음수일 수 없습니다. 유효한 금액을 입력해 주세요. 거래는 준비되지 않았습니다.'
@@ -476,11 +502,11 @@ export class AIAgent {
           options.allowTransactionPreparation
             ? 'The host permits unsigned preparation for eligible requests, but this response uses no tools and prepares nothing. Do not claim preparation is globally disabled.'
             : 'This run cannot prepare transactions.'].join('\n\n'),
-      }, options), () => true, intent);
+      }, llmOptions(options)), () => true, intent);
     } else if (intent.kind === 'lookup') {
       const target = lookupAccount(intent, settings.messages);
       if (target === null) {
-        const question = 'Which single valid Gno public address should I look up?';
+        const question = localized(this.userText(settings), 'Which single valid Gno public address should I look up?', '조회할 Gno 공개 주소 하나를 정확히 알려 주세요.');
         yield { type: 'text', delta: question };
         yield { ...this.done(options.signal), messages: [{ role: 'assistant', content: question }] };
         return;
@@ -513,7 +539,7 @@ export class AIAgent {
         try {
           planned = await proposePreparation(this.llm, messages, { ...options, tokenSymbols: this.tokenSymbols });
         } catch (error) {
-          if (!(error instanceof Error) || !error.message.startsWith('AGENT_PREPARATION_INVALID:')) throw error;
+          if (!isAgentError(error, 'AGENT_PREPARATION_INVALID')) throw error;
           options.onPreparationClarification?.(reply);
           const question = restatementQuestion(reply);
           yield { type: 'text', delta: question };
@@ -629,7 +655,7 @@ export class AIAgent {
         yield completion;
         return;
       }
-      const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: `prepare-${++this.runs}`,
+      const run = await this.harness.startRun({ account, chainId: this.chainId, operationId: this.operationId('prepare'),
         scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [action]: all[action] }, signal: options.signal, budget: options.budget });
       try {
         for (const contact of await loadContacts(this.wallet, run.signal)) contacts.push(contact);
@@ -675,7 +701,9 @@ export class AIAgent {
         if (numerator % denominator !== 0n) {
           failure = 'The requested share cannot be represented in this asset’s smallest unit. Specify an exact amount. No transaction was prepared.';
         } else {
-          amount = fromBaseUnits(numerator / denominator, asset.decimals);
+          const share = numerator / denominator;
+          // An ugnot token string means base units to the wallet tool.
+          amount = proposal.asset.value === 'ugnot' ? share.toString() : fromBaseUnits(share, asset.decimals);
         }
       }
       if (failure !== undefined) {
@@ -738,7 +766,7 @@ export class AIAgent {
     const other = intent.requests.find(request => request.target === 'other');
     const walletTools = this.wallet && this.onTransaction && other && options.account === activeAccount
       ? Object.fromEntries(Object.entries(createWalletTools({ sdk: this.wallet, account: options.account, contacts: [], userText: this.userText(settings), onTransaction: this.onTransaction })).filter(([, tool]) => tool.effect === 'read')) : {};
-    const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: `lookup-${++this.runs}`,
+    const run = await this.harness.startRun({ account: options.account, chainId: this.chainId, operationId: this.operationId('lookup'),
       scope: 'read-only', purpose: 'mainnet-read', walletTools, signal: options.signal, budget: options.budget });
     try {
       const hidden = new Set([...onblocBalanceAdapter.toolNames, ...this.balanceAdapter.toolNames]);
@@ -853,7 +881,7 @@ export class AIAgent {
       try {
         for await (const event of this.llm.generate({ ...settings, tools: undefined, outputSchema: undefined,
           system: [settings.system ?? this.prompt(), `Obtain fresh results from every required read: ${requiredReads.join(', ')}. Unrelated reads do not complete this task.`].join('\n\n'),
-        }, { ...options, loop })) {
+        }, { ...llmOptions(options), loop })) {
           if (event.type === 'done') record(event);
           else if (event.type !== 'text') yield event;
         }
