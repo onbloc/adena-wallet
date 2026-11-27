@@ -50,17 +50,20 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
   requiredReads?: readonly string[];
   userText?: string;
   evidence?: RealmEvidence;
+  account?: string;
   auditFailed?: () => boolean;
+  explanationComplete?: () => boolean;
 } = {}): AsyncGenerator<GenerateEvent> {
   let text = '';
-  let readFailed = false;
+  let incompleteRead = false;
+  const failedReads = new Map<string, { name: string; request?: string }>();
   let toolAttempted = false;
   let mismatch = false;
   let selectionConflict = false;
   let balanceConflict = false;
   let prepared = false;
   let auditFailed = false;
-  const pending = new Map<string, { name: string; input: unknown }>();
+  const pending = new Map<string, { name: string; input: unknown; retry?: string }>();
   const balances: BalanceResult[] = [];
   const conflictedSelections = new Set<string>();
   const seenAssets = new Map<string, BalanceAsset>();
@@ -69,11 +72,23 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
   const outcomes: string[] = [];
   const sourceAnswers: string[] = [];
   const userText = policy.userText ?? '';
+  const failRead = (id: string, name: string, input?: unknown, retry = pending.get(id)?.retry) => {
+    const parsed = name === balanceToolDefinition.name ? balanceRequestSchema.safeParse(input) : undefined;
+    if (retry !== undefined) failedReads.delete(retry);
+    failedReads.set(id, { name, request: parsed?.success ? balanceKey(parsed.data) : undefined });
+  };
+  const recoveredRead = (name: string, called: { retry?: string } | undefined) => {
+    if (called?.retry !== undefined && failedReads.get(called.retry)?.name === name) failedReads.delete(called.retry);
+  };
   const call = (event: Extract<GenerateEvent, { type: 'tool-call' }>) => {
     toolAttempted = true;
-    pending.set(event.id, { name: event.name, input: event.input });
-    if (event.invalid) readFailed = true;
-    if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'unsupported'
+    const input = event.name === balanceToolDefinition.name ? balanceRequestSchema.safeParse(event.input) : undefined;
+    const request = input?.success ? balanceKey(input.data) : undefined;
+    const failures = [...failedReads].filter(([, failure]) => failure.name === event.name && failure.request === request);
+    // Only a new, unambiguous retry can resolve an earlier failed attempt.
+    pending.set(event.id, { name: event.name, input: event.input, retry: failures.length === 1 ? failures[0][0] : undefined });
+    if (event.invalid) failRead(event.id, event.name, event.input);
+    if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat'
       || (intent.kind === 'prepare' && !isRead(event.name) && event.name !== intent.action)) mismatch = true;
     if (event.name === balanceToolDefinition.name) {
       const request = balanceRequestSchema.safeParse(event.input);
@@ -109,12 +124,12 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       && !policy.requiredReads?.includes(event.name)
       && !(event.name === 'get_realm_source' && policy.evidence?.selected())) {
       mismatch = true;
-      readFailed = true;
+      incompleteRead = true;
       return;
     }
     if (event.name === balanceToolDefinition.name) {
       const parsed = balanceResultSchema.safeParse(value);
-      if (!parsed.success) { readFailed = true; return; }
+      if (!parsed.success) { failRead(event.id, event.name, called?.input, called?.retry); return; }
       const balance = parsed.data;
       const input = balanceRequestSchema.safeParse(called?.input);
       if (called && (!input.success || balanceKey(input.data) !== balanceKey(balance.request))) mismatch = true;
@@ -136,11 +151,13 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         conflictedSelections.add(event.id);
       }
       if (!conflictedSelections.has(event.id)) balances.push(balance);
-      if (balance.status !== 'complete') readFailed = true;
+      if (balance.status !== 'complete') incompleteRead = true;
+      else recoveredRead(event.name, called);
     } else if (ok && value !== undefined && value !== null && status !== WalletStatus.Error && (event.name !== ToolName.GetApprovals || status === WalletStatus.Ok)) {
       const previous = reads.get(event.name);
       if (previous) previous.push(value); else reads.set(event.name, [value]);
-    } else readFailed = true;
+      recoveredRead(event.name, called);
+    } else failRead(event.id, event.name, called?.input, called?.retry);
   };
 
   for await (const event of events) {
@@ -165,14 +182,15 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
       case 'tool-error':
         toolAttempted = true;
         if (pending.has(event.id) && pending.get(event.id)?.name !== event.name) mismatch = true;
+        if (!isRead(event.name)) outcomes.push('Transaction preparation was not confirmed.');
+        else failRead(event.id, event.name, pending.get(event.id)?.input);
         pending.delete(event.id);
-        if (!isRead(event.name)) outcomes.push('Transaction preparation was not confirmed.'); else readFailed = true;
         yield event;
         break;
       case 'done': {
         const done = { ...event, verifiedAnswer: undefined };
         if (event.aborted && !outcomes.length) { yield { ...done, messages: [] }; break; }
-        if (pending.size) readFailed = true;
+        const readFailed = incompleteRead || failedReads.size > 0 || pending.size > 0;
         const lookup = intent.kind === 'lookup' ? intent : undefined;
         const requirements = lookup?.requests.filter(request => request.target === 'balance') ?? [];
         const hasOther = lookup?.requests.some(request => request.target === 'other') === true;
@@ -181,8 +199,9 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         const evidenceComplete = !policy.evidence?.selected() || policy.evidence.verified();
         const lookupComplete = !!lookup?.requests.length && balanceComplete && otherComplete && evidenceComplete;
         const explanationRequested = lookup?.explanation !== undefined;
-        const explanationComplete = !explanationRequested || !!text.trim();
-        const modelOnly = (intent.kind === 'explanation' || intent.kind === 'clarification') && !toolAttempted && !readFailed && !!text.trim();
+        const explanationComplete = !explanationRequested || !!text.trim()
+          && (policy.explanationComplete?.() ?? (!event.aborted && event.finishReason === 'stop'));
+        const modelOnly = (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat') && !toolAttempted && !readFailed && !!text.trim();
         const complete = lookupComplete && explanationComplete && !readFailed && !mismatch && !selectionConflict && !balanceConflict && !outcomes.length;
         const facts = balanceConflict ? [] : balances.map(formatBalance);
         for (const [name, values] of reads) {
@@ -191,6 +210,7 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         }
         facts.push(...sourceAnswers);
         const sections = outcomes.length ? [...outcomes] : facts;
+        if (lookup && policy.account) sections.unshift(`Account: ${policy.account}`);
         if ((modelOnly || explanationRequested) && text.trim()) sections.push(text);
         if (readFailed) sections.push('Some lookups could not be verified. Review the individual tool results.');
         if (lookup && !lookupComplete && !policy.evidence?.selected()
@@ -207,11 +227,17 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         if (balanceConflict) sections.push('Balance lookups returned conflicting results. Please try again.');
         yield { type: 'text', delta: sections.join('\n\n') || 'No wallet lookup or answer completed.' };
         const warnings = [...event.warnings];
-        if (modelOnly) warnings.push('No wallet lookup was performed; this is an unverified model explanation.');
-        else if (explanationRequested && text.trim()) warnings.push('The explanatory text is model-generated; current facts are rendered separately from tool results.');
+        if (modelOnly) {
+          if (intent.kind !== 'chat') warnings.push('No wallet lookup was performed; this is an unverified model explanation.');
+        } else if (explanationRequested && text.trim()) warnings.push('The explanatory text is model-generated; current facts are rendered separately from tool results.');
         if (auditFailed || policy.auditFailed?.()) warnings.push('Audit logging failed. Completed tool results were preserved and further execution was paused.');
         const completion = { ...done, warnings };
-        yield complete && !event.aborted ? { ...completion, verifiedAnswer: true }
+        // A preparation that ended in a result or a refusal is remembered, with its tool record, so
+        // later turns know what was prepared. The prompts and the record forbid replaying it. A turn
+        // whose audit failed stays uncommitted, as before.
+        const preparationAnswered = intent.kind === 'prepare' && outcomes.length > 0 && !mismatch
+          && !auditFailed && !policy.auditFailed?.();
+        yield (complete || preparationAnswered) && !event.aborted ? { ...completion, verifiedAnswer: true }
           : modelOnly && !event.aborted ? completion : { ...completion, messages: [] };
         break;
       }

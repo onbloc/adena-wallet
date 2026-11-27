@@ -5,12 +5,16 @@ import { simulateStreamingMiddleware, wrapLanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 
 import { AIAgent } from '../../../agent';
+import { ACCOUNT, RECIPIENT, fakeWallet } from '../../../agent/testing/fakeWallet';
+import { intentReplyText } from '../../../agent/testing/intentReply';
 import { Harness } from '../../../harness/core';
 import {
   chatSessionKey,
+  createChatSession,
   GenerateEventType,
   LLMFromModel,
   type ChatScope,
+  type ChatSession,
   type ChatTurn,
   type GenerateEvent,
   type LLM,
@@ -30,36 +34,46 @@ jest.mock('expo-sqlite/kv-store', () => {
   };
 });
 
-const plain: ChatScope = { mode: 'plain' };
 const wallet: ChatScope = {
-  mode: 'onbloc', endpoint: 'https://example.test/mcp', chainId: 'test-chain', account: 'test-account',
+  mode: 'onbloc', endpoint: 'https://example.test/mcp', chainId: 'test-chain', account: ACCOUNT,
 };
+const other: ChatScope = { ...wallet, account: RECIPIENT };
 
-async function consume(events: AsyncIterable<GenerateEvent>) {
+function newAgent(llm: LLM, session: ChatSession | undefined) {
+  return new AIAgent({ llm, harness: new Harness(), wallet: fakeWallet(), onTransaction: jest.fn(), session });
+}
+
+async function consume(events: AsyncIterable<GenerateEvent>, aborted = false) {
   for await (const event of events) {
-    if (event.type === GenerateEventType.Done) expect(event.aborted).toBe(false);
+    if (event.type === GenerateEventType.Done) expect(event.aborted).toBe(aborted);
   }
 }
 
-function blockedAgent() {
+function blockedAgent(session: ChatSession | undefined) {
   let signal: AbortSignal | undefined;
   const { promise: ready, resolve: started } = Promise.withResolvers<void>();
   const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
+  let calls = 0;
   const llm: LLM = {
     contextTokens: 8192,
     async *generate(_settings, options) {
       signal = options?.signal;
-      started();
-      await blocked;
+      // The first call is the classification; it is the one held back.
+      const first = calls++ === 0;
+      const text = first ? intentReplyText({ kind: 'explanation' }) : 'Late answer';
+      if (first) {
+        started();
+        await blocked;
+      }
       // Deliberately deliver a late result even after cancellation.
-      yield { type: GenerateEventType.Text, delta: 'Late answer' };
+      yield { type: GenerateEventType.Text, delta: text };
       yield {
         type: GenerateEventType.Done, aborted: false, finishReason: 'stop', warnings: [],
-        messages: [{ role: 'assistant', content: 'Late answer' }], metrics: { totalMs: 1, ttftMs: null },
+        messages: [{ role: 'assistant', content: text }], metrics: { totalMs: 1, ttftMs: null },
       };
     },
   };
-  return { agent: new AIAgent({ llm, harness: new Harness() }), ready, release, get signal() { return signal; } };
+  return { agent: newAgent(llm, session), ready, release, get signal() { return signal; } };
 }
 
 const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
@@ -92,16 +106,16 @@ describe('useChatSession', () => {
     const destination = [{ prompt: 'Wallet question', answer: 'Wallet answer' }];
     const originalSnapshot = JSON.stringify({ version: 1, turns: original });
     const destinationSnapshot = JSON.stringify({ version: 1, turns: destination });
-    await Storage.setItem(chatSessionKey(plain), originalSnapshot);
+    await Storage.setItem(chatSessionKey(other), originalSnapshot);
     await Storage.setItem(chatSessionKey(wallet), destinationSnapshot);
-    await act(async () => { root.render(<Probe scope={plain} />); });
+    await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.ready).toBe(true);
     expect(current.turns).toEqual(original);
     jest.clearAllMocks();
-    const blocked = blockedAgent();
+    const blocked = blockedAgent(current.history);
     let pending!: Promise<void>;
     await act(async () => {
-      pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }));
+      pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }, { account: RECIPIENT }), true);
       await blocked.ready;
     });
 
@@ -114,23 +128,23 @@ describe('useChatSession', () => {
       await pending;
     });
     expect(current.turns).toEqual(destination);
-    expect(Storage.setItem).toHaveBeenCalledWith(chatSessionKey(plain), originalSnapshot);
+    expect(Storage.setItem).toHaveBeenCalledWith(chatSessionKey(other), originalSnapshot);
     expect(Storage.setItem).not.toHaveBeenCalledWith(chatSessionKey(wallet), expect.anything());
     expect(await Storage.getItem(chatSessionKey(wallet))).toBe(destinationSnapshot);
-    expect(await Storage.getItem(chatSessionKey(plain))).toBe(originalSnapshot);
+    expect(await Storage.getItem(chatSessionKey(other))).toBe(originalSnapshot);
   });
 
   it('does not repopulate cleared memory or storage when an aborted run returns late', async () => {
-    await Storage.setItem(chatSessionKey(plain), JSON.stringify({
+    await Storage.setItem(chatSessionKey(other), JSON.stringify({
       version: 1, turns: [{ prompt: 'Old question', answer: 'Old answer' }],
     }));
-    await act(async () => { root.render(<Probe scope={plain} />); });
+    await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.ready).toBe(true);
     jest.clearAllMocks();
-    const blocked = blockedAgent();
+    const blocked = blockedAgent(current.history);
     let pending!: Promise<void>;
     await act(async () => {
-      pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }));
+      pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }, { account: RECIPIENT }), true);
       await blocked.ready;
     });
 
@@ -138,55 +152,70 @@ describe('useChatSession', () => {
 
     expect(blocked.signal?.aborted).toBe(true);
     expect(current.turns).toEqual([]);
-    expect(await Storage.getItem(chatSessionKey(plain))).toBeNull();
+    expect(await Storage.getItem(chatSessionKey(other))).toBeNull();
     await act(async () => {
       blocked.release();
       await pending;
     });
     expect(current.turns).toEqual([]);
     expect(Storage.setItem).not.toHaveBeenCalled();
-    expect(Storage.removeItem).toHaveBeenCalledWith(chatSessionKey(plain));
-    expect(await Storage.getItem(chatSessionKey(plain))).toBeNull();
+    expect(Storage.removeItem).toHaveBeenCalledWith(chatSessionKey(other));
+    expect(await Storage.getItem(chatSessionKey(other))).toBeNull();
   });
 
   it('persists compacted history and restores it without the discarded turn', async () => {
     const recent: ChatTurn = { prompt: 'The recipient is Carol.', answer: 'I will use Carol.' };
-    await Storage.setItem(chatSessionKey(plain), JSON.stringify({
+    await Storage.setItem(chatSessionKey(other), JSON.stringify({
       version: 1, turns: [{ prompt: 'Obsolete topic', answer: 'x'.repeat(6000) }, recent],
     }));
-    await act(async () => { root.render(<Probe scope={plain} />); });
+    await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.turns).toHaveLength(2);
-    const model = new MockLanguageModelV4({
-      doGenerate: {
-        content: [{ type: 'text', text: 'Carol is the recipient.' }],
-        finishReason: { unified: 'stop', raw: 'stop' }, warnings: [],
-        usage: {
-          inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
-          outputTokens: { total: 5, text: 5, reasoning: undefined },
-        },
+    const reply = (text: string) => ({
+      content: [{ type: 'text' as const, text }],
+      finishReason: { unified: 'stop' as const, raw: 'stop' }, warnings: [],
+      usage: {
+        inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
+        outputTokens: { total: 5, text: 5, reasoning: undefined },
       },
     });
+    // Classification first, then the answer.
+    const model = new MockLanguageModelV4({
+      doGenerate: [reply(intentReplyText({ kind: 'explanation' })), reply('Carol is the recipient.')],
+    });
     const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
-    const agent = new AIAgent({ llm, harness: new Harness() });
+    const agent = newAgent(llm, current.history);
     const prompt = 'Which recipient did I just name?';
 
     await act(async () => {
-      await consume(current.run(agent, { prompt, maxOutputTokens: 128 }, { contextTokens: 2048 }));
+      await consume(current.run(agent, { prompt, maxOutputTokens: 128 }, { contextTokens: 6144, account: RECIPIENT }));
     });
 
     const expected = [recent, { prompt, answer: 'Carol is the recipient.' }];
     expect(current.turns).toEqual(expected);
-    const modelPrompt = JSON.stringify(model.doGenerateCalls[0].prompt);
-    expect(modelPrompt).not.toContain('Obsolete topic');
-    expect(modelPrompt).toContain(recent.prompt);
-    expect(modelPrompt).toContain(prompt);
-    expect(JSON.parse((await Storage.getItem(chatSessionKey(plain)))!)).toEqual({ version: 1, turns: expected });
+    for (const call of model.doGenerateCalls) {
+      const modelPrompt = JSON.stringify(call.prompt);
+      expect(modelPrompt).not.toContain('Obsolete topic');
+      expect(modelPrompt).toContain(recent.prompt);
+      expect(modelPrompt).toContain(prompt);
+    }
+    expect(JSON.parse((await Storage.getItem(chatSessionKey(other)))!)).toEqual({ version: 1, turns: expected });
 
     await act(async () => { root.unmount(); });
     root = createRoot();
-    await act(async () => { root.render(<Probe scope={plain} />); });
+    await act(async () => { root.render(<Probe scope={other} />); });
     expect(current.ready).toBe(true);
     expect(current.turns).toEqual(expected);
-    expect(model.doGenerateCalls).toHaveLength(1);
+    expect(model.doGenerateCalls).toHaveLength(2);
+  });
+
+  it('rejects an agent built with another conversation\'s session', async () => {
+    await act(async () => { root.render(<Probe scope={other} />); });
+    expect(current.ready).toBe(true);
+    const llm: LLM = { contextTokens: 8192, async *generate() { throw new Error('unreachable'); } };
+    const agent = newAgent(llm, createChatSession());
+
+    await expect(consume(current.run(agent, { prompt: 'Hello' }, { account: RECIPIENT }))).rejects.toThrow(
+      'The agent continues another conversation.',
+    );
   });
 });

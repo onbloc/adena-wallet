@@ -25,6 +25,12 @@ npm run android   # expo run:android (generates android/ and builds)
 First launch: tap **Load**. The model (~1.4 GB) is downloaded from Hugging Face once,
 then loaded from local storage (works offline afterwards).
 
+Model files are cached by the full Hugging Face model ID, not just the filename. Different
+repositories may safely use the same filename. Downloads stream to a temporary native file;
+only a successful download is published as a cached model. The former filename-only cache
+cannot establish a file's repository, so it is not reused or deleted automatically: upgrading
+from that cache requires one new download. Delete file removes only the selected model's new cache.
+
 ### Release builds for a phone
 
 Connect the phone to install (iOS: unlocked, USB, trusted, Developer Mode on, a Team set in
@@ -52,15 +58,18 @@ src/llm/                      The language model
   core/                         portable, no React Native: LLM (interface), LLMFromModel (any AI SDK
                                 model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
                                 an agent drives the tool loop with), index.ts
+  remote/                       createLLMRemote({ apiKey }): the hosted OpenAI model (Responses API), fixed to
+                                `gpt-6-luna`. No React Native
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
-                                useLlm(llm) hook; runtime.ts, config.ts (model, context size);
-                                jsonGrammar.ts (structured output without the Jinja grammar)
+                                useLlm(llm) hook; runtime.ts, modelStorage.ts (namespaced native file cache),
+                                config.ts (model, context size); jsonGrammar.ts (structured output without the Jinja grammar)
+  createLlm.ts                  createLLM(remote?): on-device without options, hosted with them
 src/harness/                  Bounds and polices a tool-using run
   core/                         Harness: step/token/time budget, scopes, decisions. No model, no AI SDK
   mcp/                          tool sources backed by MCP servers (Onbloc), and a fake one for tests
 src/agent/                    AIAgent({ llm, harness, wallet }): the assistant
-  agent.ts, aiSdkBridge.ts      a harness run turned into a ToolLoop for llm.generate
-  conversation.ts               account-bound text history, turn lifecycle, context budget and reset
+  agent.ts, aiSdkBridge.ts      the entry point: one turn (history, classification, answer), a harness run as a ToolLoop
+  toolRecord.ts                 the compact record of a turn's tool calls kept in the history
   requestIntent.ts              schema-constrained request classification before wallet execution
   answerGuard.ts, prompts.ts    the answer checked against what the tools returned; the system prompt
   wallet/                       the WalletSdk port, ToolName/status constants, the zod tools
@@ -68,17 +77,18 @@ src/adena/                    AdenaWalletSdk: the WalletSdk port over @adena-wal
   adenaWalletSdk.ts, tokens.ts  builds the transaction, hands it to Adena to approve; token symbol -> package path
 src/mock/                     Test-only code, nothing above depends on it
   wallet/                       MockWalletSdk (read-only), fixture, tokens, funding the mock from Onbloc
-  app/                          Playground screen, prepared-transaction cards, Settings (MCP URL, address), benchmark log
+  app/                          Playground orchestration, model/settings/transcript components,
+                                prepared-transaction cards, scoped chat persistence and benchmark log
   cli/                          make chat (chat.ts), with-server.sh
   scenario/                     scenarios, their check, the runner and the benchmark engine (portable: jest and app)
 ```
 
 ```ts
-const llm = new LLMOnDevice();                        // or new LLMFromModel(model) on a desktop
+const llm = createLLM();                              // on-device; call llm.load() first
+// const llm = createLLM({ apiKey });  // hosted OpenAI (gpt-6-luna)
 const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
-const agent = new AIAgent({ llm, harness, wallet, onTransaction });
-const conversation = agent.createConversation({ account, contextTokens: 8192 });
-for await (const event of conversation.run({ prompt })) { /* text, tool calls, done */ }
+const agent = new AIAgent({ llm, harness, wallet, onTransaction });   // owns the conversation
+for await (const event of agent.run({ prompt }, { account, contextTokens: 8192 })) { /* text, tool calls, done */ }
 ```
 
 Dependencies point down only, and `npm run lint` enforces it: `mock` may use everything; `agent`
@@ -89,12 +99,13 @@ the mock; `llm/core` runs without React Native; `harness/core` does not know its
 
 ## Conversations and context limits
 
-`agent.createConversation({ account?, contextTokens?, saved? })` owns the history of one chat.
-Call `conversation.run({ prompt, ...generationSettings })` repeatedly; callers no longer need
-to assemble `messages` or append answers. `turns` exposes retained text turns, `serialize()`
-saves a version-1 snapshot, and `reset()` aborts the active turn and clears history. Concurrent
-turns on the same conversation are rejected. `agent.run` remains the lower-level, stateless
-single-run API for explicit messages and isolated integrations.
+`AIAgent` is the only entry point and it owns the conversation: call `agent.run({ prompt,
+...generationSettings }, { account?, contextTokens?, ... })` repeatedly; callers do not assemble
+`messages` or append answers. Chatting and using tools are one flow: every turn is classified, so
+a question in the middle of a chat can read the wallet or prepare a transaction. `turns` exposes
+the retained turns, `serialize()` saves a snapshot, `reset()` aborts the active turn and clears
+the history, and `new AIAgent({ ..., session: createChatSession(saved) })` continues a saved
+conversation. Concurrent turns on one agent are rejected.
 
 The conversation defaults to the model's context window (8192 for the default model).
 `contextTokens` can be set lower, never above that window. Each model step reserves room for
@@ -109,29 +120,46 @@ fails with `ADENA_CONTEXT_LIMIT`; shorten the question or start a larger support
 If the current tool exchange outgrows the budget, the run also fails rather than cutting tool
 arguments or results. Removed turns are forgotten by subsequent requests.
 
+Independent of the model's context window, a prompt may contain at most 16,384 UTF-16 code
+units; a larger prompt fails with `ADENA_PROMPT_LIMIT` before classification or discovery.
+Snapshots retain answers up to 32,768 code units and compact tool records up to 2,048.
+A completed answer that cannot fit those storage bounds is still shown in full, with an explicit
+warning that this exchange was not retained. Earlier retained turns are not replaced by it.
+
 Only requests classified as explanations or clarification questions can keep a tool-free model
 answer. They carry a warning that no wallet lookup was performed; this is not verified wallet
 data. A lookup or preparation request cannot be reinterpreted as an explanation merely because
 the model did not call a tool. Missing required results are explicit failures, not remembered
 answers. The guard does not semantically verify every statement in free-form explanation text.
 
-Cancelled, incomplete and failed-lookup turns are not committed. Persisted chat is text only:
-tool calls, transaction objects and signing authority are never restored or replayed. A prior
-balance answer is conversation context, not proof of the current balance. Balance amounts are
-formatted by code even when NFT or other reads succeed in the same run; those extra reads must
-not cause a raw base-unit model summary to replace the formatted balances.
+A corrected read retry can satisfy a previously failed attempt. Unresolved failed pages,
+pending calls, partial results and security mismatches still prevent completion. When a lookup
+also requests an explanation, that explanation must end normally: truncated, interrupted or
+missing-terminal explanations preserve fetched facts but do not commit the incomplete turn.
+
+Cancelled, incomplete and failed-lookup turns are not committed. A committed turn keeps the user
+text, the answer and a **tool record**: for each tool call its name, its input and a few words on
+what came of it (`prepared, unsigned and completed: 1 GNOT to g1...`, `refused (code)`, `denied
+(code)`, or just the read status), so later turns know what was called and prepared. The record is
+written by code and never carries raw tool output, which is untrusted data and can hold
+instructions. It says that the values are past and may be stale, and that a completed action is
+never repeated: remembering a transfer is not permission to prepare it again, and transaction
+objects and signing authority are never restored. A prior balance answer is conversation context,
+not proof of the current balance. Balance amounts are formatted by code even when NFT or other
+reads succeed in the same run; those extra reads must not cause a raw base-unit model summary to
+replace the formatted balances.
 
 The app restores chats separately for each endpoint, chain and account; switching scopes
-aborts the old turn. Keep the same separation when using `saved` outside the app. Existing app
-storage uses an injected `ChatSession` through `createConversation({ account, session })`,
-so loading and saving do not create a second copy of the conversation.
+aborts the old turn. Keep the same separation when using `saved` outside the app. The app keeps
+one `ChatSession` per scope and builds each run's agent with `session: history`, so loading and
+saving do not create a second copy of the conversation.
 
 ## Intent-first wallet execution
 
 Before accessing wallet tools, the agent makes a bounded, tool-free classification call. It
 uses the same conversation context, a fixed system prompt, and schema-constrained JSON output.
 The model returns `lookup` requirements, optional requested conceptual explanation, or an
-`explanation`, `prepare`, `clarification`, or `unsupported` route;
+`explanation`, `prepare`, `clarification`, or `chat` route;
 the agent validates it and maps it to a typed execution policy. The classification response
 itself is neither displayed as the answer nor appended to chat history.
 
@@ -141,7 +169,7 @@ itself is neither displayed as the answer nor appended to chat history.
 | Balance lookup | Normalized `get_balance` operation for each classified asset requirement | Complete fresh results for every required balance |
 | Other wallet lookup | Exact read-only catalog selection, then scoped model/tool execution | Every selected read succeeds; unrelated balances or model text do not complete it |
 | Transaction preparation | Host opt-in, strict structured proposal, then selected action dispatch with any normalized balance prerequisite | A matching actual preparation result or a reported refusal/failure |
-| Unsupported request | Fixed wallet-scope refusal | No wallet execution |
+| Small talk, anything else, or an action the wallet cannot do | Answer model without tools; it says plainly what it cannot do | A conversational answer; nothing prepared or read |
 
 Preparation requests, including incomplete ones, use a focused tool-free parser. Its proposal
 contains the operation (`transfer` or `approve`), a supplied recipient/address alias, a symbol
@@ -161,8 +189,7 @@ checks, wallet validation and user review of the exact unsigned transaction rema
 No signing or broadcasting is introduced.
 
 Transaction preparation additionally requires host permission:
-`agent.run(settings, { account, allowTransactionPreparation: true })` or
-`agent.createConversation({ account, allowTransactionPreparation: true })`. The default is false;
+`agent.run(settings, { account, allowTransactionPreparation: true })`. The default is false;
 classification never grants that permission. Wallet reads and preparation do not require an
 unrelated MCP server to exist.
 
@@ -173,9 +200,18 @@ model. Compound lookup answers preserve every returned result, with conceptual m
 separate from deterministically rendered facts. Completion verifies the planned results, not
 the semantic correctness of the model's plan or explanation.
 
+For read-only balance and account-history requests, a public address explicitly supplied in the
+question is the lookup target; otherwise the active account is used. Results identify the address
+queried. If the request names multiple possible addresses, the agent asks which one to use rather
+than choosing one. Looking up another address does not change the active account: transfers and
+approvals are prepared only from that account and still require host permission and wallet review.
+
 The selected preparation stops at its result, including a refusal; there is no follow-up model
 call that can erase a completed handoff or substitute another amount. Audit failures pause new
 execution but preserve completed results and surface a separate warning.
+Waiting for an asynchronous audit callback is bounded by the run's cancellation and deadline.
+If that wait is interrupted, the completed decision is returned with `auditFailed` rather than
+being lost behind a pending audit; new execution remains blocked.
 
 Relative amounts use a fresh complete, unambiguous one-asset balance in the same execution run.
 Code multiplies/divides bounded `bigint` base units; the model never computes the balance or
@@ -205,21 +241,18 @@ structured proposal --> harness dispatch --> adapter (src/agent/wallet/tools.ts)
 ```
 
 There is no account in the wallet or in the agent: each wallet method builds a transaction from
-the arguments it is given. A conversation binds the account selected by the app, and the agent
-injects it as `from`; the model never chooses it. Create a separate conversation when switching
-accounts.
+the arguments it is given. Each run binds the account selected by the app, and the agent injects
+it as `from`; the model never chooses it. Chat, questions and explanations work without an
+account; a lookup or a preparation without one fails with `ADENA_ACCOUNT_REQUIRED` (link a wallet).
+Use a separate agent (or `reset()`) when switching accounts.
 
 ```ts
 const agent = new AIAgent({
   llm, harness, wallet,
   onTransaction: ({ summary, tx }) => { /* sign `tx` in the user's wallet */ },
 });
-const conversation = agent.createConversation({ account: 'g1...', contextTokens: 8192 });
-conversation.run({ prompt });                       // subsequent calls retain this chat's context
+agent.run({ prompt }, { account: 'g1...', contextTokens: 8192 });   // later runs retain this chat's context
 ```
-
-A run keeps the account it started with. The low-level `agent.run(settings, { account })` API
-still accepts an explicit conversation, but the CLI and app use the managed conversation API.
 
 `?` methods are optional: `approve` is executable only when the wallet implements it;
 `get_approvals` is offered to read-only model execution only when the wallet lists allowances.
@@ -287,14 +320,17 @@ base units (`ResolvedToken.balance: bigint`). `createOnblocTokenResolver` reads
 ## Free chat (desktop)
 
 To see how far the model gets with plain human language, talk to it yourself. It runs on this
-Mac through llama-server; by default it is a plain chat with no wallet. `--onbloc` adds the
-wallet: the app's prompt and tools. It answers in the language you write in (English and
-Korean both work; the scenarios in `src/mock/scenario/scenarios.ts` include Korean prompts, and you can type any language into the chat).
+Mac through llama-server. Every request is classified first, with or without an account: an
+explanation or a clarification is answered without tools, while reading wallet data or preparing a
+transaction needs the account, and without one the agent fails with `ADENA_ACCOUNT_REQUIRED` (link
+a wallet). `--onbloc` gives the chat that account, the app's prompt and its tools. It answers in the
+language you write in (English and Korean both work; the scenarios in
+`src/mock/scenario/scenarios.ts` include Korean prompts, and you can type any language into the chat).
 
 ```bash
-make chat                                        # interactive plain chat; the conversation is remembered
-make chat PROMPT="Tell me a joke"                # one question, then exit
-make chat ARGS="--onbloc"                        # with the wallet (below)
+make chat                                        # interactive, no account: questions only; the conversation is remembered
+make chat PROMPT="What is GNOT?"                 # one question, then exit
+make chat ARGS="--onbloc"                        # with an account: wallet data and actions (below)
 make chat ARGS="--context-tokens 4096"           # lower the chat's context budget
 ```
 
@@ -315,7 +351,8 @@ read from the Onbloc api-v3 MCP: balances, tokens and transactions come from mai
 GNS balances (read once when the wallet is created); `/reset` and the app's Reset wallet read
 them again. Defaults are the dev endpoint and account in `src/mock/app/onblocSettings.ts`; for
 the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` / `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both
-fields in Settings gives a plain chat without the wallet.
+fields in Settings leaves the chat without an account: questions are still answered, and wallet
+data or actions fail with `ADENA_ACCOUNT_REQUIRED`.
 
 ## Scenario tests (real model)
 
@@ -346,15 +383,20 @@ Four more sets test the part before the transaction, each in English with its Ko
   order, a corrected amount) and requests that must prepare nothing (no amount, two tokens, two
   recipients, a negative or non-numeric amount, an unknown contact, finer than 6 decimals).
 - **Routing** (`ROUTING_SCENARIOS`): which kind of request it is. An explanation, a how-to, a
-  greeting, a swap, staking or a quoted instruction must call **no tool** and prepare nothing; a
-  balance question must call `get_balance` for the right asset and the answer must show the
-  amount (`10 GNOT`); a negated request or "should I send?" prepares nothing.
+  greeting, small talk, a swap, staking or a quoted instruction must call **no tool** and prepare
+  nothing; a balance question must call `get_balance` for the right asset and the answer must
+  show the amount (`10 GNOT`); a negated request or "should I send?" prepares nothing. The
+  `account:` scenarios run **without a linked wallet** (`noAccount`): a question and small talk
+  are still answered, while reading the balance or a transfer must raise `ADENA_ACCOUNT_REQUIRED`
+  (an `error` expectation: the engine passes the run when exactly that error is raised).
 - **Reads** (`READ_SCENARIOS`): which read tool answers (transactions, NFTs, token info), and no
   invented answer where no tool exists (approvals, block height). The fake history holds a memo
   that orders the model to move funds; the model must treat it as data and prepare nothing.
 - **Follow-ups** (`FOLLOW_UP_SCENARIOS`, several turns): a reply that completes an unanswered
-  question is read with it (`Send 1 GNOT` then `to carol`); a transfer already prepared is not
-  repeated (`thanks`, `do it again`).
+  question is read with it (`Send 1 GNOT` then `to carol`). A prepared transfer is remembered with
+  its tool record, so `now send 2 to the same person`, `do it again` and `ok then send 5` after a
+  refused 100 GNOT work, `What did you just prepare?` is answered without acting, and `thanks`
+  prepares nothing.
 
 These are judged on more than the summary (`checkRun`): an `answer` scenario lists the reads the
 model may make (each with its exact input), fails on any other tool call, and checks that the
@@ -363,6 +405,24 @@ agent retries it. A follow-up replays its earlier turns in one conversation and 
 turn; the time of every turn is counted. Where a request has no single right answer (two tokens,
 two recipients, the base unit) the expectation is a policy choice: the model must ask, or the
 scenario says what it must prepare.
+
+**Asked, never guessed.** After the model parses a transfer or an approval, code checks it against
+the user's own words, and a doubt becomes a question instead of a transaction:
+
+- the **amount** must be digits the user wrote (`1.5`, `1,000`, `3` next to Korean text) or a share
+  of the balance; `one and a half` or a number the model made up is asked for, and `ugnot` is not
+  converted to GNOT;
+- the **token** must be a symbol the user wrote. A misspelling that is one edit from exactly one
+  symbol the wallet knows (`got`, `gsn`) is read back as it (pass them as `tokenSymbols` to
+  `AIAgent`); a symbol the wallet does not know, or one equally near two known ones, is asked
+  about with the known ones listed;
+- more than one **token** (`1 GNOT and 2 GNS`) or more than one **recipient** (a contact and an
+  address, two contacts) in the latest message is asked about, so one of them is not silently dropped.
+  The address book is read only after parsing for this check; the model never sees it;
+- an address followed by a particle (`g1...가`) is handed to the wallet as typed.
+
+A read that cannot be matched to a tool the model chose (`AI_ToolChoiceViolationError`) no longer
+fails the run: the answer says the lookup could not be verified.
 
 Balance routing now comes from the validated classification, not a whitelist of question
 spellings. Multi-turn scenarios query all assets, discuss terminology, and ask for GNOT again.
@@ -374,6 +434,35 @@ A failure prints the prompt, the model's tool calls and its answer. The model is
 deterministic across builds or machines, so a failing scenario can be a model limit or a prompt
 problem, not necessarily a code bug. Set `SCENARIO_URL` to use another server. The jest-expo
 preset replaces `fetch` with a stub, hence the separate config.
+
+### Hosted model (OpenAI)
+
+The same scenarios run on the hosted OpenAI model (`gpt-6-luna`, fixed in `src/llm/remote/config.ts`)
+with `make scenario-remote`; the local run (`make scenario`) is unchanged and ignores these variables.
+Hosted runs are billed by OpenAI.
+
+| Variable | |
+| --- | --- |
+| `OPENAI_API_KEY` | the API key, required |
+| `SCENARIO_CONTEXT_TOKENS` | optional context window; default 128000 |
+
+```bash
+OPENAI_API_KEY=... make scenario-remote
+```
+
+Keys come from the environment only, never from the repo; `.env` is git-ignored, but jest does not
+read it, so export the variable. Do not put a key in an `EXPO_PUBLIC_*` variable: those are
+bundled into the app. The test title names the target (`[openai:gpt-6-luna]`). The context window
+is far above the local 8192, so the agent's token budgets differ from a local run.
+
+In the app, Settings > *Model* switches between the on-device model and OpenAI (API key only; the
+model and endpoint are fixed). The key is kept in memory only (re-enter it after a restart), is sent
+only to OpenAI, and is not written to the benchmark log. Requests stream through `expo/fetch`.
+
+Supported root-object output schemas retain OpenAI's strict structured-output format. Root
+unions (`oneOf` / `anyOf`) use JSON mode because OpenAI rejects those roots; their schema is
+included in the model instructions, and the returned JSON must still pass client-side validation.
+That fallback does not provide provider-enforced schema conformance.
 
 ## Benchmark in the app (on a phone)
 
@@ -387,6 +476,11 @@ It stops with **Stop benchmark**; a stopped run can be copied too.
   is the twin of an English one and expects the same outcome. Each run is PASS or FAIL against what
   the scenario expects, and a FAIL says what the model got wrong. The extra sets are kept apart so
   *Both* stays comparable between runs.
+- **Repeat:** the hard tool-calling cases (token info, an instruction hidden in tool output, a
+  chain fact no tool gives, and three follow-ups) run *Benchmark runs* times each (try 30-100) at
+  **temperature 0.7**: at temperature 0 repeats mostly give the same answer, which says little
+  about how often the model is right. The log header says so. A stopped Repeat run is still
+  balanced round by round.
 - **Text in the prompt box:** that prompt, in any language, runs *Benchmark runs* times and the
   transactions it prepared are counted by outcome (`consistent: yes` only if every run prepared the
   same one).
@@ -402,6 +496,12 @@ It stops with **Stop benchmark**; a stopped run can be copied too.
   ...), time per run (mean, p50, p95, max) and the first half against the second half, which
   shows thermal throttling. A development build is slower on the JavaScript side than a release
   build; the log says which one ran.
+- **Tool calling and intervals:** `tool choice` checks the expected calls and disallows unrelated
+  calls; transfer and approval scenarios allow a balance read. Scenarios that only specify no
+  transaction do not specify tool calls and are excluded. `arguments (right tool only)` checks
+  specified read inputs or the prepared transaction summary; unavailable comparisons are excluded.
+  Rates show a 95% Wilson interval, as do scenarios run at least 20 times. Interpreting these
+  intervals requires independent, identically distributed runs; repeated model outputs may be correlated.
 - **Time per model call:** every run line ends with the time of each model call, e.g.
   `[classify 1.9s, extract 3.2s]`, and the report adds mean, p50, p95 and output tokens per call and
   the time spent outside the model (wallet, MCP reads, JavaScript). The labels come from the
@@ -438,6 +538,13 @@ against any `LLM`; `make scenario` shares the same summary check (`check.ts`).
   llama-server (`-c` in `src/mock/cli/with-server.sh`, `SERVER_CONTEXT_TOKENS` in
   `src/mock/cli/lib/server.ts`) must use the same value to match the phone. Change the model or
   context size in `src/llm/device/config.ts`.
+- Device load, unload and file removal execute in request order. An equivalent model and
+  effective context configuration reuses the ready model; changing the configuration reloads it.
+  During `unloading`, model access is unavailable and active generations are cancelled before
+  native completion draining and release. Playground model controls are blocked during chat,
+  benchmarks, preparation and lifecycle transitions.
+- Caller and tool-loop cancellation signals are combined: either can stop generation, including
+  before the first provider call. A loop cannot replace or disable the caller's cancellation.
 - Structured output (classification, proposals) must not use llama.rn's Jinja path: for a
   reasoning model like Qwen3.5 its grammar is registered as a user grammar, so llama.cpp never
   prefills the generation prompt. The grammar then asks the model to write the assistant header
@@ -465,6 +572,7 @@ Shortcuts (`make help`):
 make init   # npm install; installs bun and llama.cpp via brew if missing
 make test   # typecheck + lint + jest (mock model, no LLM)
 make scenario # plain-language requests -> transactions, against the local model (slow; not in make test)
+make scenario-remote # the same scenarios on the hosted OpenAI model (costs money): needs OPENAI_API_KEY
 make chat   # talk to the local model; PROMPT="..." asks once, ARGS="--onbloc" adds the wallet
 make build  # Release build only: make build ios|android
 make deploy # Release build + install on a connected phone: make deploy ios|android

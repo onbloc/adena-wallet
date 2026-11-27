@@ -230,13 +230,14 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
           const name = proposal.name;
           const decision = await evaluateProposal(proposal);
           try {
-            if (audit) await audit({
+            const pending = audit?.({
               operationId,
               at: Date.now(),
               ...(isTool(name) || remote?.has(name) || offered.has(name) ? { tool: name } : {}),
               decision: decision.kind,
               ...(decision.kind === 'denied' ? { denial: decision.code } : {}),
             });
+            if (pending) await untilCancelled(pending, signal);
           } catch {
             auditFailed = true;
             return { ...decision, auditFailed: true as const };

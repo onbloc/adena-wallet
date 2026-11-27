@@ -1,6 +1,5 @@
 import type { Tool, CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { JsonSchemaValidator } from '@modelcontextprotocol/sdk/validation';
-import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
+import type { JsonSchemaValidator, jsonSchemaValidator } from '@modelcontextprotocol/sdk/validation';
 import { z } from 'zod';
 import type { RemoteTool, WalletContext } from '../core';
 
@@ -45,7 +44,7 @@ export function discoveredReadTool({ tool, permission, trustedServerEnforcesRead
   /** Set only by a host that trusts the server to enforce read-only behavior. */
   trustedServerEnforcesReadOnly?: true;
   context: WalletContext;
-  validator: AjvJsonSchemaValidator;
+  validator: jsonSchemaValidator;
   call: (args: Record<string, unknown>) => Promise<CallToolResult>;
   accepts?: (data: Record<string, unknown>, input: Record<string, unknown>, accountBound: boolean) => boolean;
 }): RemoteTool | undefined {
