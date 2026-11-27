@@ -103,6 +103,16 @@ describe('LLMFromModel', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('closes the tool loop once when the context budget is invalid', async () => {
+    const close = jest.fn();
+    const llm = new LLMFromModel(answering('hello'));
+
+    await expect(async () => collect(llm.generate({ prompt: 'hi' }, { contextTokens: 8193, loop: { options: {}, close } })))
+      .rejects.toThrow(RangeError);
+
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it('ends with an aborted done event when the signal is already aborted', async () => {
     const llm = new LLMFromModel(answering('hello'));
     const controller = new AbortController();

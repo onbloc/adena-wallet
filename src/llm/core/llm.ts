@@ -51,8 +51,13 @@ export class LLMFromModel implements LLM {
   }
 
   generate(settings: GenerateSettings, options: LLMGenerateOptions = {}) {
-    return generate(this.model, {
-      ...settings, ...options, contextTokens: resolveContextTokens(options.contextTokens, this.contextTokens),
-    });
+    let contextTokens: number;
+    try {
+      contextTokens = resolveContextTokens(options.contextTokens, this.contextTokens);
+    } catch (error) {
+      options.loop?.close();
+      throw error;
+    }
+    return generate(this.model, { ...settings, ...options, contextTokens });
   }
 }

@@ -87,6 +87,23 @@ describe('model storage identity', () => {
     expect(files.has(`${path}.download`)).toBe(false);
   });
 
+  it('reports progress to every caller sharing a download', async () => {
+    const model = 'owner/repo/model.gguf';
+    const first = jest.fn();
+    const second = jest.fn();
+    await Promise.all([downloadModel(model, first), downloadModel(model, second)]);
+    expect(first).toHaveBeenCalledWith({ percentage: 100 });
+    expect(second).toHaveBeenCalledWith({ percentage: 100 });
+  });
+
+  it('removes a partial download left by a killed run', async () => {
+    const model = 'owner/repo/model.gguf';
+    const path = await downloadModel(model);
+    files.set(`${path}.download`, 'partial');
+    await removeModel(model);
+    expect([...files.keys()]).toEqual([]);
+  });
+
   it.each(['owner/repo/../model.gguf', 'owner//model.gguf', 'model.gguf'])('rejects relative or incomplete model identity %s', async model => {
     await expect(downloadModel(model)).rejects.toThrow(TypeError);
     expect(native.config).not.toHaveBeenCalled();

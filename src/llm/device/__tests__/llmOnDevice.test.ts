@@ -192,6 +192,14 @@ describe('LLMOnDevice', () => {
     }
   );
 
+  it('closes the tool loop once when the context budget is invalid', async () => {
+    const llm = await loaded(streaming());
+    const close = jest.fn();
+    await expect(collect(llm.generate({ prompt: 'hi' }, { contextTokens: 8193, loop: { options: {}, close } })))
+      .rejects.toThrow(RangeError);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
     'rejects invalid native model windows: %s',
     n_ctx => {

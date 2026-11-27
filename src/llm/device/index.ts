@@ -4,6 +4,7 @@ export type { LocalLLMOptions, RemoteLLMOptions } from './createLlm';
 export { DEFAULT_CONTEXT_PARAMS, DEFAULT_MODEL_ID, MAX_OUTPUT_TOKENS_RANGE } from './config';
 export { LLMOnDevice } from './llmOnDevice';
 export type { LLMOnDeviceOptions, RuntimeInfo } from './llmOnDevice';
+export { LlamaRuntime } from './runtime';
 export type { RuntimeStatus } from './runtime';
 export { useLlm } from './useLlm';
 export type { GenerationSource, RunState } from './useLlm';

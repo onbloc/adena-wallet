@@ -105,6 +105,13 @@ export class LLMOnDevice implements LLM {
       options.loop?.close();
       throw new Error('Model is not loaded');
     }
+    let contextTokens: number;
+    try {
+      contextTokens = resolveContextTokens(options.contextTokens, this.contextTokens);
+    } catch (error) {
+      options.loop?.close();
+      throw error;
+    }
     const controller = new AbortController();
     const signals = [lifecycleSignal, options.signal, options.loop?.options.abortSignal]
       .filter((signal): signal is AbortSignal => signal !== undefined);
@@ -137,7 +144,7 @@ export class LLMOnDevice implements LLM {
     try {
       yield* generate(toolsOn ? withCompletedToolCalls(jsonModel) : jsonModel, {
         ...settings, ...options, signal: controller.signal, loop,
-        contextTokens: resolveContextTokens(options.contextTokens, this.contextTokens),
+        contextTokens,
       });
     } finally {
       signals.forEach(signal => signal.removeEventListener('abort', abort));

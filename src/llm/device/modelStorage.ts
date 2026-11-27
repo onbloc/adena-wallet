@@ -2,7 +2,7 @@ import BlobUtil from 'react-native-blob-util';
 import type { DownloadProgress } from '@react-native-ai/llama';
 
 const root = `${BlobUtil.fs.dirs.DocumentDir}/adena-models-v1`;
-const downloads = new Map<string, Promise<string>>();
+const downloads = new Map<string, { pending: Promise<string>; listeners: Set<(progress: DownloadProgress) => void> }>();
 
 function location(modelId: string) {
   const parts = modelId.split('/');
@@ -54,15 +54,23 @@ async function download(modelId: string, onProgress?: (progress: DownloadProgres
 
 /** Native streaming avoids buffering a GGUF file in JavaScript memory. */
 export function downloadModel(modelId: string, onProgress?: (progress: DownloadProgress) => void): Promise<string> {
-  const active = downloads.get(modelId);
-  if (active) return active;
-  const pending = download(modelId, onProgress).finally(() => { downloads.delete(modelId); });
-  downloads.set(modelId, pending);
-  return pending;
+  let active = downloads.get(modelId);
+  if (!active) {
+    const listeners = new Set<(progress: DownloadProgress) => void>();
+    const pending = download(modelId, progress => listeners.forEach(listener => listener(progress)))
+      .finally(() => { downloads.delete(modelId); });
+    active = { pending, listeners };
+    downloads.set(modelId, active);
+  }
+  if (onProgress) active.listeners.add(onProgress);
+  return active.pending;
 }
 
 export async function removeModel(modelId: string): Promise<void> {
-  await downloads.get(modelId)?.catch(() => undefined);
+  await downloads.get(modelId)?.pending.catch(() => undefined);
   const { path } = location(modelId);
-  if (await BlobUtil.fs.exists(path)) await BlobUtil.fs.unlink(path);
+  // Also clears a partial file left by a killed download.
+  for (const file of [path, `${path}.download`]) {
+    if (await BlobUtil.fs.exists(file)) await BlobUtil.fs.unlink(file);
+  }
 }
