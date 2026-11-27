@@ -1,0 +1,497 @@
+import { simulateStreamingMiddleware, tool, wrapLanguageModel } from 'ai';
+import { MockLanguageModelV4 } from 'ai/test';
+import { z } from 'zod';
+
+import { Harness, type RemoteTool } from '../../harness/core';
+import { createOnblocToolSource } from '../../harness/mcp';
+import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
+import { canRememberTurn, createChatSession, GenerateEventType, LLMFromModel, type ChatSession, type GenerateEvent, type LLM } from '../../llm/core';
+import { AIAgent } from '../agent';
+import { intentReplyText } from '../testing/intentReply';
+import { ACCOUNT, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
+import { WalletError } from '../wallet/port';
+
+const usage = {
+  inputTokens: { total: 5, noCache: 5, cacheRead: undefined, cacheWrite: undefined },
+  outputTokens: { total: 5, text: 5, reasoning: undefined },
+};
+const reply = (text: string) => ({
+  content: [{ type: 'text' as const, text }],
+  finishReason: { unified: 'stop' as const, raw: 'stop' },
+  usage,
+  warnings: [],
+});
+
+async function collect(events: AsyncIterable<GenerateEvent>) {
+  const out: GenerateEvent[] = [];
+  for await (const event of events) out.push(event);
+  return out;
+}
+
+const llmOf = (model: MockLanguageModelV4) => new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
+const lookupTools = (fetcher: typeof fetch) => createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher });
+const agentOver = (llm: LLM, session?: ChatSession, harness = new Harness(), wallet = fakeWallet()) =>
+  new AIAgent({ llm, harness, wallet, onTransaction: jest.fn(), session });
+
+// Every turn is a classification call followed by the answer call.
+function setup(answers = ['First answer', 'Follow-up answer']) {
+  const model = new MockLanguageModelV4({
+    doGenerate: answers.flatMap((answer) => [reply(intentReplyText({ kind: 'explanation' })), reply(answer)]),
+  });
+  const llm = llmOf(model);
+  return { agent: agentOver(llm), model, llm };
+}
+
+// An LLM that classifies every request as an explanation (even calls) and holds each answer (odd calls) until released.
+function heldAnswers() {
+  const { promise: ready, resolve: started } = Promise.withResolvers<void>();
+  const { promise: blocked, resolve: release } = Promise.withResolvers<void>();
+  let calls = 0;
+  const done = (text: string): GenerateEvent => ({ type: GenerateEventType.Done, metrics: { totalMs: 1, ttftMs: null },
+    aborted: false, finishReason: 'stop', warnings: [], messages: [{ role: 'assistant', content: text }] });
+  const llm: LLM = {
+    kind: 'local',
+    contextTokens: 8192,
+    async *generate() {
+      if (calls++ % 2 === 0) {
+        const route = intentReplyText({ kind: 'explanation' });
+        yield { type: GenerateEventType.Text, delta: route };
+        yield done(route);
+        return;
+      }
+      started();
+      await blocked;
+      yield { type: GenerateEventType.Text, delta: 'Late answer' };
+      yield done('Late answer');
+    },
+  };
+  return { llm, ready, release };
+}
+
+describe('agent history', () => {
+  it('continues a restored conversation without the caller assembling any messages', async () => {
+    const { agent: first, model, llm } = setup();
+    await collect(first.run({ prompt: 'Remember that the recipient is Carol.' }, { account: ACCOUNT }));
+    const restored = agentOver(llm, createChatSession(first.serialize()));
+
+    await collect(restored.run({ prompt: 'Who is the recipient?' }, { account: ACCOUNT }));
+
+    const prompt = JSON.stringify(model.doGenerateCalls[3].prompt);
+    expect(prompt).toContain('Remember that the recipient is Carol.');
+    expect(prompt).toContain('First answer');
+    expect(prompt).toContain('Who is the recipient?');
+    expect(restored.turns.map((turn) => turn.prompt)).toEqual([
+      'Remember that the recipient is Carol.', 'Who is the recipient?',
+    ]);
+    expect(first.turns).toHaveLength(1);
+  });
+
+  it('removes old turns from persistent memory but preserves the recent turn and current request intact', async () => {
+    const { llm, model } = setup();
+    const session = createChatSession();
+    session.complete('obsolete topic', 'x'.repeat(20000));
+    session.complete('The recipient is Carol.', 'I will use Carol.');
+    const agent = agentOver(llm, session);
+    const compacted = jest.fn();
+    const options = { account: ACCOUNT, contextTokens: 8192, onContextCompacted: compacted };
+    const current = 'Which recipient did I just name?';
+
+    await collect(agent.run({ prompt: current, maxOutputTokens: 128 }, options));
+
+    const prompts = model.doGenerateCalls.map(call => JSON.stringify(call.prompt));
+    expect(prompts.every(prompt => !prompt.includes('obsolete topic'))).toBe(true);
+    expect(prompts.some(prompt => prompt.includes('The recipient is Carol.') && prompt.includes(current))).toBe(true);
+    expect(compacted).toHaveBeenCalledWith(1);
+    expect(agent.turns.map((turn) => turn.prompt)).toEqual(['The recipient is Carol.', current]);
+    expect(agent.serialize()).not.toContain('obsolete topic');
+    await collect(agent.run({ prompt: 'Continue.', maxOutputTokens: 128 }, options));
+    expect(model.doGenerateCalls.every(call => !JSON.stringify(call.prompt).includes('obsolete topic'))).toBe(true);
+  });
+
+  it('rejects an oversized current request before any model or wallet access, without deleting history', async () => {
+    const { llm, model } = setup();
+    const source = jest.fn(async () => new Map());
+    const wallet = fakeWallet();
+    const session = createChatSession();
+    session.complete('kept question', 'kept answer');
+    const agent = new AIAgent({ llm, harness: new Harness({ toolSources: [source] }), wallet, onTransaction: jest.fn(), session });
+
+    await expect(collect(agent.run({ prompt: 'x'.repeat(4000), maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens: 1024 })))
+      .rejects.toThrow('AGENT_CONTEXT_LIMIT');
+
+    expect(model.doGenerateCalls).toEqual([]);
+    expect(source).not.toHaveBeenCalled();
+    expect(wallet.calls).toEqual([]);
+    expect(agent.turns).toEqual([{ prompt: 'kept question', answer: 'kept answer' }]);
+  });
+  it('rejects prompts outside the persistence bound even when the remote context admits them', async () => {
+    const { model } = setup();
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }), { contextTokens: 128_000 });
+    const source = jest.fn(async () => new Map());
+    const session = createChatSession();
+    session.complete('kept question', 'kept answer');
+    const agent = new AIAgent({ llm, harness: new Harness({ toolSources: [source] }), session });
+
+    await expect(collect(agent.run({ prompt: 'x'.repeat(16_385) }))).rejects.toMatchObject({ code: 'AGENT_PROMPT_LIMIT' });
+
+    expect(model.doGenerateCalls).toEqual([]);
+    expect(source).not.toHaveBeenCalled();
+    expect(agent.turns).toEqual([{ prompt: 'kept question', answer: 'kept answer' }]);
+  });
+
+  it('warns when a completed answer cannot be retained without truncating it or existing history', async () => {
+    const largeAnswer = 'x'.repeat(32_769);
+    const { model, llm } = setup([largeAnswer, 'Follow-up answer']);
+    const session = createChatSession();
+    session.complete('kept question', 'kept answer');
+    const agent = agentOver(llm, session);
+
+    const events = await collect(agent.run({ prompt: 'Give a long explanation.' }));
+    const done = events.find((event): event is Extract<GenerateEvent, { type: 'done' }> => event.type === 'done')!;
+
+    expect(events.filter(event => event.type === 'text').map(event => event.delta).join('')).toBe(largeAnswer);
+    expect(canRememberTurn(done)).toBe(true);
+    expect(done.warnings).toContain('This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.');
+    expect(agent.turns).toEqual([{ prompt: 'kept question', answer: 'kept answer' }]);
+    expect(createChatSession(agent.serialize()).turns).toEqual(agent.turns);
+    await collect(agent.run({ prompt: 'Continue.' }));
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).toContain('kept answer');
+    expect(JSON.stringify(model.doGenerateCalls[3].prompt)).not.toContain('Give a long explanation.');
+  });
+
+  it('keeps the live tool exchange while pruning stored turns and never replays an earlier transfer', async () => {
+    const mcp = fakeOnblocMcp([
+      { name: 'get_nfts_balance', output: { address: ACCOUNT, items: [{ tokenId: 'nft-1' }] } },
+      { name: 'list_account_transactions', output: { address: ACCOUNT, items: [{ hash: 'tx-123' }] } },
+    ]);
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Inspect NFTs and recent transactions.' }] })),
+      reply(JSON.stringify({ toolNames: ['get_nfts_balance', 'list_account_transactions'] })),
+      reply('{"supported":true}'),
+      {
+        content: [{ type: 'tool-call', toolCallId: 'current-read', toolName: 'get_nfts_balance', input: '{}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
+      {
+        content: [{ type: 'tool-call', toolCallId: 'history', toolName: 'list_account_transactions', input: '{"limit":5}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
+    ] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const session = createChatSession();
+    session.complete('obsolete topic', 'x'.repeat(20000));
+    session.complete('Send one to Carol.', 'An unsigned transaction was prepared.');
+    const agent = new AIAgent({
+      llm: llmOf(model),
+      harness: new Harness({ toolSources: [lookupTools(mcp.fetcher)] }),
+      wallet,
+      onTransaction: handoff,
+      session,
+    });
+
+    await collect(agent.run({ prompt: 'Please inspect my funds.', maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens: 8192 }));
+
+    const continuation = model.doGenerateCalls.find(call => JSON.stringify(call.prompt).includes('nft-1'));
+    expect(continuation).toBeDefined();
+    const prompt = JSON.stringify(continuation?.prompt);
+    expect(prompt).not.toContain('obsolete topic');
+    expect(prompt).toContain('Send one to Carol.');
+    expect(prompt).toContain('current-read');
+    expect(prompt).toContain('nft-1');
+    expect(agent.turns.map((turn) => turn.prompt)).toEqual(['Send one to Carol.', 'Please inspect my funds.']);
+    expect(wallet.calls).toEqual([]);
+    expect(handoff).not.toHaveBeenCalled();
+  });
+
+  it('remembers a wallet explanation between a portfolio lookup and a fresh native lookup', async () => {
+    const native = { address: ACCOUNT, denom: 'ugnot', balance: '10000000' };
+    const mcp = fakeOnblocMcp([
+      { name: 'get_native_balance', output: native },
+      { name: 'get_token_balances', output: { address: ACCOUNT, items: [] } },
+    ]);
+    const correction = 'GNOT is the native token; ugnot is its base unit.';
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'all' } }] })),
+      reply('{"kind":"all"}'),
+      reply(intentReplyText({ kind: 'explanation' })),
+      reply(correction),
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } } }] })),
+    ] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const agent = new AIAgent({
+      llm: llmOf(model),
+      harness: new Harness({ toolSources: [lookupTools(mcp.fetcher)] }),
+      wallet, onTransaction: handoff,
+    });
+    const options = { account: ACCOUNT };
+    await collect(agent.run({ prompt: 'Show me all my assets.' }, options));
+
+    const explanation = await collect(agent.run({ prompt: 'Is native token the right term?' }, options));
+    expect(explanation).toContainEqual({ type: GenerateEventType.Text, delta: correction });
+    expect(agent.turns.map((turn) => turn.prompt)).toEqual([
+      'Show me all my assets.', 'Is native token the right term?',
+    ]);
+    native.balance = '2000000';
+    const fresh = await collect(agent.run({ prompt: 'Look up that native balance again.' }, options));
+
+    expect(fresh).toContainEqual({ type: GenerateEventType.Text, delta: expect.stringContaining('2 GNOT') });
+    const freshRequest = model.doGenerateCalls.find(call => JSON.stringify(call.prompt).includes('Look up that native balance again.'));
+    expect(JSON.stringify(freshRequest?.prompt)).toContain(correction);
+    expect(mcp.calls.filter((call) => call.name === 'get_native_balance')).toHaveLength(2);
+    expect(agent.turns).toHaveLength(3);
+    expect(wallet.calls).toEqual([]);
+    expect(handoff).not.toHaveBeenCalled();
+  });
+
+  it('persists additional history eviction when a tool result fills the next model step', async () => {
+    const contextTokens = 12_288;
+    const data = 'data'.repeat(5000);
+    const model = new MockLanguageModelV4({ doGenerate: [
+      reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Look up current data and its status.' }] })),
+      reply(JSON.stringify({ toolNames: ['lookup', 'status'] })),
+      reply('{"supported":true}'),
+      {
+        content: [{ type: 'tool-call', toolCallId: 'lookup-now', toolName: 'lookup', input: '{}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
+      {
+        content: [{ type: 'tool-call', toolCallId: 'status-now', toolName: 'status', input: '{}' }],
+        finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
+      },
+    ] });
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }), { contextTokens });
+    const harness = new Harness({ toolSources: [async () => new Map<string, RemoteTool>([[
+      'lookup',
+      {
+        definition: { name: 'lookup', description: 'Look up data', jsonSchema: { type: 'object', properties: {} } },
+        execute: async () => ({ kind: 'result', value: { data } }),
+      },
+    ], [
+      'status',
+      {
+        definition: { name: 'status', description: 'Read current status', jsonSchema: { type: 'object', properties: {} } },
+        execute: async () => ({ kind: 'result', value: { status: 'complete' } }),
+      },
+    ]])] });
+    const session = createChatSession();
+    session.complete('obsolete topic', 'x'.repeat(contextTokens * 2));
+    session.complete('recent topic', 'r'.repeat(4000));
+    const agent = agentOver(llm, session, harness);
+
+    await collect(agent.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens }));
+
+    const firstLookup = model.doGenerateCalls.find(call => call.tools?.some(tool => tool.type === 'function' && tool.name === 'lookup'));
+    const statusLookup = model.doGenerateCalls.find(call => call.tools?.some(tool => tool.type === 'function' && tool.name === 'status'));
+    expect(firstLookup).toBeDefined();
+    expect(statusLookup).toBeDefined();
+    expect(JSON.stringify(firstLookup?.prompt)).toContain('recent topic');
+    const continuation = JSON.stringify(statusLookup?.prompt);
+    expect(continuation).not.toContain('recent topic');
+    expect(continuation).toContain('lookup-now');
+    expect(continuation).toContain(data);
+    expect(agent.turns.map((turn) => turn.prompt)).toEqual(['Look up current data.']);
+    expect(agent.serialize()).not.toContain('recent topic');
+  });
+
+  it.each([undefined, false, true])('forwards transaction preparation opt-in %s to every turn', async (enabled) => {
+    const mcp = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '10000000' } },
+    ]);
+    const transfer = reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+      asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } }));
+    const classification = reply(intentReplyText({ kind: 'prepare' }));
+    const model = new MockLanguageModelV4({ doGenerate: enabled
+      ? [classification, transfer, classification, transfer] : [classification, classification] });
+    const wallet = fakeWallet();
+    const handoff = jest.fn();
+    const agent = new AIAgent({
+      llm: llmOf(model),
+      harness: new Harness({ toolSources: [lookupTools(mcp.fetcher)] }),
+      wallet, onTransaction: handoff,
+    });
+    const options = { account: ACCOUNT, ...(enabled === undefined ? {} : { allowTransactionPreparation: enabled }) };
+
+    await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, options));
+    await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT} again.` }, options));
+
+    expect(wallet.calls).toHaveLength(enabled ? 2 : 0);
+    expect(handoff).toHaveBeenCalledTimes(enabled ? 2 : 0);
+    expect(wallet.calls).toEqual(enabled ? [
+      { method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } },
+      { method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } },
+    ] : []);
+    expect(model.doGenerateCalls).toHaveLength(enabled ? 4 : 2);
+    expect(mcp.calls).toEqual([]);
+  });
+
+  it('does not expose or execute caller-provided tools in an explanation turn', async () => {
+    const execute = jest.fn(async () => ({ secret: 'unexpected' }));
+    const model = new MockLanguageModelV4({ doGenerate: [reply(intentReplyText({ kind: 'explanation' })), reply('Done')] });
+    const agent = agentOver(llmOf(model));
+
+    await collect(agent.run({
+      prompt: 'Try the supplied tool.', maxSteps: 3,
+      tools: { caller_tool: tool({ inputSchema: z.object({}), execute }) },
+    }, { account: ACCOUNT }));
+
+    expect(model.doGenerateCalls).toHaveLength(2);
+    for (const call of model.doGenerateCalls) expect(call.tools ?? []).toEqual([]);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
+  it.each([0, -1, 1.5, NaN, Infinity, 8193])('rejects a context budget outside the model limits: %p', async (contextTokens) => {
+    await expect(collect(setup().agent.run({ prompt: 'Hello.' }, { account: ACCOUNT, contextTokens }))).rejects.toThrow(RangeError);
+  });
+
+  it('does not allow overlapping turns or a late result to repopulate a reset conversation', async () => {
+    const { llm, ready, release } = heldAnswers();
+    const agent = agentOver(llm);
+    const options = { account: ACCOUNT };
+    const pending = collect(agent.run({ prompt: 'Old request' }, options));
+    await ready;
+
+    await expect(collect(agent.run({ prompt: 'Overlapping request' }, options))).rejects.toThrow('active turn');
+    agent.reset();
+    release();
+    await pending;
+
+    expect(agent.turns).toEqual([]);
+    await collect(agent.run({ prompt: 'After reset' }, options));
+    expect(agent.turns.map((turn) => turn.prompt)).toEqual(['After reset']);
+  });
+
+  it('does not remember a turn that is aborted while it runs', async () => {
+    const { llm, ready, release } = heldAnswers();
+    const agent = agentOver(llm);
+    const controller = new AbortController();
+    const pending = collect(agent.run({ prompt: 'Old request' }, { account: ACCOUNT, signal: controller.signal }));
+    await ready;
+
+    controller.abort();
+    release();
+    await pending;
+
+    expect(agent.turns).toEqual([]);
+    expect(agent.serialize()).not.toContain('Old request');
+    await collect(agent.run({ prompt: 'After abort' }, { account: ACCOUNT }));
+    expect(agent.turns.map((turn) => turn.prompt)).toEqual(['After abort']);
+  });
+
+  it('forgets earlier turns on reset and does not remember the turn that was running', async () => {
+    const { llm, ready, release } = heldAnswers();
+    const session = createChatSession();
+    session.complete('earlier question', 'earlier answer', '[tool record: earlier]');
+    const agent = agentOver(llm, session);
+    const pending = collect(agent.run({ prompt: 'Old request' }, { account: ACCOUNT }));
+    await ready;
+
+    agent.reset();
+    release();
+    await pending;
+
+    expect(agent.turns).toEqual([]);
+    expect(agent.session.turns).toEqual([]);
+    expect(session.serialize()).toBe(createChatSession().serialize());
+  });
+
+  describe('tool record', () => {
+    const balance = reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'balance', request: { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } } }] }));
+    const explanation = reply(intentReplyText({ kind: 'explanation' }));
+
+    // A native balance lookup, then two explanation turns.
+    function lookup() {
+      const mcp = fakeOnblocMcp([{ name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '10000000' } }]);
+      const model = new MockLanguageModelV4({ doGenerate: [
+        balance, explanation, reply('Second answer'), explanation, reply('Third answer'),
+      ] });
+      const llm = llmOf(model);
+      return { model, llm, agent: agentOver(llm, undefined, new Harness({ toolSources: [lookupTools(mcp.fetcher)] })), mcp };
+    }
+
+    // A prepared transfer, then an explanation turn.
+    function transfer(wallet = fakeWallet()) {
+      const mcp = fakeOnblocMcp([]);
+      const model = new MockLanguageModelV4({ doGenerate: [
+        reply(intentReplyText({ kind: 'prepare' })),
+        reply(JSON.stringify({ operation: 'transfer', recipient: RECIPIENT,
+          asset: { kind: 'symbol', value: 'GNOT' }, amount: { kind: 'exact', value: '1' } })),
+        explanation, reply('Second answer'),
+      ] });
+      return { model, agent: agentOver(llmOf(model), undefined, new Harness({ toolSources: [lookupTools(mcp.fetcher)] }), wallet) };
+    }
+    const prepare = { account: ACCOUNT, allowTransactionPreparation: true };
+
+    it('tells the next turn what a lookup called, without the raw tool output', async () => {
+      const { agent, model } = lookup();
+      await collect(agent.run({ prompt: 'What is my GNOT balance?' }, { account: ACCOUNT }));
+      expect(agent.turns[0].record).toContain('get_balance');
+
+      await collect(agent.run({ prompt: 'Why is that?' }, { account: ACCOUNT }));
+
+      for (const call of model.doGenerateCalls.slice(1)) {
+        const prompt = JSON.stringify(call.prompt);
+        expect(prompt).toContain('[tool record: past results only.');
+        expect(prompt).toContain('- get_balance ');
+        expect(prompt).not.toContain('ugnot');
+        expect(prompt).not.toContain('10000000');
+      }
+    });
+
+    it('tells the next turn about a prepared transfer, without the raw tool output', async () => {
+      const { agent, model } = transfer();
+      await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, prepare));
+      expect(agent.turns[0].record).toContain('- transfer ');
+
+      await collect(agent.run({ prompt: 'What did you just do?' }, prepare));
+
+      for (const call of model.doGenerateCalls.slice(2)) {
+        const prompt = JSON.stringify(call.prompt);
+        expect(prompt).toContain('- transfer ');
+        expect(prompt).toContain(`prepared, unsigned and completed: 1 GNOT to ${RECIPIENT}`);
+        expect(prompt).not.toContain('The transaction is ready');
+        expect(prompt).not.toContain('"status"');
+      }
+    });
+
+    it('records a refused preparation by its code, not the wallet message', async () => {
+      const { agent, model } = transfer(fakeWallet({ failWith: new WalletError('insufficient_balance', 'Available balance is zero.') }));
+      await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, prepare));
+      expect(agent.turns[0].record).toContain('- transfer ');
+      expect(agent.turns[0].record).toContain('refused (insufficient_balance)');
+      expect(agent.turns[0].record).not.toContain('Available balance is zero.');
+
+      await collect(agent.run({ prompt: 'What happened?' }, prepare));
+
+      for (const call of model.doGenerateCalls.slice(2)) expect(JSON.stringify(call.prompt)).toContain('refused (insufficient_balance)');
+    });
+
+    it('adds no record for a turn without tool calls', async () => {
+      const { agent, model } = setup();
+      await collect(agent.run({ prompt: 'Explain gas.' }, { account: ACCOUNT }));
+      await collect(agent.run({ prompt: 'And fees?' }, { account: ACCOUNT }));
+
+      expect(agent.turns).toEqual([
+        { prompt: 'Explain gas.', answer: 'First answer' },
+        { prompt: 'And fees?', answer: 'Follow-up answer' },
+      ]);
+      expect(agent.serialize()).not.toContain('"record"');
+      expect(JSON.stringify(model.doGenerateCalls[3].prompt)).not.toContain('tool record');
+    });
+
+    it('keeps the record when the conversation is saved and restored', async () => {
+      const { agent, llm, model } = lookup();
+      await collect(agent.run({ prompt: 'What is my GNOT balance?' }, { account: ACCOUNT }));
+      const saved = agent.serialize();
+      expect(saved).toContain('get_balance');
+
+      const restored = agentOver(llm, createChatSession(saved));
+      expect(restored.turns).toEqual(agent.turns);
+      await collect(restored.run({ prompt: 'Why is that?' }, { account: ACCOUNT }));
+
+      expect(JSON.stringify(model.doGenerateCalls[2].prompt)).toContain('- get_balance ');
+      expect(restored.turns[0].record).toBe(agent.turns[0].record);
+    });
+  });
+});

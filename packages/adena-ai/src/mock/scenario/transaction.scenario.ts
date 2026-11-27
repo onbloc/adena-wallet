@@ -1,0 +1,160 @@
+// Scenario tests: a model turns plain-language requests into transactions. They run on the local
+// llama-server (`make scenario`) or a hosted model (`make scenario-remote`) and are not part of `npm test`.
+import { toBaseUnits } from '../../agent';
+import { TOKEN_DECIMALS } from '../wallet/tokens';
+import { checkScenarioRun } from './check';
+import {
+  GNS_PATH,
+  ACCOUNT,
+  mockTransaction,
+  createEnvScenarioRunner,
+  firstMessage,
+  scenarioTarget,
+  type ScenarioRun,
+  type ScenarioRunner,
+} from './harness';
+import { EXTRA_SCENARIOS, SCENARIOS, type Expected } from './scenarios';
+
+// A slow on-device-sized model: the agent's own run budget is 5 minutes.
+jest.setTimeout(5 * 60_000);
+
+
+/** The message the prepared transaction will sign is exactly the requested one. */
+function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'transfer' | 'allowance' }>) {
+  const [prepared] = run.prepared;
+  expect(mockTransaction(prepared).messages).toHaveLength(1);
+  const base = String(toBaseUnits(expected.amount, TOKEN_DECIMALS[expected.token]));
+
+  if (expected.kind === 'transfer') {
+    expect(firstMessage(prepared)).toMatchObject(
+      expected.token === 'GNOT'
+        ? { type: '/bank.MsgSend', value: { from_address: ACCOUNT, to_address: expected.to, amount: `${base}ugnot` } }
+        : { type: '/vm.m_call', value: { caller: ACCOUNT, pkg_path: GNS_PATH, func: 'Transfer', args: [expected.to, base] } }
+    );
+  } else {
+    expect(firstMessage(prepared)).toMatchObject({
+      type: '/vm.m_call',
+      value: { caller: ACCOUNT, pkg_path: GNS_PATH, func: 'Approve', args: [expected.spender, base] },
+    });
+  }
+}
+
+describe(`plain-language requests become transactions [${scenarioTarget()}]`, () => {
+  let runner: ScenarioRunner;
+
+  beforeAll(async () => {
+    try {
+      runner = await createEnvScenarioRunner();
+    } catch (error) {
+      throw new Error(`${String(error)}\nLocal: \`make scenario\` (SCENARIO_URL to use another server). Hosted: \`make scenario-remote\`.`);
+    }
+  });
+
+  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [], beforeExpected = [], noAccount }) => {
+    const options = { account: !noAccount };
+    if (expected.kind === 'error') {
+      await expect(runner.chat([...before, prompt], options)).rejects.toThrow(expected.code);
+      return;
+    }
+    const turns = await runner.chat([...before, prompt], options);
+    const run = turns[turns.length - 1];
+    const context = `prompts: ${JSON.stringify([...before, prompt])}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
+
+    try {
+      for (const [index, prior] of beforeExpected.entries()) {
+        const turn = turns[index];
+        expect(checkScenarioRun(turn, prior)).toEqual({ ok: true });
+        for (const prepared of turn.prepared) expect(mockTransaction(prepared).signatures).toEqual([]);
+        if ((prior.kind === 'transfer' || prior.kind === 'allowance') && turn.prepared.length) expectMessage(turn, prior);
+      }
+      // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
+      for (const prepared of run.prepared) expect(mockTransaction(prepared).signatures).toEqual([]);
+
+      // The summaries first (what the model chose), then the message that will be signed.
+      expect(checkScenarioRun(run, expected)).toEqual({ ok: true });
+      if ((expected.kind === 'transfer' || expected.kind === 'allowance') && run.prepared.length) expectMessage(run, expected);
+    } catch (error) {
+      if (error instanceof Error) error.message += `\n\n${context}`;
+      throw error;
+    }
+  });
+
+  it('T5 does not reuse a recipient from a previous request', async () => {
+    const turns = await runner.chat(['Who is carol in my contacts?', 'Send 1 GNOT.']);
+    expect(turns.flatMap((turn) => turn.prepared)).toEqual([]);
+    expect(checkScenarioRun(turns[1], {
+      kind: 'none', response: 'clarification', evidence: [/recipient|address|who|where/i],
+    })).toEqual({ ok: true });
+  });
+
+  it.each([
+    ['GNOT', '10'],
+    ['GNS', '250'],
+  ])('R1 reads the exact %s balance', async (symbol, amount) => {
+    const turn = await runner.ask(`What is my ${symbol} balance?`);
+    expect(checkScenarioRun(turn, {
+      kind: 'none', response: 'read-only', evidence: [new RegExp(`\\b${symbol}\\b`, 'i'), new RegExp(`\\b${amount}\\b`)],
+    })).toEqual({ ok: true });
+  });
+
+  it('R5 explains native terminology without confusing it with all holdings', async () => {
+    const turn = await runner.ask('What does native token mean? Does that mean all my holdings are native?');
+    expect(checkScenarioRun(turn, {
+      kind: 'none', response: 'explanation', evidence: [/\bGNOT\b/i, /\bGRC20\b/i, /not|non.native|other|different|\bno\b/i],
+    })).toEqual({ ok: true });
+  });
+
+  it.each([
+    { name: 'native balance follow-up', prompts: ['Show me all my assets.', 'What about GNOT?'] },
+    {
+      name: 'terminology followed by a current balance question',
+      prompts: ['Show me all my assets.', 'Is native token the right term? What does it mean?', 'What is my GNOT balance?'],
+    },
+  ])('$name refreshes native funds without preparing a transaction', async ({ prompts }) => {
+    const turns = await runner.chat(prompts);
+    const followUp = turns[turns.length - 1];
+    const context = turns.map((turn) => `calls: ${JSON.stringify(turn.calls)}\nanswer: ${turn.text}`).join('\n\n');
+    try {
+      expect(turns.flatMap((turn) => turn.prepared)).toEqual([]);
+      expect(followUp.results).toContainEqual({
+        name: 'get_balance',
+        output: expect.objectContaining({
+          kind: 'result',
+          value: expect.objectContaining({
+            status: 'complete',
+            assets: expect.arrayContaining([
+              expect.objectContaining({ kind: 'native', assetId: 'ugnot', symbol: 'GNOT', amount: '10000000', decimals: 6 }),
+            ]),
+          }),
+        }),
+      });
+    } catch (error) {
+      if (error instanceof Error) error.message += `\n\n${context}`;
+      throw error;
+    }
+  });
+});
+
+describe('read-only wallet with a real model', () => {
+  let runner: ScenarioRunner;
+  beforeAll(async () => { runner = await createEnvScenarioRunner(false); });
+
+  it('reads GNS in Korean without substituting native funds', async () => {
+    const turn = await runner.ask('내 GNS 얼마나 있어?');
+    expect(turn.prepared).toEqual([]);
+    expect(turn.text).toMatch(/\b250 GNS\b/);
+    expect(turn.text).not.toContain('10 GNOT');
+  });
+
+  it.each([
+    ['transfer', 'Send 1 GNOT to carol.'],
+    ['approval', 'Approve carol to spend 10 GNS.'],
+    ['Korean transfer', 'carol에게 GNOT 1개 보내줘.'],
+    ['Korean approval', 'carol에게 GNS 10개 사용을 승인해줘.'],
+  ])('T8 read-only mode refuses %s without preparing', async (_name, prompt) => {
+    const turn = await runner.ask(prompt);
+    expect(checkScenarioRun(turn, {
+      kind: 'none', response: 'refusal', evidence: [/read.only|unable|cannot|can't|not available|not enabled|권한|불가능|없|않|지원/i],
+    })).toEqual({ ok: true });
+  });
+});

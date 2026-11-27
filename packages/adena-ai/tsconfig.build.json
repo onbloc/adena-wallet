@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src",
+    "outDir": "dist/types"
+  },
+  "files": [
+    "src/index.ts",
+    "src/llm/core/index.ts",
+    "src/llm/remote/index.ts",
+    "src/llm/device/index.ts",
+    "src/harness/core/index.ts",
+    "src/harness/mcp/index.ts"
+  ]
+}

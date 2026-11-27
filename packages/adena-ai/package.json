@@ -1,0 +1,111 @@
+{
+  "name": "adena-ai-llm-poc",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": { "types": "./dist/types/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/types/index.d.cts", "default": "./dist/index.cjs" }
+    },
+    "./llm": {
+      "import": { "types": "./dist/types/llm/core/index.d.ts", "default": "./dist/llm.js" },
+      "require": { "types": "./dist/types/llm/core/index.d.cts", "default": "./dist/llm.cjs" }
+    },
+    "./llm/remote": {
+      "import": { "types": "./dist/types/llm/remote/index.d.ts", "default": "./dist/llm/remote.js" },
+      "require": { "types": "./dist/types/llm/remote/index.d.cts", "default": "./dist/llm/remote.cjs" }
+    },
+    "./llm/device": {
+      "import": { "types": "./dist/types/llm/device/index.d.ts", "default": "./dist/llm/device.js" },
+      "require": { "types": "./dist/types/llm/device/index.d.cts", "default": "./dist/llm/device.cjs" }
+    },
+    "./harness": {
+      "import": { "types": "./dist/types/harness/core/index.d.ts", "default": "./dist/harness.js" },
+      "require": { "types": "./dist/types/harness/core/index.d.cts", "default": "./dist/harness.cjs" }
+    },
+    "./harness/onbloc": {
+      "import": { "types": "./dist/types/harness/mcp/index.d.ts", "default": "./dist/harness/onbloc.js" },
+      "require": { "types": "./dist/types/harness/mcp/index.d.cts", "default": "./dist/harness/onbloc.cjs" }
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "llm": ["dist/types/llm/core/index.d.ts"],
+      "llm/remote": ["dist/types/llm/remote/index.d.ts"],
+      "llm/device": ["dist/types/llm/device/index.d.ts"],
+      "harness": ["dist/types/harness/core/index.d.ts"],
+      "harness/onbloc": ["dist/types/harness/mcp/index.d.ts"]
+    }
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.6",
+    "@ai-sdk/openai": "^4.0.123",
+    "@modelcontextprotocol/sdk": "1.32.2"
+  },
+  "devDependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.94",
+    "ai": "^7.0.179",
+    "@react-native-ai/llama": "^0.13.0",
+    "@stardazed/streams-text-encoding": "^1.0.2",
+    "@ungap/structured-clone": "^1.4.0",
+    "@types/jest": "30.0.0",
+    "@types/react": "~19.3.0",
+    "eslint": "^9.39.5",
+    "esbuild": "^0.28.2",
+    "expo": "~58.0.26",
+    "expo-clipboard": "~58.0.4",
+    "expo-sqlite": "~58.0.18",
+    "expo-status-bar": "~58.0.5",
+    "eslint-config-expo": "~58.0.4",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.15",
+    "llama.rn": "^0.13.0-rc.12",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
+    "react-native-blob-util": "0.24.13",
+    "typescript": "~6.0.3",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "ai": "^7.0.179",
+    "zod": "^4.6.7",
+    "@react-native-ai/llama": "^0.13.0",
+    "llama.rn": "^0.13.0-rc.12",
+    "react": ">=18",
+    "react-native": ">=0.76",
+    "react-native-blob-util": "^0.24.13"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-ai/llama": { "optional": true },
+    "llama.rn": { "optional": true },
+    "react": { "optional": true },
+    "react-native": { "optional": true },
+    "react-native-blob-util": { "optional": true }
+  },
+  "scripts": {
+    "start": "npm --prefix src/mock/app run start --",
+    "android": "npm --prefix src/mock/app run android --",
+    "ios": "npm --prefix src/mock/app run ios --",
+    "native:prebuild": "npm --prefix src/mock/app run prebuild --",
+    "build": "node scripts/build.mjs",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
+    "test": "jest",
+    "scenario": "jest --config jest.scenario.config.js --runInBand",
+    "chat": "bun src/mock/cli/chat.ts"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|ai/|@ai-sdk/.*|@workflow/.*|@standard-schema/.*|eventsource-parser/|zod/|@cfworker/.*)"
+    ]
+  },
+  "private": true
+}

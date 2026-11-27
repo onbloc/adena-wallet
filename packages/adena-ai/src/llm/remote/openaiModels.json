@@ -1,0 +1,755 @@
+{
+  "$comment": "OpenAI models the remote LLM can run, from the official model catalog. `models` are usable by the agent; `unsupported` and `excluded` are listed so the gap is explicit. Regenerate from the sources when OpenAI changes the catalog.",
+  "sources": ["https://developers.openai.com/api/docs/models/all.md", "https://developers.openai.com/api/docs/deprecations.md", "https://developers.openai.com/api/docs/guides/reasoning"],
+  "retrievedAt": "2026-11-27",
+  "requirements": "The agent streams every generation, constrains classification with a JSON schema and calls tools, so a model must support streaming, structured outputs and function calling through the Responses API.",
+  "models": [
+    {
+      "id": "gpt-oss-120b",
+      "name": "gpt-oss-120b",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 131072,
+      "maxOutputTokens": 131072,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high"],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": false
+      }
+    },
+    {
+      "id": "gpt-oss-20b",
+      "name": "gpt-oss-20b",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 131072,
+      "maxOutputTokens": 131072,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high"],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": false
+      }
+    },
+    {
+      "id": "gpt-6.2-sol",
+      "name": "GPT-6.2 Sol",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high", "xhigh", "max"],
+        "default": null,
+        "effortsSource": "ai-sdk"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-6.2-astra",
+      "name": "GPT-6.2 Astra",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high", "xhigh", "max"],
+        "default": null,
+        "effortsSource": "ai-sdk"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-6.1-terra",
+      "name": "GPT-6.1 Terra",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-6.1-sol",
+      "name": "GPT-6.1 Sol",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-6-sol",
+      "name": "GPT-6 Sol",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-6-luna",
+      "name": "GPT-6 Luna",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-6-cyber",
+      "name": "GPT-6 Cyber",
+      "status": "active",
+      "access": "restricted",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high"],
+        "default": null,
+        "effortsSource": "conservative",
+        "note": "Efforts are not published for this model; this is the subset every documented reasoning family accepts."
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": false
+      }
+    },
+    {
+      "id": "gpt-6-astra",
+      "name": "GPT-6 Astra",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high", "xhigh", "max"],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "name": "GPT-5.6 Terra",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "name": "GPT-5.6 Sol",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": ["gpt-5.6"],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "name": "GPT-5.6 Luna",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxInputTokens": 922000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.6-cyber",
+      "name": "GPT-5.6 Cyber",
+      "status": "active",
+      "access": "restricted",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high"],
+        "default": null,
+        "effortsSource": "conservative",
+        "note": "Efforts are not published for this model; this is the subset every documented reasoning family accepts."
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.5",
+      "name": "GPT-5.5",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5.5-2026-04-23"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh"],
+        "default": "medium"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.4-mini",
+      "name": "GPT-5.4 mini",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5.4-mini-2026-03-17"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh"],
+        "default": "none"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.4",
+      "name": "GPT-5.4",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 1050000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5.4-2026-03-05"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh"],
+        "default": "none"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.2",
+      "name": "GPT-5.2",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5.2-2025-12-11"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh"],
+        "default": "none"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "chat-latest",
+      "name": "Chat Latest",
+      "status": "active",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": false,
+        "efforts": [],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "o3",
+      "name": "o3",
+      "status": "deprecated",
+      "shutdownDate": "2026-12-11",
+      "access": "public",
+      "contextWindow": 200000,
+      "maxOutputTokens": 100000,
+      "aliases": [],
+      "snapshots": ["o3-2025-04-16"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high"],
+        "default": null,
+        "effortsSource": "ai-sdk"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.4-nano",
+      "name": "GPT-5.4 nano",
+      "status": "deprecated",
+      "shutdownDate": "2027-04-01",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5.4-nano-2026-03-17"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high", "xhigh"],
+        "default": "none"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.3-codex",
+      "name": "GPT-5.3-Codex",
+      "status": "deprecated",
+      "shutdownDate": "2027-04-01",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": [],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["low", "medium", "high", "xhigh"],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5.1",
+      "name": "GPT-5.1",
+      "status": "deprecated",
+      "shutdownDate": "2027-04-01",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5.1-2025-11-13"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["none", "low", "medium", "high"],
+        "default": "none"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5-pro",
+      "name": "GPT-5 pro",
+      "status": "deprecated",
+      "shutdownDate": "2026-12-11",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxOutputTokens": 272000,
+      "aliases": [],
+      "snapshots": ["gpt-5-pro-2025-10-06"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["high"],
+        "default": "high"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5-nano",
+      "name": "GPT-5 nano",
+      "status": "deprecated",
+      "shutdownDate": "2026-12-11",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5-nano-2025-08-07"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["minimal", "low", "medium", "high"],
+        "default": null,
+        "effortsSource": "ai-sdk"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5-mini",
+      "name": "GPT-5 mini",
+      "status": "deprecated",
+      "shutdownDate": "2026-12-11",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5-mini-2025-08-07"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["minimal", "low", "medium", "high"],
+        "default": null,
+        "effortsSource": "ai-sdk"
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-5",
+      "name": "GPT-5",
+      "status": "deprecated",
+      "shutdownDate": "2026-12-11",
+      "access": "public",
+      "contextWindow": 400000,
+      "maxInputTokens": 272000,
+      "maxOutputTokens": 128000,
+      "aliases": [],
+      "snapshots": ["gpt-5-2025-08-07"],
+      "reasoning": {
+        "supported": true,
+        "efforts": ["minimal", "low", "medium", "high"],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-4o-mini",
+      "name": "GPT-4o mini",
+      "status": "deprecated",
+      "shutdownDate": "2027-01-14",
+      "access": "public",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384,
+      "aliases": [],
+      "snapshots": ["gpt-4o-mini-2024-07-18"],
+      "reasoning": {
+        "supported": false,
+        "efforts": [],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-4o",
+      "name": "GPT-4o",
+      "status": "deprecated",
+      "shutdownDate": "2027-01-14",
+      "access": "public",
+      "contextWindow": 128000,
+      "maxOutputTokens": 16384,
+      "aliases": [],
+      "snapshots": ["gpt-4o-2024-11-20", "gpt-4o-2024-08-06"],
+      "reasoning": {
+        "supported": false,
+        "efforts": [],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-4.1-mini",
+      "name": "GPT-4.1 mini",
+      "status": "deprecated",
+      "shutdownDate": "2027-01-14",
+      "access": "public",
+      "contextWindow": 1047576,
+      "maxOutputTokens": 32768,
+      "aliases": [],
+      "snapshots": ["gpt-4.1-mini-2025-04-14"],
+      "reasoning": {
+        "supported": false,
+        "efforts": [],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    },
+    {
+      "id": "gpt-4.1",
+      "name": "GPT-4.1",
+      "status": "deprecated",
+      "shutdownDate": "2027-01-14",
+      "access": "public",
+      "contextWindow": 1047576,
+      "maxOutputTokens": 32768,
+      "aliases": [],
+      "snapshots": ["gpt-4.1-2025-04-14"],
+      "reasoning": {
+        "supported": false,
+        "efforts": [],
+        "default": null
+      },
+      "features": {
+        "streaming": true,
+        "structuredOutputs": true,
+        "functionCalling": true,
+        "imageInput": true
+      }
+    }
+  ],
+  "unsupported": [
+    {
+      "id": "gpt-5.2-pro",
+      "name": "GPT-5.2 Pro",
+      "status": "active",
+      "reason": "The agent needs streaming, structured outputs and function calling; this model has no structured outputs."
+    },
+    {
+      "id": "gpt-5.4-pro",
+      "name": "GPT-5.4 Pro",
+      "status": "active",
+      "reason": "The agent needs streaming, structured outputs and function calling; this model has no structured outputs."
+    },
+    {
+      "id": "gpt-5.5-pro",
+      "name": "GPT-5.5 Pro",
+      "status": "active",
+      "reason": "The agent needs streaming, structured outputs and function calling; this model has no streaming."
+    },
+    {
+      "id": "o3-pro",
+      "name": "o3-pro",
+      "status": "deprecated",
+      "reason": "The agent needs streaming, structured outputs and function calling; this model has no streaming."
+    }
+  ],
+  "excluded": [
+    {
+      "reason": "Image generation models",
+      "ids": ["chatgpt-image-latest", "gpt-image-1", "gpt-image-1-mini", "gpt-image-1.5", "gpt-image-2", "gpt-image-2.5-flare", "gpt-image-2.5-sunburst", "gpt-image-2.6-flare", "gpt-image-2.6-sunburst"]
+    },
+    {
+      "reason": "Audio, speech, realtime and live models",
+      "ids": ["gpt-4o-audio-preview", "gpt-4o-mini-audio-preview", "gpt-4o-mini-realtime-preview", "gpt-4o-mini-transcribe", "gpt-4o-mini-tts", "gpt-4o-realtime-preview", "gpt-4o-transcribe", "gpt-4o-transcribe-diarize", "gpt-audio", "gpt-audio-1.5", "gpt-audio-mini", "gpt-live-1", "gpt-live-1.1", "gpt-live-transcribe", "gpt-realtime", "gpt-realtime-1.5", "gpt-realtime-2", "gpt-realtime-2.1", "gpt-realtime-2.1-mini", "gpt-realtime-mini", "gpt-realtime-translate", "gpt-realtime-whisper", "gpt-transcribe", "tts-1", "tts-1-hd", "whisper-1"]
+    },
+    {
+      "reason": "Embedding models",
+      "ids": ["text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"]
+    },
+    {
+      "reason": "Moderation models",
+      "ids": ["omni-moderation-latest", "text-moderation-latest", "text-moderation-stable"]
+    },
+    {
+      "reason": "Deprecated aliases",
+      "ids": ["gpt-daybreak-blue-latest", "gpt-daybreak-red-latest"]
+    },
+    {
+      "reason": "Shut down text models",
+      "ids": ["babbage-002", "chatgpt-4o-latest", "codex-mini-latest", "computer-use-preview", "davinci-002", "gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4-turbo-preview", "gpt-4.1-nano", "gpt-4.5-preview", "gpt-4o-mini-search-preview", "gpt-4o-search-preview", "gpt-5-chat-latest", "gpt-5-codex", "gpt-5.1-chat-latest", "gpt-5.1-codex", "gpt-5.1-codex-max", "gpt-5.1-codex-mini", "gpt-5.2-chat-latest", "gpt-5.2-codex", "gpt-5.3-chat-latest", "o1", "o1-mini", "o1-preview", "o1-pro", "o3-deep-research", "o3-mini", "o4-mini", "o4-mini-deep-research"]
+    },
+    {
+      "reason": "No published model specifications; approved organizations only",
+      "ids": ["gpt-rosalind-research"]
+    }
+  ]
+}
