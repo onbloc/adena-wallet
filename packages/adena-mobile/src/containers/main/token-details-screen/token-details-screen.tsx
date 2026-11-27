@@ -24,7 +24,7 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
   const { tokenId } = route.params;
   const { account, network, allTokens, tokensLoading } = useWalletAssets();
   const showToast = useToastStore(state => state.show);
-  const { marketDataService } = useContainer();
+  const { marketDataService, onrampService } = useContainer();
   const token = allTokens.find(item => item.id === tokenId);
   const tokens = useMemo(() => (token ? [token] : []), [token]);
   const balances = useTokenBalancesQuery(account, network, tokens);
@@ -75,6 +75,8 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
 
   const handleReceive = (): void => navigation.navigate('Receive');
 
+  const handleBuy = (): void => navigation.navigate('BuyCrypto', { tokenId: token.id });
+
   const handleOpenLink = (url: string): void => {
     if (url.startsWith('https://')) {
       Linking.openURL(url).catch(() => showToast('Couldn’t open the link', 'error'));
@@ -95,6 +97,7 @@ export const TokenDetailsScreen = ({ navigation, route }: NativeStackScreenProps
       onRefresh={pull.onRefresh}
       onSend={handleSend}
       onReceive={handleReceive}
+      onBuy={onrampService.isSupported(network, token.id) ? handleBuy : undefined}
       onOpenLink={handleOpenLink}
       onBack={navigation.goBack}
     />

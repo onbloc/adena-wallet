@@ -1,7 +1,8 @@
 import { StyleSheet } from 'react-native';
 
-import { spacing } from '../../../theme';
+import { fontFamily, spacing } from '../../../theme';
 
 export const styles = StyleSheet.create({
-  hero: { flex: 1, justifyContent: 'center', gap: spacing.space12 },
+  brand: { marginBottom: spacing.space8 },
+  wordmark: { fontFamily: fontFamily.bold, fontSize: 30, lineHeight: 36, letterSpacing: 0.2 },
 });

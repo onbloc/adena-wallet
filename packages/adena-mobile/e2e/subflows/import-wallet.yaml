@@ -3,10 +3,24 @@ appId: ${APP_ID}
 - runFlow: fresh-launch.yaml
 - tapOn:
     id: welcome-import
+# The method chooser only shows when a cloud backup can be restored.
+- runFlow:
+    when:
+      visible:
+        id: import-method-phrase
+    commands:
+      - tapOn:
+          id: import-method-phrase
 - tapOn:
     id: import-secret
 - inputText: ${MNEMONIC}
 - runFlow: dismiss-keyboard.yaml
 - tapOn:
     id: import-submit
+- extendedWaitUntil:
+    visible:
+      id: select-account-0
+    timeout: 20000
+- tapOn:
+    id: select-accounts-submit
 - runFlow: set-password.yaml

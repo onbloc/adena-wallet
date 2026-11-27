@@ -60,7 +60,7 @@ export const NftDetailPage = ({
       {onOpenCollection && <ListRow label={collectionName} description={collectionDescription} onPress={onOpenCollection} />}
       {description && <Text variant='body'>{description}</Text>}
       {rows.length > 0 && (
-        <View>
+        <View style={styles.rows}>
           {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} emphasis />)}
         </View>
       )}

@@ -45,8 +45,8 @@ describe('CreatePasswordScreen', () => {
     expect(navigation.popToTop).toHaveBeenCalled();
   });
 
-  it('creates the wallet, turns on biometric unlock automatically and unlocks the session', async () => {
-    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
+  it('creates the wallet, turns on the biometric unlock chosen earlier and unlocks the session', async () => {
+    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, enableBiometrics: true });
     const { env } = await renderScreen(CreatePasswordScreen);
 
     expect(screen.queryByRole('switch')).toBeNull();
@@ -59,8 +59,20 @@ describe('CreatePasswordScreen', () => {
     await expect(env.container.walletService.isBiometricUnlockEnabled()).resolves.toBe(true);
   });
 
+  it('creates the picked accounts and writes the chosen cloud backup', async () => {
+    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, hdIndexes: [0, 2], backupPassword: 'violet orbit lantern 42' });
+    const { env } = await renderScreen(CreatePasswordScreen);
+
+    await fill(TEST_PASSWORD, TEST_PASSWORD);
+
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(env.container.accountService.getAccounts().map(account => [account.hdIndex, account.name])).toEqual([[0, 'Account 1'], [2, 'Account 3']]);
+    await expect(env.container.walletService.isBiometricUnlockEnabled()).resolves.toBe(false);
+    expect(env.container.cloudBackupService.getLocalStatus().kind).toBe('backedUp');
+  });
+
   it('warns but still finishes when biometrics cannot be enabled', async () => {
-    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
+    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, enableBiometrics: true });
     const env = createTestContainer();
 
     jest.spyOn(env.container.walletService, 'enableBiometricUnlock').mockRejectedValue(new Error('denied'));

@@ -18,6 +18,7 @@ import {
   Globe,
   History,
   House,
+  Image as ImageGlyph,
   Info,
   KeyRound,
   Link,
@@ -83,6 +84,7 @@ const ICONS = {
   trash: Trash2,
   palette: Palette,
   camera: Camera,
+  image: ImageGlyph,
   cloud: Cloud,
   shield: Shield,
 } satisfies Record<string, LucideIcon | ((props: GlyphProps) => ReactElement)>;

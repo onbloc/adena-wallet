@@ -5,6 +5,8 @@ import { CreatePasswordPage, PasswordStrengthView } from '../../../components/pa
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { OnboardingStackParamList } from '../../../navigation/types';
+import { cloudProviderName } from '../../../presenters/cloud-backup.presenter';
+import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
 import { evaluatePassword, findPasswordIssue, PASSWORD_ISSUE_MESSAGE, PasswordIssue, PasswordStrength } from '../../../security/password-policy';
 import { ENABLE_BIOMETRICS_PROMPT } from '../../../services/wallet.service';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
@@ -15,6 +17,10 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
   const { walletService, cloudBackupService } = useContainer();
   const mnemonic = useOnboardingStore(state => state.mnemonic);
   const restoreBackup = useOnboardingStore(state => state.restoreBackup);
+  const hdIndexes = useOnboardingStore(state => state.hdIndexes);
+  const backupPassword = useOnboardingStore(state => state.backupPassword);
+  const enableBiometrics = useOnboardingStore(state => state.enableBiometrics);
+  const biometric = useBiometricStatusQuery();
   // Fixed at mount: the flow this screen was opened for. The store is cleared on success while the button
   // still shows its progress label, and a later change there (e.g. a stale restore) must not swap the flow.
   const [source] = useState(() => (restoreBackup ? { restoreBackup, mnemonic: null } : { restoreBackup: null, mnemonic }));
@@ -54,15 +60,29 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
     }
   };
 
-  // Like MetaMask, biometrics turn on by default when supported; a failure or cancel never blocks onboarding.
-  const enableBiometricsIfSupported = async (): Promise<void> => {
+  // Chosen on the protect step; a failure or cancel never blocks onboarding.
+  const enableBiometricsIfChosen = async (): Promise<void> => {
     try {
-      if (await walletService.getBiometryKind()) {
+      if (enableBiometrics && await walletService.getBiometryKind()) {
         await walletService.enableBiometricUnlock(password, ENABLE_BIOMETRICS_PROMPT);
       }
     }
     catch {
       showToast('Biometric unlock could not be enabled', 'warning');
+    }
+  };
+
+  // Chosen on the backup step; the wallet is already saved, so a failed upload is left for Settings.
+  const createCloudBackupIfChosen = async (): Promise<void> => {
+    if (!backupPassword) {
+      return;
+    }
+
+    try {
+      await cloudBackupService.createBackup({ walletPassword: password, backupPassword, confirmPassword: backupPassword });
+    }
+    catch {
+      showToast(`${cloudProviderName(cloudBackupService.provider)} backup failed. Try again in Settings.`, 'warning');
     }
   };
 
@@ -83,6 +103,11 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       return;
     }
 
+    if (backupPassword && password === backupPassword) {
+      setPasswordError('Use a different password from your backup password');
+      return;
+    }
+
     // The phrase or backup the user chose is gone or was replaced: start over instead of using another one.
     if ((!source.mnemonic && !source.restoreBackup) || mnemonic !== source.mnemonic || restoreBackup !== source.restoreBackup) {
       clearOnboarding();
@@ -99,10 +124,11 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
         await cloudBackupService.restoreWallet(source.restoreBackup, password);
       }
       else if (source.mnemonic) {
-        await walletService.createWallet({ mnemonic: source.mnemonic, password });
+        await walletService.createWallet({ mnemonic: source.mnemonic, password, hdIndexes: hdIndexes ?? undefined });
       }
 
-      await enableBiometricsIfSupported();
+      await enableBiometricsIfChosen();
+      await createCloudBackupIfChosen();
 
       // The biometric prompt can outlive a lock (e.g. the error boundary); never reopen a closed session.
       const status = await walletService.getStatus().catch(() => SessionStatus.LOCKED);
@@ -174,6 +200,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       submitting={submitting}
       onSubmit={submit}
       onBack={handleBack}
+      eyebrow={biometric.data?.kind ? 'Setup / 2 of 2' : 'Setup / Password'}
       submitLabel={restoring ? 'Restore wallet' : undefined}
       submittingLabel={restoring ? 'Restoring wallet…' : undefined}
     />

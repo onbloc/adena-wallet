@@ -39,7 +39,7 @@ describe('ImportWalletScreen', () => {
     expect(screen.getByDisplayValue(TEST_MNEMONIC)).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('import-submit'));
-    expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
+    expect(navigation.navigate).toHaveBeenCalledWith('SelectAccounts');
     expect(useOnboardingStore.getState().mnemonic).toBe(TEST_MNEMONIC);
   });
 });

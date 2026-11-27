@@ -48,6 +48,7 @@ describe('price formatting', () => {
 describe('TokenDetailsPage', () => {
   it('shows stats and switches ranges', async () => {
     const onRangeChange = jest.fn();
+    const onBuy = jest.fn();
 
     await render(
       <SafeAreaProvider initialMetrics={metrics}>
@@ -71,6 +72,7 @@ describe('TokenDetailsPage', () => {
           onRefresh={jest.fn()}
           onSend={jest.fn()}
           onReceive={jest.fn()}
+          onBuy={onBuy}
           onOpenLink={jest.fn()}
           onBack={jest.fn()}
         />
@@ -80,5 +82,7 @@ describe('TokenDetailsPage', () => {
     expect(screen.getByText('$10.0M')).toBeTruthy();
     await fireEvent.press(screen.getByRole('tab', { name: '1W' }));
     expect(onRangeChange).toHaveBeenCalledWith('1W');
+    await fireEvent.press(screen.getByRole('button', { name: 'Buy' }));
+    expect(onBuy).toHaveBeenCalledTimes(1);
   });
 });

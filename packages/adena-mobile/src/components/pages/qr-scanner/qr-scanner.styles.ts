@@ -2,8 +2,8 @@ import { StyleSheet } from 'react-native';
 
 import { palette, radius, spacing } from '../../../theme';
 
-const FRAME_SIZE = 248;
-const CORNER_SIZE = 72;
+const FRAME_SIZE = 262;
+const CORNER_SIZE = 80;
 const CORNER_STROKE = 3;
 
 export const styles = StyleSheet.create({
@@ -14,7 +14,7 @@ export const styles = StyleSheet.create({
     backgroundColor: palette.neutral900,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.space24,
+    gap: spacing.space32,
   },
   frame: { width: FRAME_SIZE, height: FRAME_SIZE, alignItems: 'center', justifyContent: 'center' },
   corner: { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: palette.neutral0 },

@@ -50,7 +50,7 @@ export type MockNavigation = ReturnType<typeof createMockNavigation>;
 
 export const resetStores = (): void => {
   useSessionStore.setState({ status: SessionStatus.BOOTING, revision: 0 });
-  useOnboardingStore.setState({ mnemonic: null, restoreBackup: null });
+  useOnboardingStore.getState().clear();
   useToastStore.setState({ toast: null });
   useDappRequestStore.setState({ queue: [], active: null, inFlight: false });
 };

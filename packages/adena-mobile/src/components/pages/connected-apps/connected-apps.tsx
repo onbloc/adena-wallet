@@ -26,7 +26,7 @@ export const ConnectedAppsPage = ({ apps, onDisconnect, onBack }: ConnectedAppsP
       footer={<Text variant='meta' color='secondary'>Disconnecting ends the active connection.</Text>}
     >
       <View style={styles.intro}>
-        <Text variant='title'>{`${apps.length} connected apps`}</Text>
+        <Text variant='title'>{`${apps.length} connected ${apps.length === 1 ? 'app' : 'apps'}`}</Text>
         <Text variant='meta' color='secondary'>Manage access to Adena wallet.</Text>
       </View>
       <View style={styles.list}>

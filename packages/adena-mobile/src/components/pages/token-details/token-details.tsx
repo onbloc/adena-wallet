@@ -49,6 +49,8 @@ export interface TokenDetailsPageProps<R extends string> {
   onRefresh: () => void;
   onSend: () => void;
   onReceive: () => void;
+  // Shown as the primary action when the token can be bought with fiat.
+  onBuy?: () => void;
   onOpenLink: (url: string) => void;
   onBack: () => void;
 }
@@ -56,8 +58,10 @@ export interface TokenDetailsPageProps<R extends string> {
 const ABOUT_PREVIEW_LINES = 3;
 const PRICE_LINE_HEIGHT = 44;
 const CHANGE_LINE_HEIGHT = 18;
+const IDENTITY_ICON_SIZE = 42;
 
 // Layout follows the "Token details" design: price, chart, ranges, About, Stats, Links, then balance and activity.
+// Buy becomes the primary footer action when the token can be bought.
 export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<R>): ReactElement => {
   const refreshColors = useRefreshControlColors();
   const styles = useStyles();
@@ -71,10 +75,10 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
       <TopBar title='Token details' onBack={props.onBack} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps='handled' refreshControl={<RefreshControl {...refreshColors} refreshing={props.refreshing} onRefresh={props.onRefresh} />}>
         <View style={styles.identity}>
-          <TokenImage symbol={asset.symbol} localIcon={asset.localIcon} imageUrl={asset.imageUrl} size={40} />
+          <TokenImage symbol={asset.symbol} localIcon={asset.localIcon} imageUrl={asset.imageUrl} size={IDENTITY_ICON_SIZE} />
           <View style={styles.names}>
-            <Text variant='row'>{asset.name}</Text>
-            <Text variant='meta' color='secondary'>{asset.symbol}</Text>
+            <Text variant='section' numberOfLines={1}>{asset.name}</Text>
+            <Text variant='body' color='secondary' numberOfLines={1}>{asset.symbol}</Text>
           </View>
         </View>
 
@@ -115,7 +119,9 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
         {market.stats.length > 0 && (
           <View style={styles.section}>
             <SectionLabel label='Stats' />
-            {market.stats.map(stat => <KeyValueRow key={stat.label} label={stat.label} value={stat.value} emphasis />)}
+            <View style={styles.rows}>
+              {market.stats.map(stat => <KeyValueRow key={stat.label} label={stat.label} value={stat.value} emphasis />)}
+            </View>
           </View>
         )}
 
@@ -144,7 +150,8 @@ export const TokenDetailsPage = <R extends string>(props: TokenDetailsPageProps<
       </ScrollView>
       <View style={styles.footer}>
         <Button label='Send' tone='secondary' style={styles.action} onPress={props.onSend} />
-        <Button label='Receive' style={styles.action} onPress={props.onReceive} />
+        <Button label='Receive' tone={props.onBuy ? 'secondary' : 'primary'} style={styles.action} onPress={props.onReceive} />
+        {props.onBuy && <Button label='Buy' style={styles.action} onPress={props.onBuy} testID='token-buy' />}
       </View>
     </SafeAreaView>
   );

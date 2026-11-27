@@ -5,6 +5,14 @@ tags: [onboarding, smoke]
 - runFlow: ../subflows/fresh-launch.yaml
 - tapOn:
     id: welcome-import
+# The method chooser only shows when a cloud backup can be restored.
+- runFlow:
+    when:
+      visible:
+        id: import-method-phrase
+    commands:
+      - tapOn:
+          id: import-method-phrase
 - assertVisible:
     id: import-submit
     enabled: false
@@ -17,13 +25,45 @@ tags: [onboarding, smoke]
 - assertVisible: Check the words and their order.
 # eraseText is unreliable in the multiline field; re-enter the screen for a clean input.
 - tapOn: Back
+- runFlow:
+    when:
+      visible:
+        id: import-method-phrase
+    commands:
+      - tapOn: Back
 - tapOn:
     id: welcome-import
+# The method chooser only shows when a cloud backup can be restored.
+- runFlow:
+    when:
+      visible:
+        id: import-method-phrase
+    commands:
+      - tapOn:
+          id: import-method-phrase
 - tapOn:
     id: import-secret
 - inputText: ${MNEMONIC}
 - runFlow: ../subflows/dismiss-keyboard.yaml
 - tapOn:
     id: import-submit
+# Accounts are listed by HD index, five at a time; the first one starts selected.
+- extendedWaitUntil:
+    visible:
+      id: select-account-0
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      id: select-accounts-more
+- assertVisible:
+    id: select-account-4
+- tapOn:
+    id: select-accounts-more
+- scrollUntilVisible:
+    element:
+      id: select-account-5
+    timeout: 20000
+- tapOn:
+    id: select-accounts-submit
 - runFlow: ../subflows/set-password.yaml
 - assertVisible: ${ADDRESS_HEAD}.*

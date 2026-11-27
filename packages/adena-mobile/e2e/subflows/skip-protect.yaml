@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+---
+# The protect step only shows on devices with enrolled biometrics.
+- extendedWaitUntil:
+    visible:
+      id: password-input|protect-skip
+    timeout: 10000
+- runFlow:
+    when:
+      visible:
+        id: protect-skip
+    commands:
+      - tapOn:
+          id: protect-skip

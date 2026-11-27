@@ -33,10 +33,15 @@ import { SendRecipientScreen } from '../containers/main/send-recipient-screen';
 import { SettingsScreen } from '../containers/main/settings-screen';
 import { SwapScreen } from '../containers/main/swap-screen';
 import { TokenDetailsScreen } from '../containers/main/token-details-screen';
+import { BackupMethodScreen } from '../containers/onboarding/backup-method-screen';
+import { BackupPasswordScreen } from '../containers/onboarding/backup-password-screen';
 import { BackupPhraseScreen } from '../containers/onboarding/backup-phrase-screen';
 import { CreatePasswordScreen } from '../containers/onboarding/create-password-screen';
+import { ImportMethodScreen } from '../containers/onboarding/import-method-screen';
 import { ImportWalletScreen } from '../containers/onboarding/import-wallet-screen';
+import { ProtectWalletScreen } from '../containers/onboarding/protect-wallet-screen';
 import { RestoreBackupScreen } from '../containers/onboarding/restore-backup-screen';
+import { SelectAccountsScreen } from '../containers/onboarding/select-accounts-screen';
 import { WelcomeScreen } from '../containers/onboarding/welcome-screen';
 import { ResetWalletScreen } from '../containers/reset-wallet-screen';
 import { SplashScreen } from '../containers/splash-screen';
@@ -63,8 +68,13 @@ const OnboardingNavigator = (): ReactElement => {
   return (
     <OnboardingStack.Navigator screenOptions={screenOptions}>
       <OnboardingStack.Screen name='Welcome' component={WelcomeScreen} />
+      <OnboardingStack.Screen name='BackupMethod' component={BackupMethodScreen} />
       <OnboardingStack.Screen name='BackupPhrase' component={BackupPhraseScreen} />
+      <OnboardingStack.Screen name='BackupPassword' component={BackupPasswordScreen} />
+      <OnboardingStack.Screen name='ImportMethod' component={ImportMethodScreen} />
       <OnboardingStack.Screen name='ImportWallet' component={ImportWalletScreen} />
+      <OnboardingStack.Screen name='SelectAccounts' component={SelectAccountsScreen} />
+      <OnboardingStack.Screen name='ProtectWallet' component={ProtectWalletScreen} />
       <OnboardingStack.Screen name='CreatePassword' component={CreatePasswordScreen} />
       <OnboardingStack.Screen name='RestoreBackup' component={RestoreBackupScreen} />
       <OnboardingStack.Screen name={SHEET_ROUTE} component={SheetScreen} options={sheetOptions} />

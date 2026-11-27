@@ -11,24 +11,20 @@ describe('WelcomePage', () => {
 
     await renderPage(<WelcomePage onCreateWallet={onCreateWallet} onImportWallet={onImportWallet} />);
 
-    expect(screen.getByText('Adena')).toBeTruthy();
-    expect(screen.getByText('A clear wallet for Gno.land and connected chains.')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'Create a new wallet' }));
+    expect(screen.getByText('ADENA')).toBeTruthy();
+    expect(screen.getByText('Your wallet.\nYour world.')).toBeTruthy();
+    // The promo card of the concept is intentionally not part of the page.
+    expect(screen.queryByText('Your assets, together.')).toBeNull();
+    await fireEvent.press(screen.getByRole('button', { name: 'Create a wallet' }));
     expect(onCreateWallet).toHaveBeenCalledTimes(1);
     expect(onImportWallet).not.toHaveBeenCalled();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Import with recovery phrase' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Import a wallet' }));
     expect(onImportWallet).toHaveBeenCalledTimes(1);
   });
 
-  it('offers a cloud restore only when given', async () => {
-    const onRestore = jest.fn();
-
+  it('has no cloud restore button of its own', async () => {
     await renderPage(<WelcomePage onCreateWallet={jest.fn()} onImportWallet={jest.fn()} />);
     expect(screen.queryByTestId('welcome-restore')).toBeNull();
-
-    await renderPage(<WelcomePage onCreateWallet={jest.fn()} onImportWallet={jest.fn()} restoreLabel='Restore from iCloud' onRestore={onRestore} />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Restore from iCloud' }));
-    expect(onRestore).toHaveBeenCalledTimes(1);
   });
 });

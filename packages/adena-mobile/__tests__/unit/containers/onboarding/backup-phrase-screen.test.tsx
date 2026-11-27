@@ -29,6 +29,7 @@ describe('BackupPhraseScreen', () => {
 
   it.each<AppStateStatus>(['inactive', 'background'])('hides the phrase when the app turns %s and shows it again on request', async (state) => {
     await render(wrapPage(<BackupPhraseScreen {...props} />));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
     expect(screen.getAllByText(firstWord).length).toBeGreaterThan(0);
 
     await act(async () => listener(state));
@@ -42,11 +43,12 @@ describe('BackupPhraseScreen', () => {
 
   it('keeps the onboarding flow working while the phrase is hidden', async () => {
     await render(wrapPage(<BackupPhraseScreen {...props} />));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
     await act(async () => listener('background'));
 
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'I saved my recovery phrase' }));
+    expect(screen.getByTestId('backup-phrase-masked')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('backup-continue'));
-    expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
+    expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet');
   });
 
   it('stops listening once the screen is gone', async () => {

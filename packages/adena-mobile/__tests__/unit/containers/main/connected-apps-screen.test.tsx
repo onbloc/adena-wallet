@@ -44,7 +44,7 @@ describe('ConnectedAppsScreen', () => {
 
     await fireEvent.press(screen.getAllByRole('button', { name: 'Disconnect' })[1]);
 
-    expect(screen.getByText('1 connected apps')).toBeTruthy();
+    expect(screen.getByText('1 connected app')).toBeTruthy();
     expect(screen.queryByText(ORIGIN)).toBeNull();
     expect(connectedAppService.getConnectedApps().map(app => app.origin)).toEqual([OTHER]);
   });

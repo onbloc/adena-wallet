@@ -8,6 +8,8 @@ export const useStyles = makeStyles(colors => ({
   price: { gap: spacing.space4 },
   dimmed: { opacity: 0.5 },
   section: { gap: spacing.space8 },
+  // Stat rows sit on the design's 48pt rhythm.
+  rows: { gap: spacing.space8 },
   readMore: { alignSelf: 'center', paddingVertical: spacing.space8, minHeight: sizes.touchTarget, justifyContent: 'center' },
   footer: { flexDirection: 'row', gap: spacing.space8, paddingHorizontal: sizes.screenInset, paddingTop: spacing.space12, paddingBottom: sizes.footerBottom },
   action: { flex: 1 },

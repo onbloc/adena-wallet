@@ -42,8 +42,8 @@ const props = (overrides: Partial<SettingsPageProps> = {}): SettingsPageProps =>
 
 const ORDER = [
   'Account 1',
+  'General', 'Local currency', 'Language', 'Balances and activity', 'Haptic touch', 'Theme',
   'Manage', 'Networks', 'Connected apps', 'Address book',
-  'General', 'Theme', 'Local currency', 'Language', 'Balances and activity', 'Haptic touch',
   'Privacy and security', 'Change password', 'Recovery phrase', 'Lock wallet', 'Reset wallet',
 ];
 

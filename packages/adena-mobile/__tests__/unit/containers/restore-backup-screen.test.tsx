@@ -29,7 +29,7 @@ describe('RestoreBackupScreen', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
     await screen.findByRole('button', { name: 'Continue' });
-    expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
+    expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet');
     expect(useOnboardingStore.getState().restoreBackup?.keyrings[0]).toMatchObject({ mnemonic: TEST_MNEMONIC });
     expect(screen.getByTestId('restore-backup-password').props.value).toBe('');
   });
@@ -111,7 +111,7 @@ describe('RestoreBackupScreen', () => {
     await fireEvent.changeText(screen.getByTestId('restore-backup-password'), BACKUP_PASSWORD);
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     await screen.findByRole('button', { name: 'Continue' });
-    expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
+    expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet');
   });
 
   it('shows an empty cloud and cloud errors with retry', async () => {

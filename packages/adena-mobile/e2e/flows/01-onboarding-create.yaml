@@ -5,14 +5,19 @@ tags: [onboarding, smoke]
 - runFlow: ../subflows/fresh-launch.yaml
 - tapOn:
     id: welcome-create
-- assertVisible: Never share this phrase
+- tapOn:
+    id: backup-method-manual
+- assertVisible: Keep your words private
 - assertVisible:
     id: backup-continue
     enabled: false
-- tapOn: I saved my recovery phrase
+- tapOn:
+    id: backup-reveal
 - tapOn:
     id: backup-continue
-- assertVisible: Set a password
+- runFlow: ../subflows/skip-protect.yaml
+- assertVisible:
+    id: password-input
 # Too short, too simple, then mismatched, before the valid password.
 - tapOn:
     id: password-input

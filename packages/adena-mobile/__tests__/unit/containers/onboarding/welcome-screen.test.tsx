@@ -13,7 +13,7 @@ import { wrapPage } from '../../components/pages/render-page';
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
-const BackupStub = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'BackupPhrase'>): ReactElement => {
+const BackupStub = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'BackupMethod'>): ReactElement => {
   const handleBack = (): void => navigation.goBack();
 
   return <Pressable accessibilityRole='button' onPress={handleBack}><Text>Back to welcome</Text></Pressable>;
@@ -31,7 +31,7 @@ describe('WelcomeScreen', () => {
         <NavigationContainer>
           <Stack.Navigator>
             <Stack.Screen name='Welcome' component={WelcomeScreen} />
-            <Stack.Screen name='BackupPhrase' component={BackupStub} />
+            <Stack.Screen name='BackupMethod' component={BackupStub} />
           </Stack.Navigator>
         </NavigationContainer>
       </Wrapper>,

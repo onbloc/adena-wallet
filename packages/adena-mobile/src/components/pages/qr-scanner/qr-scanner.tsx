@@ -15,6 +15,8 @@ export interface QrScannerPageProps {
   hint: string;
   error?: string;
   onOpenSettings: () => void;
+  // Decodes a QR code from a saved photo instead of the camera.
+  onFromPhotos?: () => void;
   onShowMyQr?: () => void;
   onClose: () => void;
 }
@@ -26,7 +28,7 @@ const CORNERS = [
   { key: 'bottom-right', style: styles.bottomRight },
 ];
 
-export const QrScannerPage = ({ status, camera, hint, error, onOpenSettings, onShowMyQr, onClose }: QrScannerPageProps): ReactElement => (
+export const QrScannerPage = ({ status, camera, hint, error, onOpenSettings, onFromPhotos, onShowMyQr, onClose }: QrScannerPageProps): ReactElement => (
   <Screen
     header={<TopBar title='Scan QR code' variant='root' onBack={onClose} />}
     footer={onShowMyQr && <Button label='Show my QR code' onPress={onShowMyQr} />}
@@ -53,8 +55,9 @@ export const QrScannerPage = ({ status, camera, hint, error, onOpenSettings, onS
           <Text variant='meta' color='inverse' align='center'>{hint}</Text>
         </View>
         <Text variant='body' color='secondary' align='center'>Point your camera at a QR code to scan a wallet address.</Text>
-        {error && <InlineAlert tone='error' title={error} />}
       </>
     )}
+    {onFromPhotos && <Button label='From photos' leadingIcon='image' tone='secondary' size='compact' onPress={onFromPhotos} testID='qr-from-photos' />}
+    {error && <InlineAlert tone='error' title={error} />}
   </Screen>
 );

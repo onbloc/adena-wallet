@@ -6,8 +6,10 @@ import { Camera, CameraDevice, useCameraDevice, useCameraPermission } from 'reac
 import { Barcode, TargetBarcodeFormat, useBarcodeScannerOutput } from 'react-native-vision-camera-barcode-scanner';
 
 import { QrScannerPage, QrScannerStatus } from '../../../components/pages';
+import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
+import { scanQrFromPhotos } from '../../../infrastructure/media/qr-image-scanner';
 import { MainStackParamList } from '../../../navigation/types';
 import { useToastStore } from '../../../stores/toast.store';
 import { parseRecipientQr } from '../../../utils/recipient-qr';
@@ -56,14 +58,8 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
   const normalizeAddress = (address: string): string | null => chainRegistry.forNetwork(network).normalizeAddress(address, network);
 
   // Codes keep arriving every frame; only the first valid one is used.
-  const handleScan = (barcodes: Barcode[]): void => {
-    if (doneRef.current) {
-      return;
-    }
-
-    const payloads = barcodes.map(barcode => barcode.rawValue ?? barcode.displayValue).filter((value): value is string => Boolean(value));
-
-    if (payloads.length === 0) {
+  const handlePayloads = (payloads: string[]): void => {
+    if (doneRef.current || payloads.length === 0) {
       return;
     }
 
@@ -92,6 +88,30 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
     navigation.goBack();
   };
 
+  const handleScan = (barcodes: Barcode[]): void => {
+    handlePayloads(barcodes.map(barcode => barcode.rawValue ?? barcode.displayValue).filter((value): value is string => Boolean(value)));
+  };
+
+  const handleFromPhotos = async (): Promise<void> => {
+    try {
+      const payloads = await scanQrFromPhotos();
+
+      if (payloads === null) {
+        return;
+      }
+
+      if (payloads.length === 0) {
+        setError('No QR code found in this photo');
+        return;
+      }
+
+      handlePayloads(payloads);
+    }
+    catch (photoError) {
+      setError(toErrorMessage(photoError));
+    }
+  };
+
   const handleShowMyQr = (): void => navigation.replace('Receive');
 
   const handleCameraError = (): void => setError('The camera stopped unexpectedly.');
@@ -112,6 +132,7 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       hint={`${network.chainName} wallet address`}
       error={error}
       onOpenSettings={handleOpenSettings}
+      onFromPhotos={handleFromPhotos}
       onShowMyQr={handleShowMyQr}
       onClose={navigation.goBack}
     />

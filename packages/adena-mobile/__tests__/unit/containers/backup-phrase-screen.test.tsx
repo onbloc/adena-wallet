@@ -8,17 +8,18 @@ import { TEST_MNEMONIC } from '../../helpers/test-container';
 describe('BackupPhraseScreen', () => {
   beforeEach(resetStores);
 
-  it('shows the phrase and continues only after the acknowledgement', async () => {
+  it('keeps the phrase masked and continues only after it was shown', async () => {
     useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
     const { navigation } = await renderScreen(BackupPhraseScreen);
 
-    expect(screen.getByText('about')).toBeTruthy();
+    expect(screen.queryByText('about')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     expect(navigation.navigate).not.toHaveBeenCalled();
 
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'I saved my recovery phrase' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
+    expect(screen.getByText('about')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
-    expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
+    expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
     expect(navigation.goBack).toHaveBeenCalled();
@@ -26,6 +27,7 @@ describe('BackupPhraseScreen', () => {
 
   it('renders an empty grid without a mnemonic', async () => {
     await renderScreen(BackupPhraseScreen);
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
 
     expect(screen.queryByText('about')).toBeNull();
   });
