@@ -71,7 +71,6 @@ export const useStyles = makeStyles(colors => ({
   reviewAmounts: { gap: spacing.space8 },
   reviewSide: { flexDirection: 'row', alignItems: 'center', gap: spacing.space12 },
   reviewSideText: { flex: 1, gap: spacing.space4 },
-  sheetList: { maxHeight: 420 },
   sheetListContent: { gap: spacing.space4, paddingBottom: spacing.space8 },
   quickTokens: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.space8 },
   quickToken: {
@@ -90,7 +89,8 @@ export const useStyles = makeStyles(colors => ({
   tokenRowPressed: { backgroundColor: colors.background.pressed },
   tokenRowText: { flex: 1, gap: 2 },
   tokenRowTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.space8 },
-  tokenRowBalance: { alignItems: 'flex-end' },
+  tokenRowName: { flexShrink: 1 },
+  tokenRowBalance: { flexShrink: 0, maxWidth: '45%', alignItems: 'flex-end' },
   settingsContent: { gap: spacing.space16 },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space8, minHeight: sizes.assetRow, borderRadius: radius.input },
   settingRowPressed: { backgroundColor: colors.background.pressed },
