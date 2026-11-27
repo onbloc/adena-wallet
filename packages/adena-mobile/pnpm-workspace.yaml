@@ -43,5 +43,7 @@ allowBuilds:
   esbuild: false
   # Only checks the installed version.
   protobufjs: false
+  # Writes a Firebase JS SDK default config; RN Firebase reads the native config files instead.
+  '@firebase/util': false
   # Native addon build; the browser field maps the package to its pure-JS version.
   tiny-secp256k1: false

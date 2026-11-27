@@ -118,6 +118,23 @@ On-device checks (not covered by Jest):
 * iOS, fresh install with an existing backup: *Restore from iCloud* shows at once; the list fills in (or *Check again* finds it) once iCloud metadata syncs, and a not-downloaded file restores. Back up with the device locked right after: the upload is not held back by file protection.
 * Android: leave the consent sheet open, kill the app's activity (Don't keep activities) and return: the call fails after the timeout instead of hanging; revoke the token mid-session: the next request clears it and retries once.
 
+### Push notifications (FCM)
+
+Settings → *Notifications* opens a sheet with *Allow notifications* and one switch per category (*Received*, *Sent*, *Swaps*; `src/domain/notification.ts`). The server sends the pushes; the app only registers the device and its filters.
+
+* **Transport**: Firebase Cloud Messaging on both platforms (`@react-native-firebase/messaging`, `src/infrastructure/push/firebase-push-messaging.ts`). `firebase.json` turns FCM auto-init off, so no FCM token exists until the user turns notifications on.
+* **Permission**: turning the switch on asks the OS (iOS prompt / Android 13+ `POST_NOTIFICATIONS`); the switch stays off if it is refused, and the sheet links to the system settings.
+* **Registration** (`NotificationService`): `PUT {notificationApiBase}/v1/devices/{installationId}` with `{ token, platform, subscriptions: [{ chainId, address }], topics, locale }` — every account's address on the current network. Turning notifications off (or revoking the OS permission) sends `DELETE /v1/devices/{installationId}`; a factory reset does the same and drops the FCM token. The installation id is random per install. Syncs run on unlock, account/network changes, app foreground, token refresh and every switch change, and are skipped when nothing changed.
+* **Foreground**: a push received while the app is open is shown as a toast.
+* `REMOTE_RESOURCES.notificationApiBase` (`src/config/endpoints.ts`) is empty until the server is live; registration is a no-op meanwhile.
+
+One-time setup outside the repository:
+
+1. **Firebase**: add an Android app (`app.adena`) and an iOS app (`app.adena.Adena`) to the Firebase project, upload the APNs auth key (Project settings → Cloud Messaging).
+2. Put `google-services.json` in `android/app/` and add `GoogleService-Info.plist` to the `AdenaMobile` target in Xcode. Without them the build still succeeds and *Notifications* reports that push is unavailable.
+3. **Apple**: enable *Push Notifications* on the App ID and regenerate the provisioning profiles (the entitlements already carry `aps-environment`).
+4. iOS now builds with dynamic frameworks (React Native Firebase 27 requires them): run `pod install` again after pulling this change.
+
 ### Release builds (Android)
 
 Release signing is read from Gradle properties and never committed. Put these in `~/.gradle/gradle.properties` (or pass `ORG_GRADLE_PROJECT_<name>` in CI):

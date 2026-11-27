@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { Icon, Switch, Text } from '../../atoms';
-import { BottomSheet } from '../../molecules';
+import { Button, Icon, Switch, Text } from '../../atoms';
+import { BottomSheet, InlineAlert } from '../../molecules';
 import { styles } from './settings.styles';
 
 export interface SettingsOptionView {
@@ -77,6 +77,58 @@ export const ToggleSheet = ({ visible, title, toggles, onClose }: { visible: boo
             <Switch value={toggle.value} onValueChange={toggle.onChange} accessibilityLabel={toggle.title} />
           </View>
         ))}
+      </View>
+    </BottomSheet>
+  );
+};
+
+export interface SettingsNotificationTopicView {
+  topic: string;
+  title: string;
+  description: string;
+  value: boolean;
+}
+
+export interface SettingsNotificationsView {
+  enabled: boolean;
+  topics: SettingsNotificationTopicView[];
+  // Shown above the switches, e.g. when the OS permission is denied.
+  alert?: { title: string; description?: string };
+  // Offered with the alert when the fix is in the system settings.
+  onOpenSystemSettings?: () => void;
+  onToggleEnabled: (value: boolean) => void;
+  onToggleTopic: (topic: string, value: boolean) => void;
+}
+
+// Master switch plus one switch per category; categories stay visible but locked while it is off.
+export const NotificationSheet = ({ visible, view, onClose }: { visible: boolean; view: SettingsNotificationsView; onClose: () => void }): ReactElement => {
+  return (
+    <BottomSheet visible={visible} title='Notifications' onClose={onClose}>
+      <View style={styles.options}>
+        {view.alert && <InlineAlert tone='warning' title={view.alert.title} description={view.alert.description} />}
+        {view.alert && view.onOpenSystemSettings && (
+          <Button label='Open settings' tone='secondary' size='compact' onPress={view.onOpenSystemSettings} />
+        )}
+        <View style={styles.option}>
+          <View style={styles.optionTexts}>
+            <Text variant='row'>Allow notifications</Text>
+            <Text variant='meta' color='secondary'>Get notified about activity in your accounts.</Text>
+          </View>
+          <Switch value={view.enabled} onValueChange={view.onToggleEnabled} accessibilityLabel='Allow notifications' />
+        </View>
+        {view.topics.map((topic) => {
+          const handleChange = (value: boolean): void => view.onToggleTopic(topic.topic, value);
+
+          return (
+            <View key={topic.topic} style={styles.option}>
+              <View style={styles.optionTexts}>
+                <Text variant='row' color={view.enabled ? 'primary' : 'disabled'}>{topic.title}</Text>
+                <Text variant='meta' color='secondary'>{topic.description}</Text>
+              </View>
+              <Switch value={topic.value} disabled={!view.enabled} onValueChange={handleChange} accessibilityLabel={topic.title} />
+            </View>
+          );
+        })}
       </View>
     </BottomSheet>
   );

@@ -60,7 +60,7 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('button', { name: 'Language, English' })).toBeTruthy();
   });
 
-  it('has no notifications, advanced, accounts or placeholder rows', async () => {
+  it('has no advanced, accounts or placeholder rows, and no notifications row without its view', async () => {
     await renderPage(<SettingsPage {...props()} />);
 
     ['Notifications', 'Advanced', 'Accounts', 'Hide reported activity'].forEach(label => expect(screen.queryByText(label)).toBeNull());
@@ -165,5 +165,47 @@ describe('SettingsPage', () => {
     await renderPage(<SettingsPage {...props({ cloudBackupLabel: 'iCloud backup', cloudBackupValue: 'Out of date', onOpenCloudBackup })} />);
     await fireEvent.press(screen.getByRole('button', { name: 'iCloud backup, Out of date' }));
     expect(onOpenCloudBackup).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles notifications and each category from the notifications sheet', async () => {
+    const notifications = {
+      enabled: true,
+      topics: [
+        { topic: 'received', title: 'Received', description: 'When tokens arrive in one of your accounts.', value: true },
+        { topic: 'sent', title: 'Sent', description: 'When a transfer you sent is confirmed on-chain.', value: false },
+      ],
+      onToggleEnabled: jest.fn(),
+      onToggleTopic: jest.fn(),
+    };
+
+    await renderPage(<SettingsPage {...props({ notifications })} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Notifications, On' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Allow notifications' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Received' }));
+    await fireEvent.press(screen.getByRole('switch', { name: 'Sent' }));
+
+    expect(notifications.onToggleEnabled).toHaveBeenCalledWith(false);
+    expect(notifications.onToggleTopic).toHaveBeenNthCalledWith(1, 'received', false);
+    expect(notifications.onToggleTopic).toHaveBeenNthCalledWith(2, 'sent', true);
+  });
+
+  it('locks the categories while notifications are off and offers the system settings when denied', async () => {
+    const onOpenSystemSettings = jest.fn();
+    const notifications = {
+      enabled: false,
+      topics: [{ topic: 'received', title: 'Received', description: 'When tokens arrive.', value: true }],
+      alert: { title: 'Notifications are turned off for Adena' },
+      onOpenSystemSettings,
+      onToggleEnabled: jest.fn(),
+      onToggleTopic: jest.fn(),
+    };
+
+    await renderPage(<SettingsPage {...props({ notifications })} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Notifications, Off' }));
+
+    expect(screen.getByRole('switch', { name: 'Received' }).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('Notifications are turned off for Adena')).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Open settings' }));
+    expect(onOpenSystemSettings).toHaveBeenCalledTimes(1);
   });
 });

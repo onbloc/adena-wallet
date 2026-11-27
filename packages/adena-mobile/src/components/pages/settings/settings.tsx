@@ -6,15 +6,16 @@ import { formatAddress } from '../../../utils/address';
 import { Avatar, Switch, Text } from '../../atoms';
 import { ListRow, Screen, SectionLabel, TopBar } from '../../molecules';
 import { styles } from './settings.styles';
-import { OptionSheet, SettingsOptionView, ToggleSheet } from './settings-sheets';
+import { NotificationSheet, OptionSheet, SettingsNotificationsView, SettingsNotificationTopicView, SettingsOptionView, ToggleSheet } from './settings-sheets';
 
-export type { SettingsOptionView };
+export type { SettingsNotificationsView, SettingsNotificationTopicView, SettingsOptionView };
 
 export const SettingsSheet = {
   THEME: 'theme',
   CURRENCY: 'currency',
   LANGUAGE: 'language',
   BALANCES: 'balances',
+  NOTIFICATIONS: 'notifications',
 } as const;
 
 export type SettingsSheet = (typeof SettingsSheet)[keyof typeof SettingsSheet];
@@ -46,6 +47,8 @@ export interface SettingsPageProps {
   onToggleHideUnknownTokens: (value: boolean) => void;
   hapticsEnabled: boolean;
   onToggleHaptics: (value: boolean) => void;
+  // The Notifications row is hidden without it.
+  notifications?: SettingsNotificationsView;
   appVersion: string;
   onOpenNetworks: () => void;
   onOpenConnectedApps: () => void;
@@ -114,6 +117,9 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
         <ListRow label='Local currency' value={codeOf(props.currencyOptions, props.currency)} onPress={open(SettingsSheet.CURRENCY)} />
         <ListRow label='Language' value={titleOf(props.languageOptions, props.language)} onPress={open(SettingsSheet.LANGUAGE)} />
         <ListRow label='Balances and activity' onPress={open(SettingsSheet.BALANCES)} />
+        {props.notifications && (
+          <ListRow label='Notifications' value={props.notifications.enabled ? 'On' : 'Off'} onPress={open(SettingsSheet.NOTIFICATIONS)} />
+        )}
         <SwitchRow label='Haptic touch' value={props.hapticsEnabled} onChange={props.onToggleHaptics} />
       </Section>
       <Section label='Privacy and security'>
@@ -171,6 +177,9 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
           },
         ]}
       />
+      {props.notifications && (
+        <NotificationSheet visible={sheet === SettingsSheet.NOTIFICATIONS} view={props.notifications} onClose={close} />
+      )}
     </Screen>
   );
 };

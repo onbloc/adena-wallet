@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0C80B921A6F3F58F76C31292 /* libPods-AdenaMobile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-AdenaMobile.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		39C35026419378C8F8BE3F29 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0FDFFA55B493D5E0CF847FE2 /* Inter-Medium.ttf */; };
 		6AA5B91C461AA93721805AD7 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1394A8876A1B078108B7C86 /* Inter-Bold.ttf */; };
@@ -15,11 +14,13 @@
 		761780EF2CA45674006654EF /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EE2CA45674006654EF /* SceneDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		88700E0C8C2208FCA69EA4E6 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
-		E5B26D17A257A9AE12CE8A37 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5181AA330E86C988E6E73B72 /* Inter-Regular.ttf */; };
-		ECA4983C50E9B365C922C917 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6C4A1DB47C2AE8F4B6C903CA /* Inter-SemiBold.ttf */; };
+		9AAB3F41180279FA9EFCD84A /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2E38389DD31DD04A1EC6A976 /* FirebaseCore */; };
 		A0C1D2E3F4051627384950A1 /* AdenaCloudBackupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */; };
 		A0C1D2E3F4051627384950A3 /* AdenaCloudBackup.mm in Sources */ = {isa = PBXBuildFile; fileRef = A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */; };
 		B1D2E3F405162738495A6B01 /* AdenaSecureClipboard.mm in Sources */ = {isa = PBXBuildFile; fileRef = B1D2E3F405162738495A6B02 /* AdenaSecureClipboard.mm */; };
+		E5B26D17A257A9AE12CE8A37 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5181AA330E86C988E6E73B72 /* Inter-Regular.ttf */; };
+		ECA4983C50E9B365C922C917 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6C4A1DB47C2AE8F4B6C903CA /* Inter-SemiBold.ttf */; };
+		FC6ED7A59697E83834435615 /* Pods_AdenaMobile.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 774E251E300764F1DCD89B6F /* Pods_AdenaMobile.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,17 +32,17 @@
 		3B4392A12AC88292D35C810B /* Pods-AdenaMobile.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdenaMobile.debug.xcconfig"; path = "Target Support Files/Pods-AdenaMobile/Pods-AdenaMobile.debug.xcconfig"; sourceTree = "<group>"; };
 		5181AA330E86C988E6E73B72 /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Inter-Regular.ttf"; path = "../src/assets/fonts/Inter-Regular.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-AdenaMobile.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AdenaMobile.release.xcconfig"; path = "Target Support Files/Pods-AdenaMobile/Pods-AdenaMobile.release.xcconfig"; sourceTree = "<group>"; };
-		5DCACB8F33CDC322A6C60F78 /* libPods-AdenaMobile.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AdenaMobile.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6C4A1DB47C2AE8F4B6C903CA /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Inter-SemiBold.ttf"; path = "../src/assets/fonts/Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = AdenaMobile/AppDelegate.swift; sourceTree = "<group>"; };
 		761780EE2CA45674006654EF /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = AdenaMobile/SceneDelegate.swift; sourceTree = "<group>"; };
+		774E251E300764F1DCD89B6F /* Pods_AdenaMobile.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AdenaMobile.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = AdenaMobile/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		A1394A8876A1B078108B7C86 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Inter-Bold.ttf"; path = "../src/assets/fonts/Inter-Bold.ttf"; sourceTree = "<group>"; };
-		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		A0C1D2E3F4051627384950A2 /* AdenaCloudBackupStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AdenaCloudBackupStore.swift; path = AdenaMobile/AdenaCloudBackupStore.swift; sourceTree = "<group>"; };
 		A0C1D2E3F4051627384950A4 /* AdenaCloudBackup.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AdenaCloudBackup.mm; path = AdenaMobile/AdenaCloudBackup.mm; sourceTree = "<group>"; };
-		B1D2E3F405162738495A6B02 /* AdenaSecureClipboard.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AdenaSecureClipboard.mm; path = AdenaMobile/AdenaSecureClipboard.mm; sourceTree = "<group>"; };
 		A0C1D2E3F4051627384950A5 /* AdenaMobile.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = AdenaMobile.entitlements; path = AdenaMobile/AdenaMobile.entitlements; sourceTree = "<group>"; };
+		A1394A8876A1B078108B7C86 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Inter-Bold.ttf"; path = "../src/assets/fonts/Inter-Bold.ttf"; sourceTree = "<group>"; };
+		B1D2E3F405162738495A6B02 /* AdenaSecureClipboard.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = AdenaSecureClipboard.mm; path = AdenaMobile/AdenaSecureClipboard.mm; sourceTree = "<group>"; };
+		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,7 +50,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0C80B921A6F3F58F76C31292 /* libPods-AdenaMobile.a in Frameworks */,
+				FC6ED7A59697E83834435615 /* Pods_AdenaMobile.framework in Frameworks */,
+				9AAB3F41180279FA9EFCD84A /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -81,7 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5DCACB8F33CDC322A6C60F78 /* libPods-AdenaMobile.a */,
+				774E251E300764F1DCD89B6F /* Pods_AdenaMobile.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -138,12 +140,18 @@
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				289B39EB8ED02A8892335635 /* [CP-User] [RNFB] Core Configuration */,
+				6BF62570E66E989A055E2D6D /* [RNFB] Embed Firebase SPM Frameworks */,
+				DF3EF216857AFDF31C331D3E /* [RNFB] Remove duplicate Firebase/Google SPM binary xcframework signature files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = AdenaMobile;
+			packageProductDependencies = (
+				2E38389DD31DD04A1EC6A976 /* FirebaseCore */,
+			);
 			productName = AdenaMobile;
 			productReference = 13B07F961A680F5B00A75B9A /* AdenaMobile.app */;
 			productType = "com.apple.product-type.application";
@@ -170,6 +178,9 @@
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
+			packageReferences = (
+				ECB02FC8EBFEE4AD838F1A71 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -230,6 +241,40 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AdenaMobile/Pods-AdenaMobile-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		289B39EB8ED02A8892335635 /* [CP-User] [RNFB] Core Configuration */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)",
+			);
+			name = "[CP-User] [RNFB] Core Configuration";
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#!/usr/bin/env bash\n#\n# Copyright (c) 2016-present Invertase Limited & Contributors\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this library except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#\n\n##########################################################################\n##########################################################################\n#\n#  NOTE THAT IF YOU CHANGE THIS FILE YOU MUST RUN pod install AFTERWARDS\n#\n#  This file is installed as an Xcode build script in the project file\n#  by cocoapods, and you will not see your changes until you pod install\n#\n##########################################################################\n##########################################################################\n\nset -e\n\n_MAX_LOOKUPS=2;\n_SEARCH_RESULT=''\n_RN_ROOT_EXISTS=''\n_CURRENT_LOOKUPS=1\n_JSON_ROOT='react-native'\n_JSON_FILE_NAME='firebase.json'\n_JSON_OUTPUT_BASE64='e30=' # { }\n_CURRENT_SEARCH_DIR=${PROJECT_DIR}\n_PLIST_BUDDY=/usr/libexec/PlistBuddy\n_TARGET_PLIST=\"${BUILT_PRODUCTS_DIR}/${INFOPLIST_PATH}\"\n_DSYM_PLIST=\"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist\"\n\n# plist arrays\n_PLIST_ENTRY_KEYS=()\n_PLIST_ENTRY_TYPES=()\n_PLIST_ENTRY_VALUES=()\n\nfunction setPlistValue {\n  echo \"note:      setting plist entry '$1' of type '$2' in file '$4'\"\n  # PlistBuddy is macOS-only (Xcode builds). Fall back to python3 plistlib so\n  # unit tests can exercise this script on Linux CI (ubuntu-latest).\n  if [[ -x \"${_PLIST_BUDDY}\" ]]; then\n    ${_PLIST_BUDDY} -c \"Add :$1 $2 '$3'\" $4 || echo \"note:      '$1' already exists\"\n  else\n    python3 - \"$1\" \"$2\" \"$3\" \"$4\" <<'PY' || echo \"note:      failed to set '$1'\"\nimport plistlib\nimport sys\n\nkey, typ, value, path = sys.argv[1:5]\nwith open(path, \"rb\") as handle:\n    data = plistlib.load(handle)\nif key in data:\n    sys.exit(0)\nif typ == \"bool\":\n    data[key] = value in (\"YES\", \"true\", \"1\")\nelse:\n    data[key] = value\nwith open(path, \"wb\") as handle:\n    plistlib.dump(data, handle)\nPY\n  fi\n}\n\nfunction getFirebaseJsonKeyValue () {\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    ruby -rjson -e 'output=JSON.parse(File.read(ARGV.fetch(0))); puts output[ARGV.fetch(1)][ARGV.fetch(2)]' \"$_SEARCH_RESULT\" \"$_JSON_ROOT\" \"$1\"\n  else\n    echo \"\"\n  fi;\n}\n\nfunction jsonBoolToYesNo () {\n  if [[ $1 == \"false\" ]]; then\n    echo \"NO\"\n  elif [[ $1 == \"true\" ]]; then\n    echo \"YES\"\n  else echo \"NO\"\n  fi\n}\n\necho \"note: -> RNFB build script started\"\necho \"note: 1) Locating ${_JSON_FILE_NAME} file:\"\n\nif [[ -z ${_CURRENT_SEARCH_DIR} ]]; then\n  _CURRENT_SEARCH_DIR=$(pwd)\nfi;\n\nwhile true; do\n  _CURRENT_SEARCH_DIR=$(dirname \"$_CURRENT_SEARCH_DIR\")\n  if [[ \"$_CURRENT_SEARCH_DIR\" == \"/\" ]] || [[ ${_CURRENT_LOOKUPS} -gt ${_MAX_LOOKUPS} ]]; then break; fi;\n  echo \"note:      ($_CURRENT_LOOKUPS of $_MAX_LOOKUPS) Searching in '$_CURRENT_SEARCH_DIR' for a ${_JSON_FILE_NAME} file.\"\n  _SEARCH_RESULT=$(find \"$_CURRENT_SEARCH_DIR\" -maxdepth 2 -name ${_JSON_FILE_NAME} -print | /usr/bin/head -n 1)\n  if [[ ${_SEARCH_RESULT} ]]; then\n    echo \"note:      ${_JSON_FILE_NAME} found at $_SEARCH_RESULT\"\n    break;\n  fi;\n  _CURRENT_LOOKUPS=$((_CURRENT_LOOKUPS+1))\ndone\n\nif [[ ${_SEARCH_RESULT} ]]; then\n  if ! _RN_ROOT_EXISTS=$(ruby -rjson -e 'output=JSON.parse(File.read(ARGV.fetch(0))); puts output[ARGV.fetch(1)]' \"$_SEARCH_RESULT\" \"$_JSON_ROOT\"); then\n    echo \"error: Failed to parse firebase.json, check for syntax errors.\"\n    exit 1\n  fi\n\n  if [[ ${_RN_ROOT_EXISTS} ]]; then\n    if ! python3 --version >/dev/null 2>&1; then echo \"error: python3 not found, firebase.json file processing error.\" && exit 1; fi\n    _JSON_OUTPUT_BASE64=$(python3 -c 'import base64,json,sys; print(base64.b64encode(json.dumps(json.load(open(sys.argv[1], \"rb\"))[\"react-native\"]).encode()).decode())' \"$_SEARCH_RESULT\" || echo \"e30=\")\n  fi\n\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n\n  # config.app_data_collection_default_enabled\n  _APP_DATA_COLLECTION_ENABLED=$(getFirebaseJsonKeyValue \"app_data_collection_default_enabled\")\n  if [[ $_APP_DATA_COLLECTION_ENABLED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseDataCollectionDefaultEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_DATA_COLLECTION_ENABLED\")\")\n  fi\n\n  # config.analytics_auto_collection_enabled\n  _ANALYTICS_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"analytics_auto_collection_enabled\")\n  if [[ $_ANALYTICS_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_COLLECTION\")\")\n  fi\n\n  # config.analytics_collection_deactivated\n  _ANALYTICS_DEACTIVATED=$(getFirebaseJsonKeyValue \"analytics_collection_deactivated\")\n  if [[ $_ANALYTICS_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FIREBASE_ANALYTICS_COLLECTION_DEACTIVATED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_DEACTIVATED\")\")\n  fi\n\n  # config.analytics_idfv_collection_enabled\n  _ANALYTICS_IDFV_COLLECTION=$(getFirebaseJsonKeyValue \"analytics_idfv_collection_enabled\")\n  if [[ $_ANALYTICS_IDFV_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_IDFV_COLLECTION\")\")\n  fi\n\n  # config.analytics_default_allow_analytics_storage\n  _ANALYTICS_STORAGE=$(getFirebaseJsonKeyValue \"analytics_default_allow_analytics_storage\")\n  if [[ $_ANALYTICS_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_storage\n  _ANALYTICS_AD_STORAGE=$(getFirebaseJsonKeyValue \"analytics_default_allow_ad_storage\")\n  if [[ $_ANALYTICS_AD_STORAGE ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_STORAGE\")\")\n  fi\n\n  # config.analytics_default_allow_ad_user_data\n  _ANALYTICS_AD_USER_DATA=$(getFirebaseJsonKeyValue \"analytics_default_allow_ad_user_data\")\n  if [[ $_ANALYTICS_AD_USER_DATA ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AD_USER_DATA\")\")\n  fi\n\n  # config.analytics_default_allow_ad_personalization_signals\n  _ANALYTICS_PERSONALIZATION=$(getFirebaseJsonKeyValue \"analytics_default_allow_ad_personalization_signals\")\n  if [[ $_ANALYTICS_PERSONALIZATION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_PERSONALIZATION\")\")\n  fi\n\n  # config.analytics_registration_with_ad_network_enabled\n  _ANALYTICS_REGISTRATION_WITH_AD_NETWORK=$(getFirebaseJsonKeyValue \"google_analytics_registration_with_ad_network_enabled\")\n  if [[ $_ANALYTICS_REGISTRATION_WITH_AD_NETWORK ]]; then\n    _PLIST_ENTRY_KEYS+=(\"GOOGLE_ANALYTICS_REGISTRATION_WITH_AD_NETWORK_ENABLED\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_REGISTRATION_WITH_AD_NETWORK\")\")\n  fi\n\n  # config.google_analytics_automatic_screen_reporting_enabled\n  _ANALYTICS_AUTO_SCREEN_REPORTING=$(getFirebaseJsonKeyValue \"google_analytics_automatic_screen_reporting_enabled\")\n  if [[ $_ANALYTICS_AUTO_SCREEN_REPORTING ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAutomaticScreenReportingEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_ANALYTICS_AUTO_SCREEN_REPORTING\")\")\n  fi\n\n  # config.perf_auto_collection_enabled\n  _PERF_AUTO_COLLECTION=$(getFirebaseJsonKeyValue \"perf_auto_collection_enabled\")\n  if [[ $_PERF_AUTO_COLLECTION ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_enabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_AUTO_COLLECTION\")\")\n  fi\n\n  # config.perf_collection_deactivated\n  _PERF_DEACTIVATED=$(getFirebaseJsonKeyValue \"perf_collection_deactivated\")\n  if [[ $_PERF_DEACTIVATED ]]; then\n    _PLIST_ENTRY_KEYS+=(\"firebase_performance_collection_deactivated\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_PERF_DEACTIVATED\")\")\n  fi\n\n  # config.messaging_auto_init_enabled\n  _MESSAGING_AUTO_INIT=$(getFirebaseJsonKeyValue \"messaging_auto_init_enabled\")\n  if [[ $_MESSAGING_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseMessagingAutoInitEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_MESSAGING_AUTO_INIT\")\")\n  fi\n\n  # config.messaging_installation_id_enabled\n  _MESSAGING_INSTALLATION_ID=$(getFirebaseJsonKeyValue \"messaging_installation_id_enabled\")\n  if [[ $_MESSAGING_INSTALLATION_ID ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseMessagingInstallationIdEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_MESSAGING_INSTALLATION_ID\")\")\n  fi\n\n  # config.in_app_messaging_auto_colllection_enabled\n  _FIAM_AUTO_INIT=$(getFirebaseJsonKeyValue \"in_app_messaging_auto_collection_enabled\")\n  if [[ $_FIAM_AUTO_INIT ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseInAppMessagingAutomaticDataCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_FIAM_AUTO_INIT\")\")\n  fi\n\n  # config.app_check_token_auto_refresh\n  _APP_CHECK_TOKEN_AUTO_REFRESH=$(getFirebaseJsonKeyValue \"app_check_token_auto_refresh\")\n  if [[ $_APP_CHECK_TOKEN_AUTO_REFRESH ]]; then\n    _PLIST_ENTRY_KEYS+=(\"FirebaseAppCheckTokenAutoRefreshEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"$(jsonBoolToYesNo \"$_APP_CHECK_TOKEN_AUTO_REFRESH\")\")\n  fi\n\n  # config.crashlytics_disable_auto_disabler - undocumented for now - mainly for debugging, document if becomes useful\n  _CRASHLYTICS_AUTO_DISABLE_ENABLED=$(getFirebaseJsonKeyValue \"crashlytics_disable_auto_disabler\")\n  if [[ $_CRASHLYTICS_AUTO_DISABLE_ENABLED == \"true\" ]]; then\n    echo \"Disabled Crashlytics auto disabler.\" # do nothing\n  else\n    _PLIST_ENTRY_KEYS+=(\"FirebaseCrashlyticsCollectionEnabled\")\n    _PLIST_ENTRY_TYPES+=(\"bool\")\n    _PLIST_ENTRY_VALUES+=(\"NO\")\n  fi\nelse\n  _PLIST_ENTRY_KEYS+=(\"firebase_json_raw\")\n  _PLIST_ENTRY_TYPES+=(\"string\")\n  _PLIST_ENTRY_VALUES+=(\"$_JSON_OUTPUT_BASE64\")\n  echo \"warning:   A firebase.json file was not found, whilst this file is optional it is recommended to include it to configure firebase services in React Native Firebase.\"\nfi;\n\necho \"note: 2) Injecting Info.plist entries: \"\n\n# Log out the keys we're adding\nfor i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n  echo \"    ->  $i) ${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\"\ndone\n\nfor plist in \"${_TARGET_PLIST}\" \"${_DSYM_PLIST}\" ; do\n  if [[ -f \"${plist}\" ]]; then\n\n    # paths with spaces break the call to setPlistValue. temporarily modify\n    # the shell internal field separator variable (IFS), which normally\n    # includes spaces, to consist only of line breaks\n    oldifs=$IFS\n    IFS=\"\n\"\n\n    for i in \"${!_PLIST_ENTRY_KEYS[@]}\"; do\n      setPlistValue \"${_PLIST_ENTRY_KEYS[$i]}\" \"${_PLIST_ENTRY_TYPES[$i]}\" \"${_PLIST_ENTRY_VALUES[$i]}\" \"${plist}\"\n    done\n\n    # restore the original internal field separator value\n    IFS=$oldifs\n  else\n    echo \"warning:   A Info.plist build output file was not found (${plist})\"\n  fi\ndone\n\necho \"note: <- RNFB build script finished\"\n";
+		};
+		6BF62570E66E989A055E2D6D /* [RNFB] Embed Firebase SPM Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${BUILT_PRODUCTS_DIR}/PackageFrameworks",
+			);
+			name = "[RNFB] Embed Firebase SPM Frameworks";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "set -euo pipefail\n\napp_frameworks_dir=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nmkdir -p \"${app_frameworks_dir}\"\n\nembed_frameworks_from() {\n  local source_dir=\"$1\"\n  [ -d \"${source_dir}\" ] || return 0\n\n  find \"${source_dir}\" -maxdepth 1 -type d -name \"*.framework\" -print0 | while IFS= read -r -d '' framework; do\n    framework_name=\"$(basename \"${framework}\")\"\n    destination=\"${app_frameworks_dir}/${framework_name}\"\n\n    if [ -e \"${destination}\" ]; then\n      continue\n    fi\n\n    # Xcode's Archive action writes EVERY SKIP_INSTALL=YES product into\n    # ${OBJROOT}/UninstalledProducts/${PLATFORM_NAME} -- not just Swift\n    # Package products. With CocoaPods + `use_frameworks!` (required for\n    # SPM mode), that folder also contains every pod's .framework,\n    # including STATIC ones (Expo modules, the Pods_<target> umbrella,\n    # ...). Embedding a static framework into the app bundle makes App\n    # Store validation fail with \"Invalid bundle structure ... binary\n    # file is not permitted\". Only ever embed real dynamic libraries.\n    #\n    # Internal binary name matches the .framework folder name minus the\n    # extension for every CocoaPods/SPM-built framework (all this script\n    # handles).\n    binary_name=\"${framework_name%.framework}\"\n    # Deliberate tradeoff: match `file -b` prose for \"dynamically linked\"\n    # rather than inspecting Mach-O magic bytes. Locale-independent in\n    # practice on Apple's `file`, but still a CLI string match.\n    file_description=\"\"\n    if [ -f \"${framework}/${binary_name}\" ]; then\n      file_description=\"$(file -b \"${framework}/${binary_name}\")\"\n    fi\n    # Do not use `file ... | grep -q` here. Under this script's\n    # `set -o pipefail`, `grep -q` exits after the first matching line of\n    # a multi-line universal-binary description, `file` receives SIGPIPE,\n    # and the otherwise-successful pipeline becomes false.\n    if [[ \"${file_description}\" != *\"dynamically linked\"* ]]; then\n      echo \"Skipping ${framework_name}: binary missing or not dynamically linked\"\n      continue\n    fi\n\n    echo \"Embedding Firebase SPM framework ${framework_name} (from ${source_dir})\"\n    rsync -av --delete \\\n      --filter \"- Headers\" \\\n      --filter \"- PrivateHeaders\" \\\n      --filter \"- Modules\" \\\n      \"${framework}\" \\\n      \"${app_frameworks_dir}\"\n\n    if [ -n \"${EXPANDED_CODE_SIGN_IDENTITY:-}\" ] && [ \"${CODE_SIGNING_REQUIRED:-}\" != \"NO\" ] && [ \"${CODE_SIGNING_ALLOWED:-}\" != \"NO\" ]; then\n      /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" ${OTHER_CODE_SIGN_FLAGS:-} --preserve-metadata=identifier,entitlements \"${destination}\"\n    fi\n  done\n}\n\n# Regular (simulator/device) builds put every Swift Package product for\n# the whole scheme's dependency graph into one shared folder.\nembed_frameworks_from \"${BUILT_PRODUCTS_DIR}/PackageFrameworks\"\n\n# Xcode's Archive action (ONLY_ACTIVE_ARCH=NO, DEPLOYMENT_POSTPROCESSING=YES)\n# never populates PackageFrameworks. It stages build products under\n# ${OBJROOT}/UninstalledProducts/${PLATFORM_NAME} instead -- and that\n# folder is NOT SPM-only: Archive writes every SKIP_INSTALL=YES product\n# there, which under CocoaPods + use_frameworks! (required for SPM mode)\n# includes every pod .framework (dynamic Firebase SPM products and static\n# pods alike). Without this fallback, Archive embeds zero Firebase SPM\n# frameworks and the app crashes at launch (missing-library dyld). The\n# filter inside embed_frameworks_from keeps only dynamically linked\n# binaries so static CocoaPods frameworks are not copied into the app\n# bundle (App Store \"Invalid bundle structure\").\nembed_frameworks_from \"${OBJROOT}/UninstalledProducts/${PLATFORM_NAME}\"\n";
+		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -251,6 +296,25 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
+		};
+		DF3EF216857AFDF31C331D3E /* [RNFB] Remove duplicate Firebase/Google SPM binary xcframework signature files */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[RNFB] Remove duplicate Firebase/Google SPM binary xcframework signature files";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "rm -f \"${CONFIGURATION_BUILD_DIR}\"/GoogleAppMeasurement.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/GoogleAppMeasurement.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/GoogleAppMeasurementIdentitySupport.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/GoogleAppMeasurementIdentitySupport.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/GoogleAdsOnDeviceConversion.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/GoogleAdsOnDeviceConversion.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/FirebaseAnalytics.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/FirebaseAnalytics.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/FirebaseFirestoreInternal.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/FirebaseFirestoreInternal.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/absl.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/absl.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/grpc.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/grpc.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/grpcpp.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/grpcpp.xcframework-ios-simulator.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/openssl_grpc.xcframework-ios.signature\nrm -f \"${CONFIGURATION_BUILD_DIR}\"/openssl_grpc.xcframework-ios-simulator.signature\n";
 		};
 		E235C05ADACE081382539298 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -292,6 +356,7 @@
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-AdenaMobile.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AdenaMobile/AdenaMobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
@@ -311,6 +376,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.adena.Adena;
 				PRODUCT_NAME = AdenaMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
+				SWIFT_INCLUDE_PATHS = "$(inherited) ${SYMROOT}/${CONFIGURATION}${EFFECTIVE_PLATFORM_NAME}/";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -323,6 +390,7 @@
 			baseConfigurationReference = 5709B34CF0A7D63546082F79 /* Pods-AdenaMobile.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_EXPLICIT_MODULES = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = AdenaMobile/AdenaMobile.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
@@ -341,6 +409,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.adena.Adena;
 				PRODUCT_NAME = AdenaMobile;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ENABLE_EXPLICIT_MODULES = NO;
+				SWIFT_INCLUDE_PATHS = "$(inherited) ${SYMROOT}/${CONFIGURATION}${EFFECTIVE_PLATFORM_NAME}/";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -396,6 +466,29 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"${PODS_ROOT}/ReactCommon",
+					"${PODS_ROOT}/ReactCommon/react/nativemodule/core",
+					"${PODS_ROOT}/React-runtimeexecutor",
+					"${PODS_ROOT}/React-runtimeexecutor/platform/ios",
+					"${PODS_ROOT}/ReactCommon-Samples",
+					"${PODS_ROOT}/ReactCommon-Samples/platform/ios",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/view/platform/cxx",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/scrollview/platform/cxx",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/scrollview/platform/ios",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/textlayoutmanager/platform/ios",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/components/text/platform/cxx",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/components/textinput/platform/ios",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/components/switch/iosswitch",
+					"${PODS_ROOT}/React-NativeModulesApple",
+					"${PODS_ROOT}/React-bridging",
+					"${PODS_ROOT}/React-graphics",
+					"${PODS_ROOT}/React-graphics/react/renderer/graphics/platform/ios",
+					"${PODS_ROOT}/React-featureflags",
+					"${PODS_ROOT}/React-renderercss",
+					"${PODS_ROOT}/React-cxxstableapi",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
@@ -471,6 +564,29 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"${PODS_ROOT}/ReactCommon",
+					"${PODS_ROOT}/ReactCommon/react/nativemodule/core",
+					"${PODS_ROOT}/React-runtimeexecutor",
+					"${PODS_ROOT}/React-runtimeexecutor/platform/ios",
+					"${PODS_ROOT}/ReactCommon-Samples",
+					"${PODS_ROOT}/ReactCommon-Samples/platform/ios",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/view/platform/cxx",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/scrollview/platform/cxx",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/scrollview/platform/ios",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/textlayoutmanager/platform/ios",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/components/text/platform/cxx",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/components/textinput/platform/ios",
+					"${PODS_ROOT}/React-FabricComponents/react/renderer/components/switch/iosswitch",
+					"${PODS_ROOT}/React-NativeModulesApple",
+					"${PODS_ROOT}/React-bridging",
+					"${PODS_ROOT}/React-graphics",
+					"${PODS_ROOT}/React-graphics/react/renderer/graphics/platform/ios",
+					"${PODS_ROOT}/React-featureflags",
+					"${PODS_ROOT}/React-renderercss",
+					"${PODS_ROOT}/React-cxxstableapi",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.5;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
@@ -525,6 +641,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		ECB02FC8EBFEE4AD838F1A71 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = exactVersion;
+				version = 13.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2E38389DD31DD04A1EC6A976 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ECB02FC8EBFEE4AD838F1A71 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }

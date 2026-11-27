@@ -53,3 +53,18 @@ export const Default: Story = {};
 export const DarkThemeFiltersOff: Story = { args: { theme: 'dark', hideSmallBalances: false, hideUnknownTokens: false, hapticsEnabled: false } };
 
 export const WithoutAccount: Story = { args: { account: undefined } };
+
+export const WithNotifications: Story = {
+  args: {
+    notifications: {
+      enabled: true,
+      topics: [
+        { topic: 'received', title: 'Received', description: 'When tokens arrive in one of your accounts.', value: true },
+        { topic: 'sent', title: 'Sent', description: 'When a transfer you sent is confirmed on-chain.', value: true },
+        { topic: 'swap', title: 'Swaps', description: 'When a swap you made is confirmed on-chain.', value: false },
+      ],
+      onToggleEnabled: fn(),
+      onToggleTopic: fn(),
+    },
+  },
+};

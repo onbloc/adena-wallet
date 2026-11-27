@@ -47,6 +47,13 @@ describe('FetchHttpClient', () => {
     expect(init.headers).toEqual({ Accept: 'text/plain', 'Content-Type': 'application/json', 'X-Key': 'k' });
   });
 
+  it.each(['PUT', 'DELETE'] as const)('resolves an empty %s response to undefined', async (method) => {
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, text: async () => '' });
+    await expect(client.request('https://x', { method })).resolves.toBeUndefined();
+    fetchMock.mockResolvedValueOnce({ ok: true, status: 204 });
+    await expect(client.request('https://x', { method })).resolves.toBeUndefined();
+  });
+
   it('sends falsy-but-defined bodies without a content type', async () => {
     fetchMock.mockResolvedValue(jsonResponse({}));
     await client.request('https://x', { method: 'POST', body: 0 });

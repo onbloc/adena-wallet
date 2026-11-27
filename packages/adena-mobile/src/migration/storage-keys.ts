@@ -14,6 +14,7 @@ export const StorageKey = {
   RESTORE_PENDING: 'restore.pending',
   CLOUD_BACKUP: 'cloud-backup',
   CLOUD_BACKUP_PENDING_WRITE: 'cloud-backup.pending-write',
+  NOTIFICATIONS: 'notifications',
 } as const;
 
 export type StorageKey = (typeof StorageKey)[keyof typeof StorageKey];
