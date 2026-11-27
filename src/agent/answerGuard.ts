@@ -241,11 +241,10 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
         } else if (explanationRequested && text.trim()) warnings.push('The explanatory text is model-generated; current facts are rendered separately from tool results.');
         if (auditFailed || policy.auditFailed?.()) warnings.push('Audit logging failed. Completed tool results were preserved and further execution was paused.');
         const completion = { ...done, warnings };
-        // A preparation that ended in a result or a refusal is remembered, with its tool record, so
-        // later turns know what was prepared. The prompts and the record forbid replaying it. A turn
-        // whose audit failed stays uncommitted, as before.
+        // A confirmed host handoff cannot be undone by an audit write failure.
+        // Remember it for later turns, but do not commit audit-failed refusals.
         const preparationAnswered = intent.kind === 'prepare' && outcomes.length > 0 && !mismatch
-          && !auditFailed && !policy.auditFailed?.();
+          && (prepared || (!auditFailed && !policy.auditFailed?.()));
         yield (complete || preparationAnswered) && !event.aborted ? { ...completion, verifiedAnswer: true }
           : modelOnly && !event.aborted ? completion : { ...completion, messages: [] };
         break;

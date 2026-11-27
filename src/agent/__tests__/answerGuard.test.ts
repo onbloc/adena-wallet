@@ -245,7 +245,11 @@ describe('required normalized outcomes', () => {
     expect(answer.text).toContain('Unsigned transaction prepared');
     expect(answer.text).not.toContain('Payment confirmed');
     expect(answer.done.warnings.some(warning => warning.includes('Audit'))).toBe(true);
-    expect(canRememberTurn(answer.done)).toBe(false);
+    expect(canRememberTurn(answer.done)).toBe(true);
+    const refused = await guard(prepare, [call('transfer'), result('transfer', {
+      kind: 'result', value: { status: 'error', message: 'Insufficient balance.' }, auditFailed: true,
+    }), done()]);
+    expect(canRememberTurn(refused.done)).toBe(false);
   });
   it('remembers a preparation that ended in a result or a refusal, so later turns know what was prepared', async () => {
     const prepared = await guard(prepare, [call('transfer'), result('transfer', { kind: 'result', value: { status: 'prepared' } }), done()]);

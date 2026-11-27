@@ -18,6 +18,7 @@ const outcomeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('denied'), code: z.string() }),
   z.object({
     kind: z.literal('result'),
+    auditFailed: z.literal(true).optional(),
     value: z.object({
       status: z.string().optional(),
       code: z.string().optional(),
@@ -37,7 +38,10 @@ function outcome({ output }: CallRecord): string {
   if (!parsed.success) return output === undefined ? 'failed' : 'no result';
   if (parsed.data.kind === 'denied') return `denied (${parsed.data.code})`;
   const { status, code, to, spender, amount, token } = parsed.data.value;
-  if (status === 'prepared') return `prepared, unsigned and completed: ${amount} ${token} to ${to ?? spender}`;
+  if (status === 'prepared') {
+    const audit = parsed.data.auditFailed ? ' (audit logging failed)' : '';
+    return `prepared, unsigned and completed: ${amount} ${token} to ${to ?? spender}${audit}`;
+  }
   if (status === 'error') return `refused (${code})`;
   return status ?? 'read';
 }

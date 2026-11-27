@@ -456,13 +456,18 @@ describe('integrated request execution', () => {
     expect(wallet.calls).toEqual([{ method: 'transfer', params: { from: ACCOUNT, to: RECIPIENT, amount: '1', token: 'GNOT' } }]);
   });
   it('preserves a completed handoff and reports auditing failure separately', async () => {
-    const { agent, prepared, model } = setup([send], { intent: prepare, failAudit: true });
+    const { agent, prepared, model } = setup([send, answer(intentReplyText(prepare)), send], { intent: prepare, failAudit: true });
     const events = await collect(agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission));
     expect(prepared).toHaveLength(1);
     expect(textOf(events)).toContain('Unsigned transaction prepared');
     expect(doneOf(events)?.warnings.some(warning => warning.includes('Audit'))).toBe(true);
     expect(events.some(event => event.type === 'tool-error')).toBe(false);
     expect(model.doGenerateCalls).toHaveLength(2);
+    expect(agent.turns[0]?.record).toContain(`prepared, unsigned and completed: 1 GNOT to ${RECIPIENT} (audit logging failed)`);
+
+    await collect(agent.run({ prompt: 'Try again.' }, permission));
+    expect(JSON.stringify(model.doGenerateCalls[2]?.prompt)).toContain('audit logging failed');
+    expect(prepared).toHaveLength(1);
   });
   it('obtains a normalized prerequisite and its exact units before a relative transfer', async () => {
     const { agent, model, prepared, mcp } = setup([half], { intent: prepare });
