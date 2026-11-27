@@ -1,10 +1,19 @@
 // UTF-8 TextDecoder fallback for engines that ship TextEncoder without TextDecoder.
 // Follows the WHATWG UTF-8 decoder: malformed or truncated sequences become U+FFFD,
 // or throw when `fatal` is set, so native builds accept exactly what web/Jest accept.
+// `decode(chunk, { stream: true })` keeps an incomplete trailing sequence for the next call.
 export class Utf8TextDecoder {
   readonly encoding = 'utf-8';
   readonly fatal: boolean;
   readonly ignoreBOM: boolean;
+
+  // Decoder state carried between streaming calls.
+  private codePoint = 0;
+  private bytesSeen = 0;
+  private bytesNeeded = 0;
+  private lower = 0x80;
+  private upper = 0xbf;
+  private bomHandled = false;
 
   constructor(label = 'utf-8', options: { fatal?: boolean; ignoreBOM?: boolean } = {}) {
     if (!['utf-8', 'utf8', 'unicode-1-1-utf-8'].includes(label.trim().toLowerCase())) {
@@ -15,23 +24,24 @@ export class Utf8TextDecoder {
     this.ignoreBOM = Boolean(options.ignoreBOM);
   }
 
-  decode(input?: ArrayBuffer | ArrayBufferView): string {
-    if (!input) {
-      return '';
-    }
-
-    const bytes = input instanceof ArrayBuffer
-      ? new Uint8Array(input)
-      : new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+  decode(input?: ArrayBuffer | ArrayBufferView, options: { stream?: boolean } = {}): string {
+    const bytes = !input
+      ? new Uint8Array(0)
+      : input instanceof ArrayBuffer
+        ? new Uint8Array(input)
+        : new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
     const codePoints: number[] = [];
-    let codePoint = 0;
-    let bytesSeen = 0;
-    let bytesNeeded = 0;
-    let lower = 0x80;
-    let upper = 0xbf;
 
+    const resetSequence = (): void => {
+      this.codePoint = 0;
+      this.bytesNeeded = 0;
+      this.bytesSeen = 0;
+      this.lower = 0x80;
+      this.upper = 0xbf;
+    };
     const fail = (): void => {
       if (this.fatal) {
+        resetSequence();
         throw new TypeError('The encoded data was not valid utf-8');
       }
 
@@ -41,25 +51,25 @@ export class Utf8TextDecoder {
     for (let index = 0; index < bytes.length; index++) {
       const byte = bytes[index];
 
-      if (bytesNeeded === 0) {
+      if (this.bytesNeeded === 0) {
         if (byte <= 0x7f) {
           codePoints.push(byte);
         }
         else if (byte >= 0xc2 && byte <= 0xdf) {
-          bytesNeeded = 1;
-          codePoint = byte & 0x1f;
+          this.bytesNeeded = 1;
+          this.codePoint = byte & 0x1f;
         }
         else if (byte >= 0xe0 && byte <= 0xef) {
-          lower = byte === 0xe0 ? 0xa0 : 0x80;
-          upper = byte === 0xed ? 0x9f : 0xbf;
-          bytesNeeded = 2;
-          codePoint = byte & 0x0f;
+          this.lower = byte === 0xe0 ? 0xa0 : 0x80;
+          this.upper = byte === 0xed ? 0x9f : 0xbf;
+          this.bytesNeeded = 2;
+          this.codePoint = byte & 0x0f;
         }
         else if (byte >= 0xf0 && byte <= 0xf4) {
-          lower = byte === 0xf0 ? 0x90 : 0x80;
-          upper = byte === 0xf4 ? 0x8f : 0xbf;
-          bytesNeeded = 3;
-          codePoint = byte & 0x07;
+          this.lower = byte === 0xf0 ? 0x90 : 0x80;
+          this.upper = byte === 0xf4 ? 0x8f : 0xbf;
+          this.bytesNeeded = 3;
+          this.codePoint = byte & 0x07;
         }
         else {
           fail();
@@ -68,37 +78,43 @@ export class Utf8TextDecoder {
         continue;
       }
 
-      if (byte < lower || byte > upper) {
+      if (byte < this.lower || byte > this.upper) {
         // The offending byte starts over as a new sequence.
-        codePoint = 0;
-        bytesNeeded = 0;
-        bytesSeen = 0;
-        lower = 0x80;
-        upper = 0xbf;
+        resetSequence();
         fail();
         index--;
         continue;
       }
 
-      lower = 0x80;
-      upper = 0xbf;
-      codePoint = (codePoint << 6) | (byte & 0x3f);
-      bytesSeen++;
+      this.lower = 0x80;
+      this.upper = 0xbf;
+      this.codePoint = (this.codePoint << 6) | (byte & 0x3f);
+      this.bytesSeen++;
 
-      if (bytesSeen === bytesNeeded) {
-        codePoints.push(codePoint);
-        codePoint = 0;
-        bytesNeeded = 0;
-        bytesSeen = 0;
+      if (this.bytesSeen === this.bytesNeeded) {
+        codePoints.push(this.codePoint);
+        resetSequence();
       }
     }
 
-    if (bytesNeeded !== 0) {
-      fail();
+    if (!options.stream) {
+      if (this.bytesNeeded !== 0) {
+        resetSequence();
+        fail();
+      }
     }
 
-    if (!this.ignoreBOM && codePoints[0] === 0xfeff) {
-      codePoints.shift();
+    // The BOM is only stripped from the first decoded character of a stream.
+    if (!this.bomHandled && codePoints.length > 0) {
+      this.bomHandled = true;
+
+      if (!this.ignoreBOM && codePoints[0] === 0xfeff) {
+        codePoints.shift();
+      }
+    }
+
+    if (!options.stream) {
+      this.bomHandled = false;
     }
 
     let result = '';

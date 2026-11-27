@@ -17,7 +17,7 @@ const Tabs = createBottomTabNavigator<MainTabParamList>();
 const TAB_BY_ROUTE: Record<keyof MainTabParamList, MainTab> = { Wallet: MainTab.WALLET, Activity: MainTab.ACTIVITY };
 const ROUTE_BY_TAB: Record<MainTab, keyof MainTabParamList> = { wallet: 'Wallet', activity: 'Activity' };
 
-const TabBar = ({ state, navigation, showSwap }: BottomTabBarProps & { showSwap: boolean }): ReactElement => {
+const TabBar = ({ state, navigation, showSwap, showChat }: BottomTabBarProps & { showSwap: boolean; showChat: boolean }): ReactElement => {
   const insets = useSafeAreaInsets();
   const current = state.routes[state.index].name as keyof MainTabParamList;
 
@@ -26,6 +26,8 @@ const TabBar = ({ state, navigation, showSwap }: BottomTabBarProps & { showSwap:
   // Bubbles up to the main stack, which owns the Search page.
   const handleSearch = (): void => navigation.navigate('Search');
 
+  const handleChat = (): void => navigation.navigate('Chat');
+
   const handleSwap = (): void => navigation.navigate('Swap');
 
   return (
@@ -33,8 +35,10 @@ const TabBar = ({ state, navigation, showSwap }: BottomTabBarProps & { showSwap:
       <MainTabBar
         selected={TAB_BY_ROUTE[current]}
         showSwap={showSwap}
+        showChat={showChat}
         onNavigate={handleNavigate}
         onSearch={handleSearch}
+        onChat={handleChat}
         onSwap={handleSwap}
       />
     </View>
@@ -43,12 +47,13 @@ const TabBar = ({ state, navigation, showSwap }: BottomTabBarProps & { showSwap:
 
 export const MainTabs = (): ReactElement => {
   const colors = useThemeColors();
-  const { swapService } = useContainer();
+  const { swapService, aiAssistantService } = useContainer();
   const { network } = useWalletSnapshot();
   // Swap needs GnoSwap metadata for the network (none on AtomOne or custom networks).
   const showSwap = swapService.isSupported(network);
+  const showChat = aiAssistantService.isSupported(network);
 
-  const tabBarTabsNavigator = (props: BottomTabBarProps): React.JSX.Element => <TabBar {...props} showSwap={showSwap} />;
+  const tabBarTabsNavigator = (props: BottomTabBarProps): React.JSX.Element => <TabBar {...props} showSwap={showSwap} showChat={showChat} />;
 
   return (
     <Tabs.Navigator

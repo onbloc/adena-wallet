@@ -1,10 +1,13 @@
 import { FEATURES } from '../config/features';
+import { AiLibraryLoader } from '../infrastructure/ai/ai-library';
 import { GnoswapApiClient } from '../infrastructure/http/gnoswap-api.client';
 import { FetchHttpClient, HttpClient } from '../infrastructure/http/http-client';
 import { OnblocApiClient } from '../infrastructure/http/onbloc-api.client';
 import { StorageAccountRepository } from '../repositories/account.repository';
 import { StorageAccountPhotoRepository } from '../repositories/account-photo.repository';
 import { StorageAddressBookRepository } from '../repositories/address-book.repository';
+import { StorageAiChatRepository } from '../repositories/ai-chat.repository';
+import { StorageAiSettingsRepository } from '../repositories/ai-settings.repository';
 import { BiometricCredentialRepository, SecureBiometricCredentialRepository } from '../repositories/biometric-credential.repository';
 import { ChainModule, ChainRegistry } from '../repositories/chain/chain-registry';
 import { createCosmosModule } from '../repositories/chain/cosmos/cosmos-module';
@@ -33,6 +36,8 @@ import { AccountService } from '../services/account.service';
 import { AccountPhotoService } from '../services/account-photo.service';
 import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
+import { AiAssistantService } from '../services/ai-assistant.service';
+import { AiWalletService } from '../services/ai-wallet.service';
 import { AppResetService } from '../services/app-reset.service';
 import { BackupReminder } from '../services/backup-reminder';
 import { BalanceService } from '../services/balance.service';
@@ -82,6 +87,10 @@ export interface Infrastructure {
   hapticEngine?: HapticEngine;
   // Picks new accounts' avatar colors; injectable for deterministic tests.
   random?: () => number;
+  // Loads the adena-ai library; tests pass a fake so no model or polyfill is needed.
+  aiLibraryLoader?: AiLibraryLoader;
+  // Streaming fetch for model and MCP calls (React Native's own fetch cannot stream).
+  aiFetch?: typeof fetch;
   // Wallet mutation queue; defaults to the one shared by every container in this JS runtime.
   walletMutations?: SerialQueue;
 }
@@ -113,6 +122,7 @@ export interface Services {
   migrationService: MigrationService;
   cloudBackupService: CloudBackupService;
   backupReminder: BackupReminder;
+  aiAssistantService: AiAssistantService;
 }
 
 export type AppContainer = Services & {
@@ -145,9 +155,10 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const keyringSession = new KeyringSession();
   const attemptLimiter = new PasswordAttemptLimiter(new SecurePasswordAttemptRepository(secureStore), infra.now);
   const vaultService = new VaultService(vaultRepository, infra.vaultCipher ?? new ScryptXChaChaVaultCipher(), attemptLimiter);
+  const clearAiPending = (): void => aiAssistantService.clearAllPending();
   const accountService = overrides.accountService ?? new AccountService(accountRepository, keyringSession, chainRegistry, infra.random, infra.walletMutations ?? runtimeWalletMutations);
   const accountPhotoService = overrides.accountPhotoService ?? new AccountPhotoService(new StorageAccountPhotoRepository(keyValueStore));
-  const networkService = overrides.networkService ?? new NetworkService(networkRepository, chainRegistry);
+  const networkService = overrides.networkService ?? new NetworkService(networkRepository, chainRegistry, undefined, clearAiPending);
   const balanceService = overrides.balanceService ?? new BalanceService(chainRegistry, accountService);
   const transactionService = overrides.transactionService
     ?? new TransactionService(chainRegistry, accountService, keyringSession, pendingBroadcastRepository);
@@ -159,8 +170,18 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const resetMarker = new ResetMarker(keyValueStore);
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
   const cloudBackupStateRepository = new StorageCloudBackupStateRepository(keyValueStore);
+  const addressBookService = overrides.addressBookService
+    ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry);
+  const aiAssistantService = overrides.aiAssistantService ?? new AiAssistantService(
+    new StorageAiSettingsRepository(keyValueStore, secureStore),
+    new StorageAiChatRepository(keyValueStore),
+    new AiWalletService(accountService, tokenService, transactionService, addressBookService),
+    accountService,
+    infra.aiLibraryLoader,
+    infra.aiFetch,
+  );
   const walletService = overrides.walletService
-    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository, backupReminder);
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository, aiAssistantService], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository, backupReminder);
   const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
     infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
     infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),
@@ -189,8 +210,8 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     marketDataService: overrides.marketDataService
       ?? new MarketDataService(infra.marketDataRepository ?? new DexMarketDataRepository(new GnoswapApiClient(http), DEX_API_CONFIG, infra.now)),
     nftService,
-    addressBookService: overrides.addressBookService
-      ?? new AddressBookService(new StorageAddressBookRepository(keyValueStore), chainRegistry),
+    addressBookService,
+    aiAssistantService,
     onrampService: overrides.onrampService ?? new OnrampService(infra.onrampConfig ?? ONRAMP_CONFIG),
     appResetService: overrides.appResetService ?? new AppResetService(keyringSession, vaultService, secureStore, keyValueStore, migrationService, resetMarker),
     activityService: overrides.activityService ?? new ActivityService(chainRegistry, accountService),

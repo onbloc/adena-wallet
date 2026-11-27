@@ -97,19 +97,21 @@ export default function PlaygroundScreen() {
   // Editable Onbloc settings, in memory only. Clear both fields for a plain chat without the wallet.
   const [mcpUrl, setMcpUrl] = useState(DEFAULT_ONBLOC_MCP_URL);
   const [myAddress, setMyAddress] = useState(DEFAULT_ONBLOC_ACCOUNT);
-  const onblocSettings = resolveOnblocSettings(mcpUrl, myAddress, __DEV__ ? true : undefined);
+  const [chainId, setChainId] = useState(GNO_MAINNET_CHAIN);
+  const onblocSettings = resolveOnblocSettings(mcpUrl, myAddress, chainId, __DEV__ ? true : undefined);
   const onblocMode = onblocSettings.enabled;
   const onbloc =
-    onblocMode && onblocSettings.endpointError === null && onblocSettings.accountError === null
+    onblocMode && onblocSettings.endpointError === null && onblocSettings.accountError === null && onblocSettings.chainIdError === null
       ? {
           endpoint: onblocSettings.endpoint,
           account: onblocSettings.account,
+          chainId: onblocSettings.chainId,
           fetcher: expoFetch,
           ...(__DEV__ ? { allowLoopbackHttp: true as const } : {}),
         }
       : undefined;
   const walletScope = onbloc && {
-    mode: 'onbloc' as const, endpoint: onbloc.endpoint, chainId: GNO_MAINNET_CHAIN, account: onbloc.account,
+    mode: 'onbloc' as const, endpoint: onbloc.endpoint, chainId: onbloc.chainId, account: onbloc.account,
   };
   const scope = walletScope && useTools ? walletScope : { mode: 'plain' as const };
   const scopeKey = chatSessionKey(scope);
@@ -188,7 +190,7 @@ export default function PlaygroundScreen() {
 
   /** The mock wallet funded with the account's Onbloc balances; null (reason shown) if they cannot be read. */
   const ensureOnblocWallet = async (config: NonNullable<typeof onbloc>) => {
-    const key = chatSessionKey({ mode: 'onbloc', endpoint: config.endpoint, chainId: GNO_MAINNET_CHAIN, account: config.account });
+    const key = chatSessionKey({ mode: 'onbloc', endpoint: config.endpoint, chainId: config.chainId, account: config.account });
     if (walletRef.current?.key === key) return walletRef.current.sdk;
     setPreparing(true);
     try {
@@ -253,8 +255,8 @@ export default function PlaygroundScreen() {
         });
         const handoff = { current: onTransaction };
         const agent = onblocWallet
-          ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction: tx => handoff.current(tx), session: history, tokenSymbols: TOKEN_SYMBOLS })
-          : new AIAgent({ llm, harness, session: history });
+          ? new AIAgent({ llm, harness, chainId: onbloc?.chainId, wallet: onblocWallet, onTransaction: tx => handoff.current(tx), session: history, tokenSymbols: TOKEN_SYMBOLS })
+          : new AIAgent({ llm, harness, chainId: onbloc?.chainId, session: history });
         entry = { scope: scopeKey, agent, handoff };
         agentRef.current = entry;
       } else {
@@ -341,6 +343,19 @@ export default function PlaygroundScreen() {
           {onblocSettings.endpointError !== null && (
             <Text style={styles.error}>{onblocSettings.endpointError}</Text>
           )}
+          <Text style={styles.label}>Chain ID</Text>
+          <Text style={styles.muted}>Mainnet: gnoland-1 · Testnet: onyx-1. Pair with the matching MCP endpoint.</Text>
+          <TextInput
+            style={[styles.input, onblocSettings.chainIdError !== null && styles.invalid]}
+            value={chainId}
+            onChangeText={value => { clearDisplayedRun(); setAllowTransactionPreparation(false); setChainId(value); }}
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!preparing && !run.running}
+          />
+          {onblocSettings.chainIdError !== null && (
+            <Text style={styles.error}>{onblocSettings.chainIdError}</Text>
+          )}
           <Text style={styles.label}>My address</Text>
           <TextInput
             style={[styles.input, onblocSettings.accountError !== null && styles.invalid]}
@@ -357,7 +372,7 @@ export default function PlaygroundScreen() {
           {onblocMode ? (
             <>
               <Text style={styles.muted}>
-                Reads use Onbloc api-v3 (mainnet). When enabled, transaction preparation uses a
+                Reads use the configured Onbloc endpoint and chain. When enabled, transaction preparation uses a
                 mock wallet funded from Onbloc balances; it never signs or sends.
               </Text>
               {onbloc && <BalancesCard wallet={wallet} activeAddress={onbloc.account} />}

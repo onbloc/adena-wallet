@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type { BalanceAdapter, BalanceAsset, BalanceRequest, BalanceScope } from './balanceOperation';
-import { GNO_MAINNET_CHAIN } from '../harness/mcp';
 
 const nativeTool = 'get_native_balance';
 const tokensTool = 'get_token_balances';
@@ -77,8 +76,7 @@ export const onblocBalanceAdapter: BalanceAdapter = {
       }
       const output = await run.dispatch({ name: scope === 'native' ? nativeTool : tokensTool, input: {} });
       const result = envelope.safeParse(output);
-      if (!result.success || result.data.value.chainId !== GNO_MAINNET_CHAIN ||
-        result.data.value.chainId !== run.context.chainId) {
+      if (!result.success || result.data.value.chainId !== run.context.chainId) {
         missing.push(scope);
         continue;
       }

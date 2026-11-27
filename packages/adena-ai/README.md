@@ -38,7 +38,7 @@ wallet SDK.
 | `adena-ai-llm-poc/llm` | `LLM`, `LLMFromModel`, generation utilities |
 | `adena-ai-llm-poc/llm/remote` | `createLLMRemote`, hosted OpenAI options, the model catalog |
 | `adena-ai-llm-poc/harness` | `Harness`, budgets and tool-source contracts |
-| `adena-ai-llm-poc/harness/onbloc` | Onbloc mainnet reader/tool source |
+| `adena-ai-llm-poc/harness/onbloc` | Chain-bound Onbloc reader/tool source |
 | `adena-ai-llm-poc/llm/device` | Optional native `LLMOnDevice`, `createLLM`, React hook |
 
 ```ts
@@ -47,11 +47,11 @@ import { createLLMRemote } from 'adena-ai-llm-poc/llm/remote';
 import { Harness } from 'adena-ai-llm-poc/harness';
 import { createOnblocToolSource } from 'adena-ai-llm-poc/harness/onbloc';
 
-// The key, context limit, wallet adapter and preparation permission come from the host.
+// The endpoint-chain pair, key, context limit and wallet come from trusted host configuration.
 const llm = createLLMRemote({ apiKey, contextTokens });
-const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint })] });
+const harness = new Harness({ toolSources: [createOnblocToolSource({ endpoint, chainId })] });
 const agent = new AIAgent({
-  llm, harness, wallet, onTransaction,
+  llm, harness, chainId, wallet, onTransaction,
   budget: { maxSteps: 5, timeoutMs: 60_000 },
 });
 for await (const event of agent.run({ prompt }, { account, signal, allowTransactionPreparation })) {
@@ -454,10 +454,29 @@ software, hardware-wallet and session-account signing checks; calling a signing 
 must not bypass those policies. The host decides which funding address the run acts for and
 retains any separate signing-account identity.
 
-Onbloc's built-in source supports **Gno mainnet only**. A different `chainId` does not turn it
-into another network's reader: enable the feature only on mainnet, or supply matching tools and
-wallet implementation. Recreate the agent when its configured chain changes and start a fresh
-conversation when the account or network changes.
+Onbloc supports **Gno mainnet (`gnoland-1`) and Onyx testnet (`onyx-1`)** through host-configured
+endpoint-chain pairs. `OnblocMcpConfig.chainId` defaults to `gnoland-1`; an explicit value must
+contain 1–128 characters without whitespace. A source exposes tools only for its configured
+chain, labels results with that chain, and rejects structured responses whose `network` differs.
+The host must verify the endpoint serves that chain: changing `chainId` does not switch the
+server's backend, and responses without `network` cannot independently establish its identity.
+
+Multiple networks can share one harness without colliding on tool names:
+
+```ts
+const harness = new Harness({
+  toolSources: [
+    createOnblocToolSource({ endpoint: mainnetEndpoint, chainId: 'gnoland-1' }),
+    createOnblocToolSource({ endpoint: onyxEndpoint, chainId: 'onyx-1' }),
+  ],
+});
+const agent = new AIAgent({ llm, harness, chainId: 'onyx-1', wallet, onTransaction });
+```
+
+Only the selected chain's source is discovered for each run. Supply a matching wallet
+implementation, recreate the agent when its chain changes, and isolate conversations and
+pending choices by endpoint, chain and account. The playground already uses those scope keys;
+its mock transfer/approval summaries and unsigned payloads use the selected chain.
 
 The MCP adapter and its client use an interpreter-based JSON Schema validator, preserving
 input/output validation without `eval` or `new Function`. This supports MV3 extension CSP;
@@ -490,15 +509,26 @@ rejected rather than truncated.
 
 ### The wallet: Onbloc reads, mock transactions
 
-`make chat ARGS="--onbloc"` and the app's Settings tab (MCP URL and My address, both editable)
-read from the Onbloc api-v3 MCP: balances, tokens and transactions come from mainnet.
+`make chat ARGS="--onbloc"` and the app's Settings tab (MCP URL, Chain ID and My address)
+read from the configured Onbloc MCP. Mainnet remains the default; to use Onyx, pair
+`onyx-1` with its actual MCP endpoint. No testnet URL is inferred or bundled.
 `transfer` and `approve` build a transaction with the mock wallet and show it (the app as a card:
 "Not signed. Sign it in your wallet."). The mock wallet starts with the address's real GNOT and
 GNS balances (read once when the wallet is created); `/reset` and the app's Reset wallet read
-them again. Defaults are the dev endpoint and account in `src/mock/app/onblocSettings.ts`; for
-the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL` / `EXPO_PUBLIC_ONBLOC_ACCOUNT` override them. Clearing both
-fields in Settings leaves the chat without an account: questions are still answered, and wallet
-data or actions fail with `AGENT_ACCOUNT_REQUIRED`.
+them again. Defaults are the mainnet endpoint and account in `src/mock/app/onblocSettings.ts`.
+For the CLI, `EXPO_PUBLIC_ONBLOC_MCP_URL`, `EXPO_PUBLIC_ONBLOC_ACCOUNT` and
+`EXPO_PUBLIC_ONBLOC_CHAIN_ID` override the endpoint, account and chain respectively.
+A non-mainnet chain requires an explicitly configured MCP URL:
+
+```sh
+EXPO_PUBLIC_ONBLOC_CHAIN_ID=onyx-1 \
+EXPO_PUBLIC_ONBLOC_MCP_URL="$ONYX_MCP_URL" \
+make chat ARGS="--onbloc"
+```
+
+Set `ONYX_MCP_URL` to the approved Onyx MCP endpoint before running this command.
+Clearing both endpoint and address in Settings leaves the chat without an account:
+questions are still answered, and wallet data or actions fail with `AGENT_ACCOUNT_REQUIRED`.
 
 ## Scenario tests (real model)
 

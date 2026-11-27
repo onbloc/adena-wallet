@@ -12,6 +12,8 @@ export const SecureKey = {
   PASSWORD_ATTEMPTS: 'password-attempts',
   // Failed cloud backup password attempts during restore; survives a factory reset.
   BACKUP_PASSWORD_ATTEMPTS: 'backup-password-attempts',
+  // OpenAI API key typed in by the user for the AI assistant.
+  AI_API_KEY: 'ai-api-key',
   // Schema version of secure items, used by secure migrations.
   SECURE_SCHEMA_VERSION: 'secure-schema-version',
 } as const;

@@ -1,6 +1,8 @@
 // Shared sample data for page stories; public test addresses only.
-import { DappMessageView } from '../components/pages';
-import { AssetItemView, NftCardView } from '../components/view-models';
+import { AiSettingsSheetProps } from '../components/molecules';
+import { ChatDraftReview, DappMessageView } from '../components/pages';
+import { AssetItemView, ChatDraftView, ChatMessageView, NftCardView } from '../components/view-models';
+import { FeeTier } from '../domain/fee';
 
 export const SAMPLE_ADDRESS = 'g1semyl4hhfvkjmrg3e3ef8v0dkx0d6asffvakl4';
 export const SAMPLE_RECIPIENT = 'g17290cwvmrapvp869xfnhhawa8sm9edpufzat7d';
@@ -24,3 +26,74 @@ export const SWAP_MESSAGES: DappMessageView[] = [
   { title: 'Call', details: [{ label: 'Function', value: 'Deposit' }, { label: 'Package', value: 'gno.land/r/gnoland/wugnot' }, { label: 'Send', value: '1 GNOT' }] },
   { title: 'Call', details: [{ label: 'Function', value: 'ExactInSwapRoute' }, { label: 'Package', value: 'gno.land/r/gnoswap/router' }, { label: 'Arguments', value: 'wugnot → GNS, 1000000, min 4550753' }] },
 ];
+
+export const CHAT_DRAFT: ChatDraftView = {
+  id: 'draft-1',
+  title: 'Send 1 GNOT',
+  rows: [
+    { label: 'To', value: SAMPLE_RECIPIENT, multiline: true },
+    { label: 'Amount', value: '1 GNOT' },
+    { label: 'Network', value: 'Gno.land Mainnet' },
+  ],
+  state: 'pending',
+};
+
+export const CHAT_MESSAGES: ChatMessageView[] = [
+  { id: 'm1', role: 'user', text: 'What is my GNOT balance?' },
+  { id: 'm2', role: 'assistant', text: 'You hold 11,301.850689 GNOT on Gno.land Mainnet.', tools: [{ id: 't1', label: 'Get balance', status: 'done' }] },
+  { id: 'm3', role: 'user', text: `Send 1 GNOT to ${SAMPLE_RECIPIENT}` },
+  {
+    id: 'm4',
+    role: 'assistant',
+    text: 'I prepared the transfer. Review it before sending.',
+    warnings: ['This address has never received funds from you.'],
+    drafts: [CHAT_DRAFT],
+  },
+];
+
+export const CHAT_SETTINGS: AiSettingsSheetProps = {
+  visible: false,
+  provider: 'openai',
+  onChangeProvider: () => undefined,
+  apiKey: '',
+  hasApiKey: false,
+  onChangeApiKey: () => undefined,
+  onRemoveApiKey: () => undefined,
+  model: 'gpt-4o-mini',
+  modelOptions: [
+    { value: 'gpt-4o-mini', label: 'GPT-4o mini' },
+    { value: 'gpt-4o', label: 'GPT-4o' },
+  ],
+  onChangeModel: () => undefined,
+  local: { state: 'idle' },
+  onLoadLocal: () => undefined,
+  onUnloadLocal: () => undefined,
+  onRemoveLocal: () => undefined,
+  saving: false,
+  onSave: () => undefined,
+  onClose: () => undefined,
+};
+
+export const CHAT_REVIEW: ChatDraftReview = {
+  title: 'Review transfer',
+  rows: [
+    { label: 'To', value: SAMPLE_RECIPIENT, multiline: true },
+    { label: 'Amount', value: '1 GNOT', emphasis: true },
+  ],
+  fee: {
+    options: [
+      { tier: FeeTier.SLOW, label: 'Slow', feeLabel: '0.1003 GNOT' },
+      { tier: FeeTier.AVERAGE, label: 'Average', feeLabel: '0.1103 GNOT' },
+      { tier: FeeTier.FAST, label: 'Fast', feeLabel: '0.1204 GNOT' },
+    ],
+    selected: FeeTier.AVERAGE,
+    onSelect: () => undefined,
+    customAdjustment: '1',
+    onChangeCustomAdjustment: () => undefined,
+    tooLow: false,
+  },
+  totalLabel: '1.1103 GNOT',
+  confirming: false,
+  onConfirm: () => undefined,
+  onClose: () => undefined,
+};

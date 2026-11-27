@@ -15,6 +15,7 @@ export const StorageKey = {
   CLOUD_BACKUP: 'cloud-backup',
   CLOUD_BACKUP_PENDING_WRITE: 'cloud-backup.pending-write',
   BACKUP_REQUIRED: 'backup.required',
+  AI_SETTINGS: 'ai.settings',
 } as const;
 
 export type StorageKey = (typeof StorageKey)[keyof typeof StorageKey];
@@ -22,3 +23,6 @@ export type StorageKey = (typeof StorageKey)[keyof typeof StorageKey];
 // One raw data URI per account (`account-photo.<accountId>`), kept out of the accounts document
 // so listing accounts never parses image data.
 export const ACCOUNT_PHOTO_KEY_PREFIX = 'account-photo.';
+
+// One serialized conversation per account and network (`ai.chat.<networkId>.<accountId>`).
+export const AI_CHAT_KEY_PREFIX = 'ai.chat.';

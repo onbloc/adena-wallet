@@ -12,6 +12,7 @@ export * from './backup-password';
 export * from './backup-phrase';
 export * from './buy-crypto';
 export * from './change-password';
+export * from './chat';
 export * from './checkout';
 export * from './cloud-backup';
 export * from './connected-apps';

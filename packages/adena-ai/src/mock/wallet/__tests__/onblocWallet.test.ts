@@ -60,6 +60,39 @@ describe('Onbloc-funded mock wallet', () => {
     ]);
   });
 
+  it('binds testnet drafts to their snapshot chain without changing balances or precision', async () => {
+    const chainId = 'onyx-1';
+    const { fetcher } = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { ...native, network: chainId } },
+      { name: 'get_token_balances', output: { ...tokens(gnsItem), network: chainId } },
+    ]);
+    const sdk = await createOnblocMockWallet({
+      onbloc: { endpoint: 'https://test.example/mcp', account, chainId, fetcher },
+    });
+    const before = sdk.inspect();
+    const transfer = await sdk.transfer({ from: account, to: FIXTURE.recipient, amount: '0.000001', token: TokenSymbol.Gnot });
+    const approval = await sdk.approve({ from: account, spender: FIXTURE.recipient, amount: '0.000001', token: gnsItem.packagePath });
+    for (const draft of [transfer, approval]) {
+      expect(draft.summary).toMatchObject({ chainId, amount: '0.000001' });
+      expect(draft.tx).toMatchObject({ chainId, signatures: [] });
+    }
+    expect(transfer.tx).toMatchObject({ messages: [{ value: { amount: '1ugnot' } }] });
+    expect(approval.tx).toMatchObject({ messages: [{ value: { args: [FIXTURE.recipient, '1'] } }] });
+    await expect(sdk.transfer({ from: account, to: FIXTURE.recipient, amount: '0.0000001', token: TokenSymbol.Gnot }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InvalidAmount });
+    expect(sdk.inspect()).toEqual(before);
+  });
+
+  it('rejects a foreign network before funding a snapshot wallet', async () => {
+    const { fetcher } = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { ...native, network: 'foreign-chain' } },
+      { name: 'get_token_balances', output: tokens(gnsItem) },
+    ]);
+    await expect(createOnblocMockWallet({
+      onbloc: { endpoint: 'https://test.example/mcp', account, chainId: 'onyx-1', fetcher },
+    })).rejects.toThrow('get_native_balance failed');
+  });
+
   it('fails when a balance tool is missing', async () => {
     const { fetcher } = fakeOnblocMcp([{ name: 'get_native_balance', output: native }]);
 

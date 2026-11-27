@@ -27,6 +27,22 @@ const give = (amount: string, token: string = gns, spender = other) => ({
   token,
 });
 
+describe('configured wallet chain', () => {
+  it('binds fixture transfer and approval drafts to the selected chain', async () => {
+    const sdk = new MockWalletSdk({ chainId: 'onyx-1' });
+    const before = sdk.inspect();
+    for (const draft of [await sdk.transfer(send('0.000001')), await sdk.approve(give('0.000001'))]) {
+      expect(draft.summary).toMatchObject({ chainId: 'onyx-1', amount: '0.000001' });
+      expect(draft.tx).toMatchObject({ chainId: 'onyx-1', signatures: [] });
+    }
+    expect(sdk.inspect()).toEqual(before);
+  });
+
+  it.each(['', ' onyx-1', 'onyx 1', 'a'.repeat(129)])('rejects malformed chain %p', chainId => {
+    expect(() => new MockWalletSdk({ chainId })).toThrow();
+  });
+});
+
 describe('fixtures and address check', () => {
   it('uses addresses that pass the wallet address check', () => {
     const all = [

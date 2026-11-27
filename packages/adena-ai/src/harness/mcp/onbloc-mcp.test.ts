@@ -1,10 +1,11 @@
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { Harness } from '../core';
-import { createOnblocToolSource, GNO_MAINNET_CHAIN } from './index';
+import { createOnblocReader, createOnblocToolSource, GNO_MAINNET_CHAIN, type OnblocMcpConfig } from './index';
 import { fakeOnblocMcp, type FakeOnblocTool } from './testing/fakeOnblocMcp';
 
 const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 const endpoint = 'https://example.test/mcp';
+const testChain = 'onyx-1';
 const invalidInput = { kind: 'denied', code: 'INVALID_INPUT' };
 const invalidOutput = { kind: 'denied', code: 'INVALID_OUTPUT' };
 const realm = 'gno.land/r/gnoswap/gns';
@@ -22,6 +23,132 @@ const outputSchema: Tool['outputSchema'] = {
   type: 'object', properties: { content: { type: 'string' } }, required: ['content'], additionalProperties: false,
 };
 const text = (value: string) => [{ type: 'text' as const, text: value }];
+
+describe('Onbloc configured networks', () => {
+  it.each([GNO_MAINNET_CHAIN, testChain, 'unconfigured-chain'])(
+    'routes identically named tools only to the source matching %s', async chainId => {
+      const mainnet = fakeOnblocMcp([{
+        name: 'get_native_balance', output: { address: account, network: GNO_MAINNET_CHAIN, balance: '11' },
+      }]);
+      const testnet = fakeOnblocMcp([{
+        name: 'get_native_balance', output: { address: account, network: testChain, balance: '22' },
+      }]);
+      const mainnetFetch = jest.fn(mainnet.fetcher);
+      const testnetFetch = jest.fn(testnet.fetcher);
+      const harness = new Harness({ toolSources: [
+        createOnblocToolSource({ endpoint, fetcher: mainnetFetch }),
+        createOnblocToolSource({ endpoint: 'https://testnet.example.test/mcp', chainId: testChain, fetcher: testnetFetch }),
+      ] });
+      const run = await harness.startRun({
+        account, chainId, operationId: 'network-routing', scope: 'read-only', purpose: 'mainnet-read',
+      });
+      try {
+        const configured = chainId !== 'unconfigured-chain';
+        expect(run.tools.map(tool => tool.name)).toEqual(configured ? ['get_native_balance'] : []);
+        if (configured) {
+          expect(await run.dispatch({ name: 'get_native_balance', input: {} })).toEqual({
+            kind: 'result',
+            value: { chainId, untrustedData: { address: account, network: chainId, balance: chainId === testChain ? '22' : '11' } },
+          });
+        }
+        if (chainId === GNO_MAINNET_CHAIN) {
+          expect(mainnet.calls).toEqual([{ name: 'get_native_balance', arguments: { address: account } }]);
+        } else {
+          expect(mainnetFetch).not.toHaveBeenCalled();
+          expect(mainnet.calls).toEqual([]);
+        }
+        if (chainId === testChain) {
+          expect(testnet.calls).toEqual([{ name: 'get_native_balance', arguments: { address: account } }]);
+        } else {
+          expect(testnetFetch).not.toHaveBeenCalled();
+          expect(testnet.calls).toEqual([]);
+        }
+      } finally { run.close(); }
+    },
+  );
+
+  it('snapshots source configuration before later host object mutations', async () => {
+    const mcp = fakeOnblocMcp([
+      { name: 'get_native_balance', output: { address: account, network: testChain } },
+      { name: 'custom_read', output: {} },
+    ]);
+    const config = {
+      endpoint, chainId: testChain, fetcher: mcp.fetcher, trustedServerEnforcesReadOnly: undefined as true | undefined,
+    };
+    const source = createOnblocToolSource(config);
+    config.endpoint = 'https://changed.example.test/mcp';
+    config.chainId = GNO_MAINNET_CHAIN;
+    config.fetcher = async () => { throw new Error('Mutated fetcher must not be used.'); };
+    config.trustedServerEnforcesReadOnly = true;
+    const run = await new Harness({ toolSources: [source] }).startRun({
+      account, chainId: testChain, operationId: 'config-snapshot', scope: 'read-only', purpose: 'mainnet-read',
+    });
+    try {
+      expect(run.tools.map(tool => tool.name)).toEqual(['get_native_balance']);
+      expect(await run.dispatch({ name: 'get_native_balance', input: {} })).toEqual({
+        kind: 'result', value: { chainId: testChain, untrustedData: { address: account, network: testChain } },
+      });
+    } finally { run.close(); }
+  });
+
+  it.each([
+    ['null', null], ['number', 42], ['object', {}], ['array', []], ['empty string', ''],
+    ['leading whitespace', ` ${testChain}`], ['trailing whitespace', `${testChain} `],
+  ])('rejects a malformed structured network (%s) without an advertised output schema', async (_label, network) => {
+    const mcp = fakeOnblocMcp([{ name: 'get_native_balance', output: { address: account, network } }]);
+    const run = await new Harness({ toolSources: [
+      createOnblocToolSource({ endpoint, chainId: testChain, fetcher: mcp.fetcher }),
+    ] }).startRun({
+      account, chainId: testChain, operationId: 'malformed-network', scope: 'read-only', purpose: 'mainnet-read',
+    });
+    try {
+      expect(await run.dispatch({ name: 'get_native_balance', input: {} })).toEqual(invalidOutput);
+      expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: account } }]);
+    } finally { run.close(); }
+  });
+
+  it.each([GNO_MAINNET_CHAIN, testChain])('does not discover configured tools for an invalid account on %s', async chainId => {
+    const fetcher = jest.fn(fakeOnblocMcp([{ name: 'get_native_balance', output: {} }]).fetcher);
+    const run = await new Harness({ toolSources: [createOnblocToolSource({ endpoint, chainId, fetcher })] }).startRun({
+      account: 'invalid-account', chainId, operationId: 'invalid-account', scope: 'read-only', purpose: 'mainnet-read',
+    });
+    try {
+      expect(run.tools).toEqual([]);
+      expect(fetcher).not.toHaveBeenCalled();
+    } finally { run.close(); }
+  });
+
+  it.each(['', ' ', ' test-chain', 'test-chain ', 'test chain', 'test\tchain', 'test\nchain', 'test-chain\n', '\u00a0chain', 'x'.repeat(129)])(
+    'rejects invalid configured chain ID %j before connecting', chainId => {
+      const fetcher = jest.fn(fakeOnblocMcp([]).fetcher);
+      expect(() => createOnblocToolSource({ endpoint, chainId, fetcher })).toThrow('Onbloc chain ID');
+      expect(() => createOnblocReader({ endpoint, chainId, fetcher })).toThrow('Onbloc chain ID');
+      expect(fetcher).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['x', 'x'.repeat(128)])('reads on configured chains at the valid length boundary', async chainId => {
+    const output = { address: account, network: chainId, balance: '42' };
+    const mcp = fakeOnblocMcp([{ name: 'get_native_balance', output }]);
+    const run = await new Harness({ toolSources: [
+      createOnblocToolSource({ endpoint, chainId, fetcher: mcp.fetcher }),
+    ] }).startRun({
+      account, chainId, operationId: 'chain-length-boundary', scope: 'read-only', purpose: 'mainnet-read',
+    });
+    try {
+      expect(await run.dispatch({ name: 'get_native_balance', input: {} })).toEqual({
+        kind: 'result', value: { chainId, untrustedData: output },
+      });
+      expect(mcp.calls).toEqual([{ name: 'get_native_balance', arguments: { address: account } }]);
+    } finally { run.close(); }
+  });
+
+  it.each([null, 42, {}])('rejects runtime non-string configured chain ID %j', chainId => {
+    const config = { endpoint, chainId } as unknown as OnblocMcpConfig;
+    expect(() => createOnblocToolSource(config)).toThrow('Onbloc chain ID');
+    expect(() => createOnblocReader(config)).toThrow('Onbloc chain ID');
+  });
+});
 
 describe('Onbloc discovered read policy', () => {
   it('keeps all ten reviewed reads, binding the account only for wallet-scoped calls', async () => {

@@ -5,15 +5,17 @@ import {
 } from '../onblocSettings';
 
 describe('resolveOnblocSettings', () => {
-  it('accepts the defaults', () => {
-    expect(resolveOnblocSettings(DEFAULT_ONBLOC_MCP_URL, DEFAULT_ONBLOC_ACCOUNT)).toEqual({
-      enabled: true,
-      endpoint: DEFAULT_ONBLOC_MCP_URL,
-      account: DEFAULT_ONBLOC_ACCOUNT,
-      endpointError: null,
-      accountError: null,
+  it('accepts a host-configured network without changing its identity', () => {
+    expect(resolveOnblocSettings('https://test.example/mcp', DEFAULT_ONBLOC_ACCOUNT, 'onyx-1')).toMatchObject({
+      enabled: true, endpoint: 'https://test.example/mcp', chainId: 'onyx-1', chainIdError: null,
     });
   });
+
+  it.each(['', ' ', ' onyx-1', 'onyx-1 ', 'onyx\n1', 'a'.repeat(129)])(
+    'rejects malformed chain %p', (chainId) => {
+      expect(resolveOnblocSettings(DEFAULT_ONBLOC_MCP_URL, DEFAULT_ONBLOC_ACCOUNT, chainId).chainIdError).not.toBeNull();
+    }
+  );
 
   it('trims input', () => {
     const result = resolveOnblocSettings(` ${DEFAULT_ONBLOC_MCP_URL} `, ` ${DEFAULT_ONBLOC_ACCOUNT}\n`);
@@ -57,7 +59,7 @@ describe('resolveOnblocSettings', () => {
     const url = 'http://127.0.0.1:8080/mcp';
 
     expect(resolveOnblocSettings(url, DEFAULT_ONBLOC_ACCOUNT).endpointError).not.toBeNull();
-    expect(resolveOnblocSettings(url, DEFAULT_ONBLOC_ACCOUNT, true).endpointError).toBeNull();
+    expect(resolveOnblocSettings(url, DEFAULT_ONBLOC_ACCOUNT, undefined, true).endpointError).toBeNull();
   });
 
   it.each(['alice', 'G1' + DEFAULT_ONBLOC_ACCOUNT.slice(2), DEFAULT_ONBLOC_ACCOUNT.slice(0, -1)])(

@@ -1,4 +1,5 @@
 import { fromBaseUnits, toBaseUnits } from '../../agent';
+import { GNO_MAINNET_CHAIN, gnoChainId } from '../../harness/mcp';
 import {
   ADDRESS_LENGTH,
   INVALID_ADDRESS_LENGTH_MESSAGE,
@@ -20,8 +21,6 @@ import {
   type WalletSdk,
 } from '../../agent';
 
-const MOCK_CHAIN_ID = 'gnoland-1'; // assumption, not verified
-
 export type MockMessage =
   | { type: '/bank.MsgSend'; value: { from_address: string; to_address: string; amount: string } }
   | { type: '/vm.m_call'; value: { caller: string; pkg_path: string; func: 'Transfer' | 'Approve'; args: [string, string]; send: string } };
@@ -37,6 +36,7 @@ export type WalletState = {
 };
 
 export type MockWalletSdkOptions = {
+  chainId?: string;
   accounts?: MockAccount[];
   /** The address book. Defaults to the fixture's. */
   contacts?: readonly Contact[];
@@ -52,8 +52,10 @@ export class MockWalletSdk implements WalletSdk {
   readonly #holdings = new Map<string, readonly { symbol: string; packagePath: string; decimals: number; units: bigint }[]>();
   readonly #fixtureOwners = new Set<string>();
   readonly #contacts: readonly Contact[];
+  readonly #chainId: string;
 
-  constructor({ accounts = FIXTURE.accounts, contacts = FIXTURE.contacts }: MockWalletSdkOptions = {}) {
+  constructor({ accounts = FIXTURE.accounts, contacts = FIXTURE.contacts, chainId = GNO_MAINNET_CHAIN }: MockWalletSdkOptions = {}) {
+    this.#chainId = gnoChainId.parse(chainId);
     if (accounts.length === 0) throw new Error('MockWalletSdk needs an account');
     this.#contacts = contacts;
     for (const account of accounts) {
@@ -175,7 +177,7 @@ export class MockWalletSdk implements WalletSdk {
     }
     const summary: TransferSummary = {
       type: TransactionType.Transfer,
-      chainId: MOCK_CHAIN_ID,
+      chainId: this.#chainId,
       from,
       to,
       amount: fromBaseUnits(units, decimals),
@@ -185,7 +187,7 @@ export class MockWalletSdk implements WalletSdk {
     const message: MockMessage = asset.packagePath
       ? { type: '/vm.m_call', value: { caller: from, pkg_path: asset.packagePath, func: 'Transfer', args: [to, String(units)], send: '' } }
       : { type: '/bank.MsgSend', value: { from_address: from, to_address: to, amount: `${units}ugnot` } };
-    const tx: MockTransaction = { chainId: MOCK_CHAIN_ID, messages: [message], signatures: [] };
+    const tx: MockTransaction = { chainId: this.#chainId, messages: [message], signatures: [] };
     return { summary, tx };
   }
 
@@ -199,7 +201,7 @@ export class MockWalletSdk implements WalletSdk {
     const units = this.#positiveUnits(params.amount, decimals);
     const summary: AllowanceSummary = {
       type: TransactionType.Allowance,
-      chainId: MOCK_CHAIN_ID,
+      chainId: this.#chainId,
       from,
       spender,
       amount: fromBaseUnits(units, decimals),
@@ -207,7 +209,7 @@ export class MockWalletSdk implements WalletSdk {
       ...(asset.packagePath ? { packagePath: asset.packagePath } : {}),
     };
     const tx: MockTransaction = {
-      chainId: MOCK_CHAIN_ID,
+      chainId: this.#chainId,
       messages: [{ type: '/vm.m_call', value: { caller: from, pkg_path: asset.packagePath, func: 'Approve', args: [spender, String(units)], send: '' } }],
       signatures: [],
     };

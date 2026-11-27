@@ -1,6 +1,10 @@
 # dependencies
 /node_modules
 
+# Local Yarn artifacts left by older checkouts; this repository uses pnpm.
+/.yarn/cache/
+/.yarn/install-state.gz
+
 # testing
 /coverage
 

@@ -10,6 +10,7 @@ import { formatBalance, getBalance, type BalanceAdapter, type BalanceRequest } f
 import { ACCOUNT } from '../testing/fakeWallet';
 
 const native = { address: ACCOUNT, denom: 'ugnot', balance: '10000000' };
+const testChain = 'onyx-1';
 const token = { address: ACCOUNT, tokenId: 'gno.land/r/shared.X', packagePath: 'gno.land/r/shared', symbol: 'X', amount: '0', decimals: 6 };
 const one = (value: string): BalanceRequest => ({ kind: 'one', asset: { kind: 'symbol', value } });
 const all: BalanceRequest = { kind: 'all' };
@@ -19,19 +20,19 @@ const server = (tokenOutput: Record<string, unknown>, nativeOutput: Record<strin
 ];
 const tokens = (items: unknown[], extra: Record<string, unknown> = {}) => ({ address: ACCOUNT, items, ...extra });
 
-async function query(tools: FakeOnblocTool[], request: BalanceRequest, maxToolCalls = 4) {
+async function query(tools: FakeOnblocTool[], request: BalanceRequest, maxToolCalls = 4, chainId = GNO_MAINNET_CHAIN) {
   const mcp = fakeOnblocMcp(tools);
   const audit: PolicyEvent[] = [];
   const harness = new Harness({
-    toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })],
+    toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', chainId, fetcher: mcp.fetcher })],
     budget: { ...DEFAULT_BUDGET, maxToolCalls },
     audit: event => { audit.push(event); },
   });
   const run = await harness.startRun({
-    account: ACCOUNT, chainId: GNO_MAINNET_CHAIN, operationId: 'balance-test', scope: 'read-only', purpose: 'mainnet-read',
+    account: ACCOUNT, chainId, operationId: 'balance-test', scope: 'read-only', purpose: 'mainnet-read',
   });
   try {
-    const result = await getBalance(run, request, { account: ACCOUNT, chainId: GNO_MAINNET_CHAIN, adapter: onblocBalanceAdapter });
+    const result = await getBalance(run, request, { account: ACCOUNT, chainId, adapter: onblocBalanceAdapter });
     return { result, calls: mcp.calls, audit };
   } finally {
     run.close();
@@ -39,6 +40,64 @@ async function query(tools: FakeOnblocTool[], request: BalanceRequest, maxToolCa
 }
 
 describe('structured balance operations', () => {
+  it.each([GNO_MAINNET_CHAIN, testChain])('reads native and token balances on the configured chain %s', async chainId => {
+    const { result, calls } = await query(server(
+      tokens([{ ...token, amount: '2500000' }], { network: chainId }),
+      { ...native, network: chainId },
+    ), all, 4, chainId);
+    expect(result).toMatchObject({
+      account: ACCOUNT, chainId, status: 'complete', missing: [],
+      assets: [
+        { kind: 'native', symbol: 'GNOT', amount: '10000000' },
+        { kind: 'token', assetId: token.tokenId, symbol: 'X', amount: '2500000' },
+      ],
+    });
+    expect(calls).toEqual([
+      { name: 'get_native_balance', arguments: { address: ACCOUNT } },
+      { name: 'get_token_balances', arguments: { address: ACCOUNT } },
+    ]);
+  });
+
+  it('accepts configured testnet balances when the provider omits its optional network field', async () => {
+    const { result } = await query(server(tokens([token])), all, 4, testChain);
+    expect(result).toMatchObject({
+      chainId: testChain, status: 'complete', missing: [], assets: [{ symbol: 'GNOT' }, { symbol: 'X' }],
+    });
+  });
+
+  it.each([GNO_MAINNET_CHAIN, 'foreign-test-chain'])('rejects native and token data from %s on a configured testnet', async network => {
+    const { result, audit } = await query(server(
+      tokens([token], { network }), { ...native, network },
+    ), all, 4, testChain);
+    expect(result).toMatchObject({ chainId: testChain, status: 'unavailable', missing: ['native', 'tokens'], assets: [] });
+    expect(audit).toEqual(expect.arrayContaining([
+      expect.objectContaining({ tool: 'get_native_balance', decision: 'denied', denial: 'INVALID_OUTPUT' }),
+      expect.objectContaining({ tool: 'get_token_balances', decision: 'denied', denial: 'INVALID_OUTPUT' }),
+    ]));
+  });
+
+  it.each([
+    ['foreign result envelopes', GNO_MAINNET_CHAIN, testChain],
+    ['foreign structured networks', testChain, GNO_MAINNET_CHAIN],
+  ])('independently rejects %s in the balance adapter', async (_label, envelopeChain, network) => {
+    const remotes = ['get_native_balance', 'get_token_balances'].map<RemoteTool>(name => ({
+      definition: { name, description: 'Read a balance', jsonSchema: { type: 'object', properties: {} } },
+      execute: async () => ({
+        kind: 'result', value: {
+          chainId: envelopeChain,
+          untrustedData: name === 'get_native_balance' ? { ...native, network } : tokens([token], { network }),
+        },
+      }),
+    }));
+    const run = await new Harness({
+      toolSources: [async () => new Map(remotes.map(remote => [remote.definition.name, remote]))],
+    }).startRun({ account: ACCOUNT, chainId: testChain, operationId: 'balance-chain-check', scope: 'read-only', purpose: 'mainnet-read' });
+    try {
+      const result = await getBalance(run, all, { account: ACCOUNT, chainId: testChain, adapter: onblocBalanceAdapter });
+      expect(result).toMatchObject({ status: 'unavailable', missing: ['native', 'tokens'], assets: [] });
+    } finally { run.close(); }
+  });
+
   it('distinguishes a true zero from a token absent from a complete response', async () => {
     const present = await query(server(tokens([token])), one('X'));
     expect(present.result).toMatchObject({ status: 'complete', missing: [], assets: [{ symbol: 'X', amount: '0' }] });

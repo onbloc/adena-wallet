@@ -21,9 +21,15 @@ The app is a standalone pnpm project (excluded from the repository workspace, wi
 ```bash
 corepack enable
 
-# repository root: only needed for the adena-module parity tests (linked via link:../adena-module)
+# repository root: adena-module parity tests
 pnpm install
 pnpm build:module
+
+# AI library: independent npm project, linked at runtime by the mobile app
+cd packages/adena-ai
+npm ci
+npm run build
+cd ../..
 
 # the app
 cd packages/adena-mobile
@@ -87,6 +93,56 @@ E2E_PLATFORM=ios pnpm e2e                 # force a platform when both are conne
 * Every flow starts from a wiped app (`clearState` plus `clearKeychain` on iOS). **Run it on a dedicated simulator**, not one holding wallets you care about: `xcrun simctl create "Adena E2E" ...`, then install the `.app` from DerivedData with `xcrun simctl install`.
 * Debug builds need Metro running (`pnpm start`). A release build embeds the bundle and needs nothing else.
 * Flows never broadcast a transaction; the dApp flow rejects the signing request, so the default account needs no balance.
+
+### AI assistant
+
+On Gno mainnet and Onyx, **Chat** follows Activity in the bottom navigation. Chat automatically
+uses the network selected in Adena; there is no separate AI chain selector. Open **AI settings**
+in the conversation to choose OpenAI or the on-device model.
+
+* OpenAI: enter your own API key and select a supported model. The key is stored only in
+  Keychain/Keystore, never the chat history or a bundled environment file. Removing the key or
+  resetting the wallet deletes it. Hosted inference sends prompts and wallet context to OpenAI.
+* On-device: **Download & load** fetches the default Qwen GGUF model (about 1.4 GB).
+  **Unload** releases model memory; **Delete** also removes the cached model. Model inference
+  stays on the device, but public blockchain queries still contact the configured Onbloc MCP
+  endpoint and can include the account address and query parameters.
+* Conversations are stored in encrypted MMKV separately per account and network. Backgrounding,
+  locking, changing scope or choosing a new model cancels pending work. Prepared transfers are
+  not restored from chat history.
+* The agent can read public chain data and prepare a transfer; it cannot sign or broadcast.
+  **Review** opens Adena's existing fee/review sheet. Only **Confirm and send** signs through
+  `TransactionService`, with the existing sufficient-funds and pending-broadcast guards.
+  Allowance approvals are not exposed in this integration.
+  GRC20 assets are identified by their canonical registry key (`realm.SYMBOL`), not the realm
+  alone. Ambiguous symbols require choosing a registry key; the adapter never picks the first asset.
+
+`src/config/ai.ts` pairs each supported built-in network with its trusted MCP endpoint:
+
+| Selected network | Chain ID | Development MCP endpoint |
+| --- | --- | --- |
+| Gno mainnet | `gnoland-1` | `https://dev-gnoscan-v2.api.onbloc.xyz/mcp` |
+| Onyx | `onyx-1` | `https://dev-testnet-gnoscan-v2.api.onbloc.xyz/mcp` |
+
+Both the agent and its read-only harness are bound to the selected chain ID. Unsupported or
+custom networks cannot use Chat. Switching networks cancels pending requests and unapproved
+transfers; account/network-specific conversation history remains separate. These endpoints are
+for development; production-approved endpoints are required before release.
+No provider API key is included. Remote inference requires a valid user-supplied key.
+
+The AI package is a full-history subtree at `packages/adena-ai`, imported from
+`onbloc/adena-ai`. Its source is synchronized with main
+(`d229f6e385e4e8fbb2e129dff54ec7ab5e25411d`) and is excluded from the root pnpm workspace.
+Build it before mobile typechecking/bundling and rebuild after editing its source.
+Its mock app is a reference testbed, not a second shipped application.
+Upstream sync uses `git subtree pull --prefix=packages/adena-ai https://github.com/onbloc/adena-ai.git main`;
+this creates a merge commit and requires the usual commit approval.
+
+`llama.rn` and `react-native-blob-util` require a native rebuild. The pnpm policy permits
+llama.rn's checksum-verified native artifact download. Do not commit native simulator-only QR
+scanner autolinking overrides: ML Kit currently lacks an arm64 simulator slice. The local
+QR workaround does not remove that dependency from real-device/release requirements.
+
 
 ### Cloud backup (iCloud / Google Drive)
 

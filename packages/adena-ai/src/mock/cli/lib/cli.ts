@@ -1,3 +1,22 @@
+import { GNO_MAINNET_CHAIN } from '../../../harness/mcp';
+import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL, resolveOnblocSettings } from '../../app/onblocSettings';
+
+/** A custom network must be paired with a host-supplied endpoint. */
+export function resolveOnblocEnv(env: Readonly<Record<string, string | undefined>>) {
+  const chainId = env.EXPO_PUBLIC_ONBLOC_CHAIN_ID ?? GNO_MAINNET_CHAIN;
+  if (chainId !== GNO_MAINNET_CHAIN && !env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim()) {
+    throw new Error('A non-mainnet EXPO_PUBLIC_ONBLOC_CHAIN_ID requires EXPO_PUBLIC_ONBLOC_MCP_URL.');
+  }
+  const settings = resolveOnblocSettings(
+    env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim() || DEFAULT_ONBLOC_MCP_URL,
+    env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim() || DEFAULT_ONBLOC_ACCOUNT,
+    chainId
+  );
+  const error = settings.chainIdError ?? settings.endpointError ?? settings.accountError;
+  if (error) throw new Error(`Invalid Onbloc configuration: ${error}`);
+  return { endpoint: settings.endpoint, account: settings.account, chainId: settings.chainId };
+}
+
 export type ParsedArgs = { values: Map<string, string>; flags: Set<string> };
 
 /** Parses `--key value` options and bare `--flag`s; rejects anything else. */

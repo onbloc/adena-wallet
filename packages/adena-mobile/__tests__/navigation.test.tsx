@@ -2,7 +2,8 @@ import { createNavigationContainerRef, NavigationContainer } from '@react-naviga
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import React from 'react';
+import React, { ReactElement } from 'react';
+import { Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ContainerProvider } from '../src/di/container-provider';
@@ -11,6 +12,7 @@ import { createTestContainer, TEST_MNEMONIC, TEST_PASSWORD } from './helpers/tes
 
 const metrics = { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } };
 const Stack = createNativeStackNavigator();
+const ChatStub = (): ReactElement => <Text>ChatScreen</Text>;
 
 describe('main tabs', () => {
   it('switches tabs without stacking duplicate screens', async () => {
@@ -27,6 +29,7 @@ describe('main tabs', () => {
             <NavigationContainer ref={ref}>
               <Stack.Navigator screenOptions={{ headerShown: false }}>
                 <Stack.Screen name='Main' component={MainTabs} />
+                <Stack.Screen name='Chat' component={ChatStub} />
               </Stack.Navigator>
             </NavigationContainer>
           </QueryClientProvider>
@@ -47,5 +50,9 @@ describe('main tabs', () => {
       expect(tabs?.routes.map(route => route.name)).toEqual(['Wallet', 'Activity']);
       expect(tabs?.routes[tabs.index ?? 0].name).toBe('Wallet');
     });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Chat' }));
+    expect(await screen.findByText('ChatScreen')).toBeTruthy();
+    expect(ref.getRootState()?.routes.at(-1)?.name).toBe('Chat');
   });
 });

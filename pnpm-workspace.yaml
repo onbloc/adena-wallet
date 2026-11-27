@@ -2,6 +2,8 @@ packages:
   - packages/*
   # The mobile app is a standalone pnpm project with its own lockfile (packages/adena-mobile/pnpm-workspace.yaml).
   - '!packages/adena-mobile'
+  # The AI assistant library is a standalone npm project with its own lockfile and Expo test toolchain.
+  - '!packages/adena-ai'
 
 # Mirrors the Renovate minimumReleaseAge policy (minutes; 7 days).
 minimumReleaseAge: 10080
@@ -13,6 +15,11 @@ minimumReleaseAgeExclude:
   - '@babel/runtime@7.29.14'
   - 'ox@0.14.65'
   - 'viem@2.57.19'
+  # AI SDK versions used by packages/adena-ai; all clear the 7-day window by 2026-12-01 and these entries can go then.
+  - '@ai-sdk/gateway@4.0.152'
+  - '@ai-sdk/openai@4.0.123'
+  - '@ai-sdk/provider-utils@5.0.83'
+  - 'ai@7.0.179'
 
 overrides:
   # Security floors for transitive dependencies.
@@ -46,3 +53,5 @@ allowBuilds:
   protobufjs: false
   # Native addon build; the browser field maps the package to its pure-JS version.
   tiny-secp256k1: false
+  # Downloads the prebuilt iOS xcframework / Android JNI libs from the package's own GitHub release and verifies their pinned sha256.
+  llama.rn: true

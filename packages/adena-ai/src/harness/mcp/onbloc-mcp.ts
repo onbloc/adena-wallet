@@ -4,23 +4,27 @@ import { CallToolResultSchema, ListToolsResultSchema } from '@modelcontextprotoc
 import { CfWorkerJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/cfworker';
 import { discoveredReadTool, type DiscoveredReadPermission } from './discovered-read-tool';
 import { parseOnblocEndpoint } from './onbloc-endpoint';
-import { gnoPublicAddress, GNO_MAINNET_CHAIN } from './gno';
+import { gnoChainId, gnoPublicAddress, GNO_MAINNET_CHAIN } from './gno';
 import type { RemoteTool, ToolSource } from '../core';
 
-/** Supply the approved mainnet endpoint from trusted application configuration, not user input. */
+/** Supply the approved endpoint and chain pair from trusted application configuration, not user input. */
 export type OnblocMcpConfig = Readonly<{
   endpoint: string;
+  /** Defaults to GNO_MAINNET_CHAIN; the host must verify this server serves the configured chain. */
+  chainId?: string;
   fetcher?: typeof fetch;
   allowLoopbackHttp?: true;
   /** Host assertion that this specific server enforces read-only access. Never derive from endpoint input or server hints. */
   trustedServerEnforcesReadOnly?: true;
 }>;
 
-/** The harness tool source for an Onbloc MCP: mainnet reads for a valid public address. */
-export function createOnblocToolSource(config: OnblocMcpConfig): ToolSource {
-  const read = createOnblocReader(config);
-  return async ({ account, chainId }, signal) =>
-    chainId === GNO_MAINNET_CHAIN && gnoPublicAddress.safeParse(account).success ? read(account, signal) : new Map();
+/** The harness tool source for Onbloc reads on its configured chain and a valid public address. */
+export function createOnblocToolSource({
+  endpoint, chainId = GNO_MAINNET_CHAIN, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly,
+}: OnblocMcpConfig): ToolSource {
+  const read = createOnblocReader({ endpoint, chainId, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly });
+  return async ({ account, chainId: runChainId }, signal) =>
+    runChainId === chainId && gnoPublicAddress.safeParse(account).success ? read(account, signal) : new Map();
 }
 
 // Discovery supplies schemas, not authority. Only these host-reviewed reads may be exposed.
@@ -66,7 +70,12 @@ function limitItems(remote: RemoteTool): RemoteTool {
   };
 }
 
-export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly }: OnblocMcpConfig) {
+export function createOnblocReader({
+  endpoint, chainId = GNO_MAINNET_CHAIN, fetcher, allowLoopbackHttp, trustedServerEnforcesReadOnly,
+}: OnblocMcpConfig) {
+  if (!gnoChainId.safeParse(chainId).success) {
+    throw new Error('Onbloc chain ID must contain 1–128 non-whitespace characters.');
+  }
   const url = parseOnblocEndpoint(endpoint, allowLoopbackHttp);
 
   return async (address: string, signal: AbortSignal) => {
@@ -108,14 +117,14 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trust
             tool,
             permission: Object.hasOwn(permissions, name) ? permissions[name] : undefined,
             trustedServerEnforcesReadOnly,
-            context: { account: address, chainId: GNO_MAINNET_CHAIN },
+            context: { account: address, chainId },
             validator,
             call: args => client.request({ method: 'tools/call', params: { name, arguments: args } }, CallToolResultSchema, options),
             accepts(data, input, accountBound) {
               const requestedHash = input.txHash;
               if (typeof requestedHash === 'string' && typeof data.txHash === 'string' &&
                 requestedHash.toLowerCase() !== data.txHash.toLowerCase() && requestedHash !== data.txHashBase64) return false;
-              return !((Object.hasOwn(data, 'network') && data.network !== GNO_MAINNET_CHAIN) ||
+              return !((Object.hasOwn(data, 'network') && data.network !== chainId) ||
                 (accountBound && ((Object.hasOwn(data, 'address') && data.address !== address) ||
                   (Array.isArray(data.items) && data.items.some(item => item && typeof item === 'object' &&
                     'address' in item && item.address !== address)))));

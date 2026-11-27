@@ -10,7 +10,7 @@ declare class TextEncoder {
 declare class TextDecoder {
   constructor(label?: string);
   readonly encoding: string;
-  decode(input?: ArrayBuffer | ArrayBufferView): string;
+  decode(input?: ArrayBuffer | ArrayBufferView, options?: { stream?: boolean }): string;
 }
 
 interface AdenaWebCrypto {

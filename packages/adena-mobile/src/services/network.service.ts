@@ -35,6 +35,7 @@ export class NetworkService {
     private readonly networkRepository: NetworkRepository,
     private readonly chainRegistry: ChainRegistry,
     private readonly builtInNetworks: Network[] = BUILT_IN_NETWORKS,
+    private readonly onSelectionChange: () => void = () => {},
   ) {}
 
   getNetworks(): Network[] {
@@ -65,6 +66,10 @@ export class NetworkService {
 
   selectNetwork(networkId: string): Network {
     const network = this.getNetwork(networkId);
+
+    if (this.getCurrentNetwork().id !== network.id) {
+      this.onSelectionChange();
+    }
 
     this.networkRepository.setCurrentNetworkId(network.id);
     return network;
@@ -117,6 +122,7 @@ export class NetworkService {
     this.networkRepository.saveCustomNetworks(remaining);
 
     if (this.networkRepository.getCurrentNetworkId() === networkId) {
+      this.onSelectionChange();
       this.networkRepository.setCurrentNetworkId(DEFAULT_NETWORK_ID);
     }
   }

@@ -12,6 +12,7 @@ import { AddressBookEditScreen } from '../containers/main/address-book-edit-scre
 import { AddressBookScreen } from '../containers/main/address-book-screen';
 import { BuyCryptoScreen } from '../containers/main/buy-crypto-screen';
 import { ChangePasswordScreen } from '../containers/main/change-password-screen';
+import { ChatScreen } from '../containers/main/chat-screen';
 import { CheckoutScreen } from '../containers/main/checkout-screen';
 import { CloudBackupScreen } from '../containers/main/cloud-backup-screen';
 import { ConnectedAppsScreen } from '../containers/main/connected-apps-screen';
@@ -133,6 +134,7 @@ const MainNavigator = (): ReactElement => {
       <MainStack.Screen name='Search' component={SearchScreen} />
       <MainStack.Screen name='BuyCrypto' component={BuyCryptoScreen} />
       <MainStack.Screen name='Checkout' component={CheckoutScreen} />
+      <MainStack.Screen name='Chat' component={ChatScreen} options={{ presentation: 'fullScreenModal' }} />
       <MainStack.Screen name='Swap' component={SwapScreen} options={{ presentation: 'fullScreenModal' }} />
       <MainStack.Screen
         name='DappRequest'

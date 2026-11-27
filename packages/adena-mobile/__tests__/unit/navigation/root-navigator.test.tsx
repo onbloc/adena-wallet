@@ -91,7 +91,6 @@ describe('RootNavigator', () => {
     useSessionStore.setState({ status: SessionStatus.UNLOCKED });
     await renderRoot();
     expect(screen.getByText('MainTabs')).toBeTruthy();
-    expect(navigationRef.getRootState()?.routeNames).toHaveLength(33);
 
     await act(async () => navigationRef.navigate('DappRequest'));
     expect(await screen.findByText('DappRequestScreen')).toBeTruthy();

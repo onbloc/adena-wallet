@@ -90,3 +90,48 @@ describe('Utf8TextDecoder conformance', () => {
     expect(() => new Fallback('latin1')).toThrow(RangeError);
   });
 });
+
+describe('Utf8TextDecoder streaming', () => {
+  const text = 'a한글€🙂 mixed é';
+  const bytes = encode(text);
+
+  it('decodes a sequence split across chunks at every byte boundary', () => {
+    for (let split = 1; split < bytes.length; split++) {
+      const decoder = new Utf8TextDecoder();
+      const streamed = decoder.decode(bytes.slice(0, split), { stream: true })
+        + decoder.decode(bytes.slice(split));
+
+      expect(streamed).toBe(text);
+    }
+  });
+
+  it('decodes byte by byte like the standard decoder', () => {
+    const decoder = new Utf8TextDecoder();
+    const reference = new TextDecoder();
+    let streamed = '';
+    let expected = '';
+
+    for (const byte of bytes) {
+      streamed += decoder.decode(Uint8Array.of(byte), { stream: true });
+      expected += reference.decode(Uint8Array.of(byte), { stream: true });
+    }
+
+    expect(streamed + decoder.decode()).toBe(text);
+    expect(streamed).toBe(expected);
+  });
+
+  it('flushes a truncated tail as U+FFFD on the final call and starts clean', () => {
+    const decoder = new Utf8TextDecoder();
+
+    expect(decoder.decode(Uint8Array.of(0xe2, 0x82), { stream: true })).toBe('');
+    expect(decoder.decode()).toBe('\ufffd');
+    expect(decoder.decode(encode('ok'))).toBe('ok');
+  });
+
+  it('strips the BOM only once per stream', () => {
+    const decoder = new Utf8TextDecoder();
+
+    expect(decoder.decode(Uint8Array.of(0xef, 0xbb, 0xbf, 0x61), { stream: true })).toBe('a');
+    expect(decoder.decode(Uint8Array.of(0xef, 0xbb, 0xbf))).toBe('\ufeff');
+  });
+});

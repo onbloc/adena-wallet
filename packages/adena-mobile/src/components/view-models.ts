@@ -57,3 +57,42 @@ export const MainTab = {
 } as const;
 
 export type MainTab = (typeof MainTab)[keyof typeof MainTab];
+
+export type ChatToolStatus = 'running' | 'done' | 'error';
+
+export interface ChatToolView {
+  id: string;
+  label: string;
+  status: ChatToolStatus;
+}
+
+export type ChatDraftState = 'pending' | 'sent' | 'dismissed';
+
+export interface ChatDraftView {
+  id: string;
+  // e.g. 'Send 1 GNOT'.
+  title: string;
+  rows: { label: string; value: string; multiline?: boolean }[];
+  state: ChatDraftState;
+}
+
+export interface ChatMessageView {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  // Shows a typing indicator while the text grows.
+  streaming?: boolean;
+  // Inline error under the bubble.
+  error?: string;
+  warnings?: string[];
+  tools?: ChatToolView[];
+  drafts?: ChatDraftView[];
+}
+
+export type ChatLocalModelState = 'idle' | 'downloading' | 'loading' | 'ready' | 'error';
+
+export type ChatSetup
+  = | { kind: 'ready' }
+  // No API key for the hosted model.
+    | { kind: 'needs-key' }
+    | { kind: 'local-model'; state: ChatLocalModelState; percentage?: number; message?: string };

@@ -14,25 +14,26 @@ import type { LanguageModel } from 'ai';
 
 import { AIAgent, formatBalance, type AgentSettings, type PreparedTransaction } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
-import { createOnblocToolSource, gnoPublicAddress, type OnblocMcpConfig } from '../../harness/mcp';
+import { createOnblocToolSource, type OnblocMcpConfig } from '../../harness/mcp';
 import {
   DEFAULT_GENERATE_SETTINGS,
   GenerateEventType,
   LLMFromModel,
 } from '../../llm/core';
 import { describeTransaction } from '../app/describeTransaction';
-import { DEFAULT_ONBLOC_ACCOUNT, DEFAULT_ONBLOC_MCP_URL } from '../app/onblocSettings';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk } from '../wallet/mockWalletSdk';
 import { TOKEN_SYMBOLS, type Balances } from '../wallet/tokens';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
-import { boundedNumber, parseChatArgs } from './lib/cli';
+import { boundedNumber, parseChatArgs, resolveOnblocEnv } from './lib/cli';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from './lib/server';
 
 const USAGE = `Usage: bun src/mock/cli/chat.ts [options]
   --prompt TEXT      ask once and exit instead of chatting
   --onbloc           add Onbloc reads (default MCP URL and address; override with
-                     EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT)
+                     EXPO_PUBLIC_ONBLOC_MCP_URL / EXPO_PUBLIC_ONBLOC_ACCOUNT).
+                     EXPO_PUBLIC_ONBLOC_CHAIN_ID selects the chain (default mainnet);
+                     a non-mainnet chain requires an explicit MCP URL.
   --allow-transaction-preparation
                      allow mock transfer/approve preparation with --onbloc; never signs or sends
   --url URL          OpenAI-compatible base URL (default ${DEFAULT_SERVER_URL})
@@ -61,13 +62,7 @@ function parseOptions(argv: string[]): Options {
   const systemFile = values.get('system-file');
   let onbloc: Options['onbloc'];
   if (flags.has('onbloc')) {
-    // Env overrides the app's Settings defaults.
-    const endpoint = process.env.EXPO_PUBLIC_ONBLOC_MCP_URL?.trim() || DEFAULT_ONBLOC_MCP_URL;
-    const account = process.env.EXPO_PUBLIC_ONBLOC_ACCOUNT?.trim() || DEFAULT_ONBLOC_ACCOUNT;
-    if (!endpoint || !gnoPublicAddress.safeParse(account).success) {
-      throw new Error('Set EXPO_PUBLIC_ONBLOC_MCP_URL and a valid public EXPO_PUBLIC_ONBLOC_ACCOUNT.');
-    }
-    onbloc = { endpoint, account: gnoPublicAddress.parse(account) };
+    onbloc = resolveOnblocEnv(process.env);
   }
 
   return {
@@ -164,8 +159,8 @@ async function main() {
       budget: { ...DEFAULT_BUDGET, maxTokens: 2 * llm.contextTokens, timeoutMs: 5 * 60_000 },
     });
     const agent = sdk
-      ? new AIAgent({ llm, harness, wallet: sdk, onTransaction: printTransaction, tokenSymbols: TOKEN_SYMBOLS })
-      : new AIAgent({ llm, harness });
+      ? new AIAgent({ llm, harness, chainId: options.onbloc.chainId, wallet: sdk, onTransaction: printTransaction, tokenSymbols: TOKEN_SYMBOLS })
+      : new AIAgent({ llm, harness, chainId: options.onbloc.chainId });
     return { agent, sdk };
   };
   let session = await newSession();

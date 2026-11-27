@@ -2,6 +2,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowLeftRight,
+  ArrowUp,
   Camera,
   Check,
   ChevronDown,
@@ -25,6 +26,7 @@ import {
   LoaderCircle,
   Lock,
   LucideIcon,
+  MessageCircle,
   Palette,
   Plus,
   QrCode,
@@ -34,6 +36,8 @@ import {
   Settings,
   Share2,
   Shield,
+  Square,
+  SquarePen,
   Trash2,
   TriangleAlert,
   User,
@@ -87,6 +91,10 @@ const ICONS = {
   image: ImageGlyph,
   cloud: Cloud,
   shield: Shield,
+  chat: MessageCircle,
+  compose: SquarePen,
+  arrowUp: ArrowUp,
+  stop: Square,
 } satisfies Record<string, LucideIcon | ((props: GlyphProps) => ReactElement)>;
 
 export type IconName = keyof typeof ICONS;

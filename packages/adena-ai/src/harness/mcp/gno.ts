@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const GNO_MAINNET_CHAIN = 'gnoland-1';
+export const gnoChainId = z.string().min(1).max(128).refine(value => !/\s/u.test(value));
 export const gnoPublicAddress = z.string().regex(/^g1[023456789acdefghjklmnpqrstuvwxyz]{38}$/);
 
 /** Verify a canonical Gno Bech32 account address, including its checksum. */

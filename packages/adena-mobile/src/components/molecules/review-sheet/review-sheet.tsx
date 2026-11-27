@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, ReactElement, ReactNode } from 'react';
-import { ScrollView, useWindowDimensions } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 
 import { Button } from '../../atoms';
 import { BottomSheet } from '../bottom-sheet';
@@ -32,20 +32,22 @@ export const ReviewSheet = ({ visible, title, rows, fee, totals, error, confirmL
 
   return (
     <BottomSheet visible={visible} title={title} onClose={onClose} dismissible={!confirming}>
-      <ScrollView
-        style={[styles.body, { maxHeight: Math.round(height * BODY_MAX_HEIGHT_RATIO) }]}
-        contentContainerStyle={styles.bodyContent}
-        keyboardShouldPersistTaps='handled'
-        nestedScrollEnabled
-        testID='review-body'
-      >
-        {children}
-        {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} emphasis={row.emphasis} />)}
-        <FeeSelector {...fee} />
-        {totals}
-        {error && <InlineAlert tone='error' title='Transaction failed' description={error} />}
-      </ScrollView>
-      <Button label={confirmLabel} loadingLabel='Broadcasting…' loading={confirming} disabled={fee.tooLow} onPress={onConfirm} testID='review-confirm' />
+      <View collapsable={false} style={styles.bodyContent}>
+        <ScrollView
+          style={[styles.body, { maxHeight: Math.round(height * BODY_MAX_HEIGHT_RATIO) }]}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps='handled'
+          nestedScrollEnabled
+          testID='review-body'
+        >
+          {children}
+          {rows.map(row => <KeyValueRow key={row.label} label={row.label} value={row.value} multiline={row.multiline} emphasis={row.emphasis} />)}
+          <FeeSelector {...fee} />
+          {totals}
+          {error && <InlineAlert tone='error' title='Transaction failed' description={error} />}
+        </ScrollView>
+        <Button label={confirmLabel} loadingLabel='Broadcasting…' loading={confirming} disabled={fee.tooLow} onPress={onConfirm} testID='review-confirm' />
+      </View>
     </BottomSheet>
   );
 };

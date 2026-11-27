@@ -112,6 +112,7 @@ export async function createOnblocMockWallet({
 }): Promise<MockWalletSdk> {
   const { balances, holdings } = await fetchOnblocSnapshot(onbloc, signal);
   return new MockWalletSdk({
+    chainId: onbloc.chainId,
     accounts: [{ name: 'My address', address: onbloc.account, balances, holdings }],
   });
 }

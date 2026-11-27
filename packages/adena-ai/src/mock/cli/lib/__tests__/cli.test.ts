@@ -1,6 +1,34 @@
-import { boundedNumber, parseArgs, parseChatArgs } from '../cli';
+import { GNO_MAINNET_CHAIN } from '../../../../harness/mcp';
+import { boundedNumber, parseArgs, parseChatArgs, resolveOnblocEnv } from '../cli';
 
 const spec = { values: ['runs', 'out'], flags: ['verbose'] };
+
+describe('Onbloc environment', () => {
+  it('retains mainnet behavior when no overrides are supplied', () => {
+    expect(resolveOnblocEnv({}).chainId).toBe(GNO_MAINNET_CHAIN);
+  });
+
+  it('accepts an explicit endpoint-chain pair', () => {
+    expect(resolveOnblocEnv({
+      EXPO_PUBLIC_ONBLOC_MCP_URL: 'https://test.example/mcp',
+      EXPO_PUBLIC_ONBLOC_CHAIN_ID: 'onyx-1',
+    })).toMatchObject({ endpoint: 'https://test.example/mcp', chainId: 'onyx-1' });
+  });
+
+  it.each([undefined, '', ' '])('requires an endpoint for a custom chain (%p)', (endpoint) => {
+    expect(() => resolveOnblocEnv({
+      EXPO_PUBLIC_ONBLOC_MCP_URL: endpoint, EXPO_PUBLIC_ONBLOC_CHAIN_ID: 'onyx-1',
+    })).toThrow('requires EXPO_PUBLIC_ONBLOC_MCP_URL');
+  });
+
+  it.each(['', ' onyx-1', 'onyx 1', 'onyx-1\n', 'a'.repeat(129)])(
+    'rejects explicitly malformed chain %p', (chainId) => {
+      expect(() => resolveOnblocEnv({
+        EXPO_PUBLIC_ONBLOC_MCP_URL: 'https://test.example/mcp', EXPO_PUBLIC_ONBLOC_CHAIN_ID: chainId,
+      })).toThrow('Invalid Onbloc configuration');
+    }
+  );
+});
 
 describe('parseArgs', () => {
   it('reads options with values and bare flags in any order', () => {

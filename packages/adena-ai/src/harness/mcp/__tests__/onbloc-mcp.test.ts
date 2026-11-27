@@ -94,6 +94,34 @@ describe('Onbloc MCP without runtime code generation', () => {
     expect(calls).toEqual([{ name: transferTool.name, arguments: { ...input, address: account } }]);
   });
 
+  it('binds a configured testnet result envelope independently of later config mutations', async () => {
+    const chainId = 'onyx-1';
+    const testOutput = { ...output, network: chainId };
+    const { fetcher, calls } = fakeOnblocMcp([{ ...transferTool, output: testOutput }]);
+    const config = { endpoint, chainId, fetcher };
+    const read = createOnblocReader(config);
+    config.chainId = 'gnoland-1';
+    config.fetcher = async () => { throw new Error('Mutated fetcher must not be used.'); };
+    const tools = await read(account, controller.signal);
+
+    expect(await tools.get(transferTool.name)!.execute(input)).toEqual({
+      kind: 'result', value: { chainId, untrustedData: testOutput },
+    });
+    expect(calls).toEqual([{ name: transferTool.name, arguments: { ...input, address: account } }]);
+  });
+
+  it.each([
+    ['mainnet data', { ...output, network: 'gnoland-1' }],
+    ['foreign testnet data', { ...output, network: 'foreign-test-chain' }],
+    ['another account', { ...output, network: 'onyx-1', address: 'another-account' }],
+  ])('rejects %s on a configured testnet reader', async (_label, invalidOutput) => {
+    const { fetcher, calls } = fakeOnblocMcp([{ ...transferTool, output: invalidOutput }]);
+    const tools = await createOnblocReader({ endpoint, chainId: 'onyx-1', fetcher })(account, controller.signal);
+
+    expect(await tools.get(transferTool.name)!.execute(input)).toEqual({ kind: 'denied', code: 'INVALID_OUTPUT' });
+    expect(calls).toEqual([{ name: transferTool.name, arguments: { ...input, address: account } }]);
+  });
+
   it.each([
     ['missing required fields', {}],
     ['missing pagination limit', { page: input.page }],

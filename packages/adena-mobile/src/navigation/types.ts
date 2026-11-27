@@ -77,4 +77,5 @@ export type MainStackParamList = {
   Sheet: SheetRouteParams;
   // `inputTokenId` preselects the token to sell (e.g. from token details).
   Swap: { inputTokenId?: string } | undefined;
+  Chat: undefined;
 };

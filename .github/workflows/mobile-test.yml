@@ -8,6 +8,7 @@ on:
     paths:
       - packages/adena-mobile/**
       - packages/adena-module/**
+      - packages/adena-ai/**
       - .github/workflows/mobile-test.yml
 
 # Read-only checks: the token never needs to write.
@@ -24,6 +25,12 @@ jobs:
       - run: |
           pnpm install --frozen-lockfile
           pnpm build:module
+      - working-directory: packages/adena-ai
+        run: |
+          npm ci
+          npm run build
+          npm run typecheck
+          npm test -- --ci --runInBand
       - working-directory: packages/adena-mobile
         run: pnpm install --frozen-lockfile
       - working-directory: packages/adena-mobile

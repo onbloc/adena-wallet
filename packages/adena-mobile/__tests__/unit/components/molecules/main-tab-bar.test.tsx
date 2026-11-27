@@ -1,29 +1,48 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
-import { MainTabBar } from '../../../../src/components/molecules';
+import { MainTabBar, MainTabBarProps } from '../../../../src/components/molecules';
 import { MainTab } from '../../../../src/components/view-models';
 
-describe('MainTabBar', () => {
-  it('navigates tabs, opens search and offers Swap as the primary action', async () => {
-    const onNavigate = jest.fn();
-    const onSearch = jest.fn();
-    const onSwap = jest.fn();
+const props = (overrides: Partial<MainTabBarProps> = {}): MainTabBarProps => ({
+  selected: MainTab.WALLET,
+  showSwap: true,
+  onNavigate: jest.fn(),
+  onSearch: jest.fn(),
+  onChat: jest.fn(),
+  onSwap: jest.fn(),
+  ...overrides,
+});
 
-    await render(<MainTabBar selected={MainTab.WALLET} showSwap onNavigate={onNavigate} onSearch={onSearch} onSwap={onSwap} />);
+describe('MainTabBar', () => {
+  it('navigates tabs, opens search and chat and offers Swap as the primary action', async () => {
+    const bar = props();
+
+    await render(<MainTabBar {...bar} />);
     await fireEvent.press(screen.getByRole('button', { name: 'Search' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Activity' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Chat' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Swap' }));
 
-    expect(onSearch).toHaveBeenCalledTimes(1);
-    expect(onSwap).toHaveBeenCalledTimes(1);
-    expect(onNavigate.mock.calls).toEqual([[MainTab.ACTIVITY]]);
+    expect(bar.onSearch).toHaveBeenCalledTimes(1);
+    expect(bar.onChat).toHaveBeenCalledTimes(1);
+    expect(bar.onSwap).toHaveBeenCalledTimes(1);
+    expect((bar.onNavigate as jest.Mock).mock.calls).toEqual([[MainTab.ACTIVITY]]);
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull();
   });
 
+  it('places Chat after Activity', async () => {
+    await render(<MainTabBar {...props()} />);
+    expect(screen.getAllByRole('button').map(button => button.props.accessibilityLabel)).toEqual(['Wallet', 'Search', 'Activity', 'Chat', 'Swap']);
+  });
+
   it('hides Swap on networks without a DEX', async () => {
-    await render(<MainTabBar selected={MainTab.ACTIVITY} showSwap={false} onNavigate={jest.fn()} onSearch={jest.fn()} onSwap={jest.fn()} />);
+    await render(<MainTabBar {...props({ selected: MainTab.ACTIVITY, showSwap: false })} />);
     expect(screen.queryByRole('button', { name: 'Swap' })).toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(3);
+  });
+
+  it('hides Chat when the assistant is unavailable', async () => {
+    await render(<MainTabBar {...props({ showChat: false })} />);
+    expect(screen.queryByRole('button', { name: 'Chat' })).toBeNull();
   });
 });
