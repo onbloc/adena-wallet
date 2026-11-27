@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help init test chat build deploy ios android
+.PHONY: help init test scenario scenario-remote chat build deploy ios android
 
 PORT   ?= 8089
 MODEL  ?= bartowski/Qwen_Qwen3.5-2B-GGUF:Q4_K_M
@@ -11,7 +11,7 @@ WITH_SERVER := PORT=$(PORT) MODEL=$(MODEL) src/mock/cli/with-server.sh
 URL         := http://127.0.0.1:$(PORT)/v1
 
 help: ## Show targets
-	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-6s %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-15s %s\n", $$1, $$2}'
 
 init: ## Install npm packages, plus bun and llama.cpp (brew) if missing
 	npm install
@@ -22,6 +22,13 @@ test: ## Typecheck + lint + all jest tests (mock model, no LLM)
 	npm run typecheck
 	npm run lint
 	npm test
+
+scenario: ## Run the plain-language -> transaction scenarios against the local model (slow; not part of make test)
+	$(WITH_SERVER) env -u SCENARIO_REMOTE SCENARIO_URL=$(URL) npm run scenario
+
+scenario-remote: ## Same scenarios on the hosted OpenAI model (costs money). Env: OPENAI_API_KEY
+	@test -n "$$OPENAI_API_KEY" || { echo "set OPENAI_API_KEY" >&2; exit 1; }
+	SCENARIO_REMOTE=1 npm run scenario
 
 chat: ## Chat with the local model. Vars: PROMPT="..." asks once; ARGS="--onbloc" adds the wallet (Onbloc reads, mock transfer/approve)
 	$(WITH_SERVER) bun src/mock/cli/chat.ts --url $(URL) $(if $(PROMPT),--prompt "$$PROMPT") $(ARGS)

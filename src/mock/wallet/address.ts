@@ -1,6 +1,4 @@
-// Addresses are compared in lowercase. Only the 'g1' prefix and the length are checked:
-// no character set, no checksum (assumed format).
-const ADDRESS_PREFIX = 'g1';
+import { isValidGnoAddress } from '../../harness/mcp';
 
 export const ADDRESS_LENGTH = 40;
 
@@ -9,7 +7,4 @@ export const INVALID_ADDRESS_LENGTH_MESSAGE = 'The address length is not valid. 
 
 export const normalizeAddress = (address: string) => address.toLowerCase();
 
-export const isValidAddress = (address: string) => {
-  const normalized = normalizeAddress(address);
-  return normalized.length === ADDRESS_LENGTH && normalized.startsWith(ADDRESS_PREFIX);
-};
+export const isValidAddress = (address: string) => isValidGnoAddress(normalizeAddress(address));

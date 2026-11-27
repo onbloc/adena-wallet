@@ -14,4 +14,5 @@ export type {
   WalletAction,
   WalletContext,
   WalletReader,
+  WalletTool,
 } from './tools';

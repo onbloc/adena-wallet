@@ -1,4 +1,4 @@
-import { boundedNumber, parseArgs } from '../cli';
+import { boundedNumber, parseArgs, parseChatArgs } from '../cli';
 
 const spec = { values: ['runs', 'out'], flags: ['verbose'] };
 
@@ -19,6 +19,19 @@ describe('parseArgs', () => {
     ['a stray positional argument', ['hello'], 'Unexpected argument: hello'],
   ])('rejects %s', (_label, argv, message) => {
     expect(() => parseArgs(argv, spec)).toThrow(message);
+  });
+});
+
+describe('chat transaction preparation', () => {
+  it('is disabled by default, including when the prompt asks to send', () => {
+    expect(parseChatArgs(['--onbloc', '--prompt', 'Send 1 GNOT']).allowTransactionPreparation).toBe(false);
+  });
+
+  it('requires an explicit flag and an Onbloc session', () => {
+    expect(parseChatArgs(['--onbloc', '--allow-transaction-preparation']).allowTransactionPreparation).toBe(true);
+    expect(() => parseChatArgs(['--allow-transaction-preparation'])).toThrow(
+      '--allow-transaction-preparation requires --onbloc.'
+    );
   });
 });
 

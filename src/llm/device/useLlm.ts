@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 
 import {
   applyToolEvent,
+  canRememberTurn,
   GenerateEventType,
   type CallRecord,
   type GenerateEvent,
@@ -51,6 +52,7 @@ export function useLlm(llm: LLMOnDevice) {
     controllerRef.current = controller;
     let text = '';
     let reasoning = '';
+    let completedAnswer: string | undefined;
     setRun({ ...INITIAL_RUN, running: true });
 
     try {
@@ -65,6 +67,7 @@ export function useLlm(llm: LLMOnDevice) {
             setRun((prev) => ({ ...prev, reasoning }));
             break;
           case GenerateEventType.Done:
+            if (!controller.signal.aborted && canRememberTurn(event)) completedAnswer = text;
             setRun((prev) => ({
               ...prev,
               metrics: event.metrics,
@@ -80,12 +83,14 @@ export function useLlm(llm: LLMOnDevice) {
         }
       }
     } catch (error) {
+      completedAnswer = undefined;
       const message = error instanceof Error ? error.message : String(error);
       setRun((prev) => ({ ...prev, error: message }));
     } finally {
       controllerRef.current = null;
       setRun((prev) => ({ ...prev, running: false }));
     }
+    return controller.signal.aborted ? undefined : completedAnswer;
   }, []);
 
   const stop = useCallback(() => controllerRef.current?.abort(), []);

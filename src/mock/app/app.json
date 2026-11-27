@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "../../../assets/icon.png",
     "userInterfaceStyle": "light",
-    "plugins": ["llama.rn"],
+    "plugins": ["llama.rn", "expo-sqlite"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.onbloc.adenaaillmpoc"

@@ -4,8 +4,8 @@ import { TransactionType } from '../wallet/constants';
 import type { Allowance, Contact, WalletSdk } from '../wallet/port';
 
 export const ACCOUNT = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
-export const RECIPIENT = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
-export const FRIEND: Contact = { alias: 'carol', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s' };
+export const RECIPIENT = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpqcg7v29';
+export const FRIEND: Contact = { alias: 'carol', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2u50rw9' };
 
 export type FakeWalletOptions = {
   /** What `transfer` and `approve` throw, e.g. a WalletError. */

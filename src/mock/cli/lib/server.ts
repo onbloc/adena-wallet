@@ -18,5 +18,7 @@ export async function connectModel(url: string, modelName: string): Promise<Lang
         'Start llama-server first (make chat starts one for you).'
     );
   }
-  return createOpenAICompatible({ name: 'llama-server', baseURL, includeUsage: true }).chatModel(modelName);
+  return createOpenAICompatible({
+    name: 'llama-server', baseURL, includeUsage: true, supportsStructuredOutputs: true,
+  }).chatModel(modelName);
 }

@@ -22,6 +22,15 @@ import {
 
 const MOCK_CHAIN_ID = 'gnoland-1'; // assumption, not verified
 
+export type MockMessage =
+  | { type: '/bank.MsgSend'; value: { from_address: string; to_address: string; amount: string } }
+  | { type: '/vm.m_call'; value: { caller: string; pkg_path: string; func: 'Transfer' | 'Approve'; args: [string, string]; send: string } };
+
+/** Host-owned unsigned draft; never an SDK encoding or a signed transaction. */
+export type MockTransaction = { chainId: string; messages: MockMessage[]; signatures: never[] };
+
+const GNS_PATH = 'gno.land/r/gnoswap/gns';
+
 /** What the wallet holds: balances by address. They never change. */
 export type WalletState = {
   balances: Record<string, Balances>;
@@ -67,7 +76,7 @@ export class MockWalletSdk implements WalletSdk {
 
   /** The mock's token for a symbol (any case). Throws UnknownToken. */
   #token(symbol: string): TokenSymbol {
-    const token = TOKEN_SYMBOLS.find((known) => known.toLowerCase() === symbol.trim().toLowerCase());
+    const token = symbol.trim() === GNS_PATH ? 'GNS' : TOKEN_SYMBOLS.find((known) => known.toLowerCase() === symbol.trim().toLowerCase());
     if (!token) throw new WalletError(WalletErrorCode.UnknownToken, `Unknown token ${symbol}`);
     return token;
   }
@@ -128,12 +137,17 @@ export class MockWalletSdk implements WalletSdk {
       amount: fromBaseUnits(units, decimals),
       token,
     };
-    return { summary, tx: { ...summary } };
+    const message: MockMessage = token === 'GNOT'
+      ? { type: '/bank.MsgSend', value: { from_address: from, to_address: to, amount: `${units}ugnot` } }
+      : { type: '/vm.m_call', value: { caller: from, pkg_path: GNS_PATH, func: 'Transfer', args: [to, String(units)], send: '' } };
+    const tx: MockTransaction = { chainId: MOCK_CHAIN_ID, messages: [message], signatures: [] };
+    return { summary, tx };
   }
 
   /** Like ERC-20, an allowance may exceed the balance. */
   async approve(params: AllowanceParams): Promise<PreparedTransaction<AllowanceSummary>> {
     const token = this.#token(params.token);
+    if (token === 'GNOT') throw new WalletError(WalletErrorCode.UnsupportedToken, 'Native GNOT does not support allowances');
     const from = this.#assertAddress(params.from, 'Owner is not a valid g1... address');
     const spender = this.#assertAddress(params.spender, 'Spender is not a valid g1... address');
     const units = this.#positiveUnits(params.amount, token);
@@ -145,7 +159,12 @@ export class MockWalletSdk implements WalletSdk {
       amount: fromBaseUnits(units, TOKEN_DECIMALS[token]),
       token,
     };
-    return { summary, tx: { ...summary } };
+    const tx: MockTransaction = {
+      chainId: MOCK_CHAIN_ID,
+      messages: [{ type: '/vm.m_call', value: { caller: from, pkg_path: GNS_PATH, func: 'Approve', args: [spender, String(units)], send: '' } }],
+      signatures: [],
+    };
+    return { summary, tx };
   }
 
   /**

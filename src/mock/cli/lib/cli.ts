@@ -23,6 +23,19 @@ export function parseArgs(
   return { values, flags };
 }
 
+/** Chat is read-only unless the host explicitly enables wallet preparation. */
+export function parseChatArgs(argv: string[]): ParsedArgs & { allowTransactionPreparation: boolean } {
+  const parsed = parseArgs(argv, {
+    values: ['prompt', 'url', 'model', 'temperature', 'max-tokens', 'context-tokens', 'system-file'],
+    flags: ['onbloc', 'allow-transaction-preparation'],
+  });
+  const allowTransactionPreparation = parsed.flags.has('allow-transaction-preparation');
+  if (allowTransactionPreparation && !parsed.flags.has('onbloc')) {
+    throw new Error('--allow-transaction-preparation requires --onbloc.');
+  }
+  return { ...parsed, allowTransactionPreparation };
+}
+
 /** A number option within [min, max]; `fallback` when it was not given. */
 export function boundedNumber(
   values: Map<string, string>,

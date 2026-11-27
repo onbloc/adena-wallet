@@ -22,7 +22,7 @@ export const actionSchema = z.discriminatedUnion('kind', [
 export type WalletContext = Readonly<z.infer<typeof accountSchema>>;
 export type Selection = z.infer<typeof selectionSchema>;
 export type WalletAction = Readonly<Selection & WalletContext>;
-export type Scope = 'read-only' | 'prepare-transfer' | 'manage-session';
+export type Scope = 'read-only' | 'prepare-transfer' | 'manage-session' | 'prepare-wallet';
 export type WalletReader = {
   getBalances?(context: WalletContext, signal: AbortSignal): Promise<unknown>;
   findTokens?(context: WalletContext, symbol: string, signal: AbortSignal): Promise<unknown>;
@@ -47,16 +47,24 @@ const definitions = {
 export type ToolName = keyof typeof definitions;
 export type ToolDefinition = Readonly<{ name: string; description: string } &
   ({ inputSchema: z.ZodType } | { jsonSchema: Tool['inputSchema'] })>;
-export type Decision =
+export type Decision = { auditFailed?: true } & (
   | { kind: 'result'; value: unknown }
   | { kind: 'clarify'; reason: 'AMBIGUOUS_ASSET' | 'CONFIRM_TRANSFER' | 'CONFIRM_SESSION'; choices?: readonly z.infer<typeof asset>[] }
   | { kind: 'approval-required'; action: WalletAction }
-  | { kind: 'denied'; code: 'UNKNOWN_TOOL' | 'OUT_OF_SCOPE' | 'INVALID_INPUT' | 'INVALID_OUTPUT' | 'TARGET_CHANGED' | 'CANCELLED' | 'BUDGET_EXHAUSTED' | 'RUN_PAUSED' | 'WALLET_UNAVAILABLE' | 'MCP_UNAVAILABLE' | 'MCP_TOOL_ERROR' | 'MCP_RESULT_TOO_LARGE' };
+  | { kind: 'denied'; code: 'UNKNOWN_TOOL' | 'OUT_OF_SCOPE' | 'INVALID_INPUT' | 'INVALID_OUTPUT' | 'TARGET_CHANGED' | 'CANCELLED' | 'BUDGET_EXHAUSTED' | 'RUN_PAUSED' | 'WALLET_UNAVAILABLE' | 'MCP_UNAVAILABLE' | 'MCP_TOOL_ERROR' | 'MCP_RESULT_TOO_LARGE' });
 
 /** A tool offered by an external source (an MCP server): how it looks to the model, and how to run it. */
 export type RemoteTool = Readonly<{
   definition: { name: string; description: string; jsonSchema: Tool['inputSchema'] };
   execute(raw: unknown): Promise<Decision>;
+}>;
+
+/** A trusted, run-bound wallet operation. Preparing a transaction does not sign or send it. */
+export type WalletTool = Readonly<{
+  definition: ToolDefinition;
+  effect: 'read' | 'prepare';
+  /** The run deadline is epoch milliseconds; check it again immediately before handoff. */
+  execute(raw: unknown, signal: AbortSignal, deadline?: number): Promise<Decision>;
 }>;
 
 /**
@@ -72,7 +80,7 @@ export function isTool(name: string): name is ToolName {
 
 export function allowed(scope: Scope, name: ToolName): boolean {
   switch (definitions[name].effect) {
-    case 'read': return scope === 'read-only' || scope === 'prepare-transfer' || scope === 'manage-session';
+    case 'read': return scope === 'read-only' || scope === 'prepare-transfer' || scope === 'manage-session' || scope === 'prepare-wallet';
     case 'propose': return scope === 'prepare-transfer';
     case 'session': return scope === 'manage-session';
   }

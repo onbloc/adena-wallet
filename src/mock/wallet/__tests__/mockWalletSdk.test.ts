@@ -9,6 +9,7 @@ const other = FIXTURE.contacts[0].address;
 const to = FIXTURE.recipient;
 const gnot = TokenSymbol.Gnot;
 const gns = TokenSymbol.Gns;
+const invalidChecksum = to.slice(0, -1) + (to.endsWith('q') ? 'p' : 'q');
 
 const makeSdk = () => new MockWalletSdk();
 
@@ -43,6 +44,7 @@ describe('fixtures and address check', () => {
     acc1.address + 'q', // too long
     acc1.address.slice(0, -1), // too short
     'x1' + acc1.address.slice(2), // right length, wrong prefix
+    acc1.address.slice(0, -1) + (acc1.address.endsWith('q') ? 'p' : 'q'),
   ])('rejects %p', (address) => {
     expect(isValidAddress(address)).toBe(false);
   });
@@ -51,9 +53,9 @@ describe('fixtures and address check', () => {
     'g1' + 'b'.repeat(38),
     'g1' + '1'.repeat(38),
     'g1' + 'A'.repeat(38),
-  ])('accepts %p: only the prefix and the length are checked', async (address) => {
-    expect(isValidAddress(address)).toBe(true);
-    await expect(makeSdk().getBalance(address)).resolves.toEqual({ GNOT: '0', GNS: '0' });
+  ])('rejects %p despite a matching prefix and length', async (address) => {
+    expect(isValidAddress(address)).toBe(false);
+    await expect(makeSdk().getBalance(address)).rejects.toMatchObject({ code: WalletErrorCode.InvalidAddress });
   });
 });
 
@@ -94,6 +96,16 @@ describe('getBalance', () => {
 });
 
 describe('transfer', () => {
+  it('builds a token transfer from its validated package identity and base units', async () => {
+    const { summary, tx } = await makeSdk().transfer(send('0.063607', 'gno.land/r/gnoswap/gns'));
+    expect(summary).toMatchObject({ token: 'GNS', amount: '0.063607' });
+    expect(tx).toEqual({
+      chainId: 'gnoland-1',
+      messages: [{ type: '/vm.m_call', value: { caller: acc1.address, pkg_path: 'gno.land/r/gnoswap/gns', func: 'Transfer', args: [to, '63607'], send: '' } }],
+      signatures: [],
+    });
+  });
+
   it('prepares a transfer with a normalized amount and moves no funds', async () => {
     const sdk = makeSdk();
 
@@ -107,8 +119,11 @@ describe('transfer', () => {
       amount: '0.5',
       token: gnot,
     });
-    expect(tx).toEqual(summary);
-    expect(tx).not.toBe(summary);
+    expect(tx).toEqual({
+      chainId: 'gnoland-1',
+      messages: [{ type: '/bank.MsgSend', value: { from_address: acc1.address, to_address: to, amount: '500000ugnot' } }],
+      signatures: [],
+    });
     expect(await sdk.getBalance(acc1.address)).toEqual({ GNOT: '10', GNS: '250' });
     expect(await sdk.getBalance(to)).toEqual({ GNOT: '0', GNS: '0' });
   });
@@ -117,6 +132,7 @@ describe('transfer', () => {
     ['sender is malformed', { ...send('1'), from: 'alice' }, WalletErrorCode.InvalidAddress],
     ['sender holds nothing', { ...send('1'), from: to }, WalletErrorCode.InsufficientBalance],
     ['recipient is malformed', { ...send('1'), to: 'alice' }, WalletErrorCode.InvalidAddress],
+    ['recipient checksum is invalid', { ...send('1'), to: invalidChecksum }, WalletErrorCode.InvalidAddress],
     ['amount is zero', send('0'), WalletErrorCode.InvalidAmount],
     ['amount is negative', send('-1'), WalletErrorCode.InvalidAmount],
     ['amount is not a number', send('half'), WalletErrorCode.InvalidAmount],
@@ -180,7 +196,11 @@ describe('approve', () => {
       amount: '5',
       token: gns,
     });
-    expect(tx).toEqual(summary);
+    expect(tx).toEqual({
+      chainId: 'gnoland-1',
+      messages: [{ type: '/vm.m_call', value: { caller: acc1.address, pkg_path: 'gno.land/r/gnoswap/gns', func: 'Approve', args: [other, '5000000'], send: '' } }],
+      signatures: [],
+    });
     expect(await sdk.getBalance(acc1.address)).toEqual({ GNOT: '10', GNS: '250' });
   });
 
@@ -200,10 +220,12 @@ describe('approve', () => {
     ['owner is malformed', { ...give('5'), from: 'alice' }, WalletErrorCode.InvalidAddress],
     ['spender is malformed', give('5', gns, 'x1' + to.slice(2)), WalletErrorCode.InvalidAddress],
     ['spender has the wrong length', give('5', gns, to.slice(0, -1)), WalletErrorCode.InvalidAddress],
+    ['spender checksum is invalid', give('5', gns, invalidChecksum), WalletErrorCode.InvalidAddress],
     ['amount is zero', give('0'), WalletErrorCode.InvalidAmount],
     ['amount is negative', give('-1'), WalletErrorCode.InvalidAmount],
     ['amount is not a number', give('lots'), WalletErrorCode.InvalidAmount],
     ['the token is unknown', give('5', 'DOGE'), WalletErrorCode.UnknownToken],
+    ['native tokens have no allowances', give('5', gnot), WalletErrorCode.UnsupportedToken],
   ])('refuses when %s', async (_label, params, code) => {
     await expect(makeSdk().approve(params)).rejects.toMatchObject({ code });
   });

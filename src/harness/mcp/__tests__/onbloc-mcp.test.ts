@@ -3,14 +3,14 @@ import type * as FakeOnbloc from '../testing/fakeOnblocMcp';
 
 const account = 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v';
 const endpoint = 'https://example.test/mcp';
-const input = { page: { limit: 2 } };
+const input = { page: { limit: 2 }, limit: 2 };
 const output = {
   address: account,
   network: 'gnoland-1',
   items: [{ denom: 'ugnot', balance: '42' }],
 };
-const balanceTool: FakeOnbloc.FakeOnblocTool = {
-  name: 'get_balances',
+const transferTool: FakeOnbloc.FakeOnblocTool = {
+  name: 'list_native_transfers',
   inputSchema: {
     type: 'object',
     properties: {
@@ -21,8 +21,9 @@ const balanceTool: FakeOnbloc.FakeOnblocTool = {
         required: ['limit'],
         additionalProperties: false,
       },
+      limit: { type: 'integer', minimum: 1, maximum: 10 },
     },
-    required: ['address', 'page'],
+    required: ['address', 'page', 'limit'],
     additionalProperties: false,
   },
   outputSchema: {
@@ -75,14 +76,14 @@ describe('Onbloc MCP without runtime code generation', () => {
   });
 
   it('discovers structured tools and validates their actual results without Function or eval', async () => {
-    const { fetcher, calls } = fakeOnblocMcp([balanceTool]);
+    const { fetcher, calls } = fakeOnblocMcp([transferTool]);
     const tools = await createOnblocReader({ endpoint, fetcher })(account, controller.signal);
-    const tool = tools.get(balanceTool.name)!;
+    const tool = tools.get(transferTool.name)!;
 
-    expect([...tools.keys()]).toEqual([balanceTool.name]);
+    expect([...tools.keys()]).toEqual([transferTool.name]);
     expect(tool.definition.jsonSchema).toMatchObject({
-      properties: { page: balanceTool.inputSchema!.properties!.page },
-      required: ['page'],
+      properties: { page: transferTool.inputSchema!.properties!.page, limit: transferTool.inputSchema!.properties!.limit },
+      required: ['page', 'limit'],
       additionalProperties: false,
     });
     expect(tool.definition.jsonSchema.properties).not.toHaveProperty('address');
@@ -90,20 +91,22 @@ describe('Onbloc MCP without runtime code generation', () => {
       kind: 'result',
       value: { chainId: 'gnoland-1', untrustedData: output },
     });
-    expect(calls).toEqual([{ name: balanceTool.name, arguments: { ...input, address: account } }]);
+    expect(calls).toEqual([{ name: transferTool.name, arguments: { ...input, address: account } }]);
   });
 
   it.each([
     ['missing required fields', {}],
-    ['incorrect nested types', { page: { limit: '2' } }],
-    ['out-of-range values', { page: { limit: 0 } }],
+    ['missing pagination limit', { page: input.page }],
+    ['incorrect nested types', { ...input, page: { limit: '2' } }],
+    ['out-of-range nested values', { ...input, page: { limit: 0 } }],
+    ['out-of-range limits', { ...input, limit: 0 }],
     ['undeclared fields', { ...input, extra: true }],
     ['caller-supplied addresses', { ...input, address: account }],
   ])('rejects %s before calling the server', async (_label, invalidInput) => {
-    const { fetcher, calls } = fakeOnblocMcp([balanceTool]);
+    const { fetcher, calls } = fakeOnblocMcp([transferTool]);
     const tools = await createOnblocReader({ endpoint, fetcher })(account, controller.signal);
 
-    expect(await tools.get(balanceTool.name)!.execute(invalidInput)).toEqual({ kind: 'denied', code: 'INVALID_INPUT' });
+    expect(await tools.get(transferTool.name)!.execute(invalidInput)).toEqual({ kind: 'denied', code: 'INVALID_INPUT' });
     expect(calls).toEqual([]);
   });
 
@@ -113,10 +116,10 @@ describe('Onbloc MCP without runtime code generation', () => {
     ['invalid nested values', { ...output, items: [{ denom: 'ugnot', balance: '-1' }] }],
     ['undeclared fields', { ...output, extra: true }],
   ])('rejects outputs with %s after calling the server', async (_label, invalidOutput) => {
-    const { fetcher, calls } = fakeOnblocMcp([{ ...balanceTool, output: invalidOutput }]);
+    const { fetcher, calls } = fakeOnblocMcp([{ ...transferTool, output: invalidOutput }]);
     const tools = await createOnblocReader({ endpoint, fetcher })(account, controller.signal);
 
-    expect(await tools.get(balanceTool.name)!.execute(input)).toEqual({ kind: 'denied', code: 'INVALID_OUTPUT' });
-    expect(calls).toEqual([{ name: balanceTool.name, arguments: { ...input, address: account } }]);
+    expect(await tools.get(transferTool.name)!.execute(input)).toEqual({ kind: 'denied', code: 'INVALID_OUTPUT' });
+    expect(calls).toEqual([{ name: transferTool.name, arguments: { ...input, address: account } }]);
   });
 });

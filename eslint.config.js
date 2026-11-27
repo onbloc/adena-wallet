@@ -46,7 +46,7 @@ module.exports = defineConfig([
   //   mock -> agent, llm, harness     agent -> llm/core, harness
   //   nothing outside src/mock imports it, tests included; each library tests itself with its
   //   own fakes (agent/testing, harness/mcp/testing)
-  { files: ['src/**', 'App.tsx'], rules: restrict() },
+  { files: ['src/**'], rules: restrict() },
   { files: ['src/llm/**'], rules: restrict(llmBan) },
   {
     // The portable core: no device runtime, no React Native.
@@ -67,6 +67,16 @@ module.exports = defineConfig([
   {
     files: ['src/llm/device/**'],
     rules: restrict(llmBan, [['../core/**'], 'Import llm/core through its index (../core).']),
+  },
+  {
+    // Remote models are portable too: no device runtime or native React dependencies.
+    files: ['src/llm/remote/**'],
+    rules: restrict(
+      llmBan,
+      [ban('device'), 'llm/remote must not depend on llm/device.'],
+      [['react', 'react-native', '@react-native-ai/*', 'llama.rn'], 'llm/remote must run without React Native.'],
+      [['../core/**'], 'Import llm/core through its index (../core).']
+    ),
   },
   { files: ['src/harness/**'], rules: restrict(harnessBan) },
   {

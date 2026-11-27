@@ -1,11 +1,15 @@
 import {
+  asSchema,
   isStepCount,
+  Output,
   streamText,
   type LanguageModel,
   type ModelMessage,
   type ToolSet,
 } from 'ai';
+import type { ZodType } from 'zod';
 import type { ToolLoop } from './loop';
+import { compactContext, estimateContextInput } from './session';
 
 /** What to answer: one prompt, or a whole conversation. */
 type GenerateInput =
@@ -25,6 +29,8 @@ export type GenerateSettings = GenerateInput & {
   tools?: ToolSet;
   /** Max model calls when tools are used (SDK default: 1). A `loop` brings its own limit. */
   maxSteps?: number;
+  /** Constrains providers with structured-output support; callers still validate the result. */
+  outputSchema?: ZodType;
 };
 
 export type GenerateOptions = GenerateSettings & {
@@ -32,6 +38,10 @@ export type GenerateOptions = GenerateSettings & {
   signal?: AbortSignal;
   /** Tools and per-step hooks from the layer above; closed when the generation ends. */
   loop?: ToolLoop;
+  /** Bound each model step to this context window. Managed loops apply their own budget. */
+  contextTokens?: number;
+  /** History user/assistant pairs removed from a successful step's input. */
+  onContextCompacted?: (droppedTurns: number) => void;
 };
 
 export type Metrics = {
@@ -77,9 +87,11 @@ export type GenerateEvent =
       metrics: Metrics;
       aborted: boolean;
       finishReason?: string;
+      /** The application rendered a complete answer directly from validated balance results. */
+      verifiedAnswer?: true;
       /** Provider warnings, e.g. unsupported options. */
       warnings: string[];
-      /** What the model said and did (assistant and tool messages), to append to a conversation. Empty if aborted. */
+      /** Raw assistant and tool messages for this run; never replay tool calls as chat history. */
       messages: ModelMessage[];
     };
 
@@ -98,7 +110,7 @@ const errorMessage = (error: unknown) =>
  */
 export async function* generate(
   model: LanguageModel,
-  { signal, maxSteps, loop, ...options }: GenerateOptions,
+  { signal, maxSteps, loop, contextTokens, onContextCompacted, outputSchema, ...options }: GenerateOptions,
   now: () => number = () => Date.now()
 ): AsyncGenerator<GenerateEvent> {
   const startedAt = now();
@@ -109,32 +121,46 @@ export async function* generate(
   const warnings: string[] = [];
   let responseMessages: ModelMessage[] = [];
   const loopSignal = loop?.options.abortSignal;
-  let abortSignal = signal ?? loopSignal;
-  let detachAbortSignals: (() => void) | undefined;
+  const controller = signal && loopSignal && signal !== loopSignal ? new AbortController() : undefined;
+  const abortSignal = controller?.signal ?? signal ?? loopSignal;
+  const abort = () => controller?.abort(signal?.aborted ? signal.reason : loopSignal?.reason);
 
   try {
-    if (signal && loopSignal && signal !== loopSignal) {
-      const controller = new AbortController();
-      abortSignal = controller.signal;
-      const abortFromCaller = () => controller.abort(signal.reason);
-      const abortFromLoop = () => controller.abort(loopSignal.reason);
-      if (signal.aborted) {
-        abortFromCaller();
-      } else if (loopSignal.aborted) {
-        abortFromLoop();
-      } else {
-        detachAbortSignals = () => {
-          signal.removeEventListener('abort', abortFromCaller);
-          loopSignal.removeEventListener('abort', abortFromLoop);
-        };
-        signal.addEventListener('abort', abortFromCaller, { once: true });
-        loopSignal.addEventListener('abort', abortFromLoop, { once: true });
-      }
+    if (controller) {
+      signal?.addEventListener('abort', abort, { once: true });
+      loopSignal?.addEventListener('abort', abort, { once: true });
+      if (signal?.aborted || loopSignal?.aborted) abort();
     }
+    if (abortSignal?.aborted) throw abortSignal.reason ?? new Error('Generation aborted.');
+    if (contextTokens !== undefined && (!Number.isSafeInteger(contextTokens) || contextTokens <= 0)) {
+      throw new RangeError('Context tokens must be a positive safe integer.');
+    }
+    const bounded = contextTokens !== undefined && !loop?.options.prepareStep;
+    const maxOutputTokens = options.maxOutputTokens ?? 512;
+    const tools = loop?.options.tools ?? options.tools;
+    const schemas = bounded && tools
+      ? await Promise.all(Object.entries(tools).map(async ([name, definition]) =>
+        [name, definition.description, await asSchema(definition.inputSchema).jsonSchema]))
+      : [];
+    const formatSchemas = bounded && outputSchema
+      ? [...schemas, { responseFormat: await asSchema(outputSchema).jsonSchema }] : schemas;
+    if (abortSignal?.aborted) throw abortSignal.reason ?? new Error('Generation aborted.');
     const result = streamText({
       model,
       ...options,
+      ...(outputSchema && { output: Output.object({ schema: outputSchema }) }),
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
+      ...(bounded && {
+        maxOutputTokens,
+        prepareStep: ({ messages, instructions }) => {
+          const context = compactContext(messages, candidate =>
+            estimateContextInput([instructions, formatSchemas, candidate]) + maxOutputTokens <= (contextTokens ?? Infinity));
+          if (!context) throw new Error('AGENT_CONTEXT_LIMIT: Current request and tool results exceed the model context.');
+          const droppedTurns = (messages.length - context.length) / 2;
+          if (droppedTurns > 0) onContextCompacted?.(droppedTurns);
+          return { messages: context };
+        },
+      }),
       ...loop?.options,
       abortSignal,
       onError: () => {}, // errors are rethrown from the stream below
@@ -192,12 +218,16 @@ export async function* generate(
           throw part.error;
       }
     }
+    aborted ||= abortSignal?.aborted === true;
     if (!aborted) responseMessages = await result.responseMessages;
   } catch (error) {
     if (!abortSignal?.aborted) throw error;
     aborted = true;
   } finally {
-    detachAbortSignals?.();
+    if (controller) {
+      signal?.removeEventListener('abort', abort);
+      loopSignal?.removeEventListener('abort', abort);
+    }
     loop?.close();
   }
 
