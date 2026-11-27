@@ -153,6 +153,58 @@ export class AccountService {
     return account;
   }
 
+  // Adds several HD accounts of one keyring in a single write, so an interruption leaves none or all of them.
+  // Keys already in the wallet (the same phrase in another keyring) are skipped. Caller runs inside runExclusive.
+  async appendHdAccounts(keyringId: string, entries: { hdIndex: number; name: string }[]): Promise<Account[]> {
+    const epoch = this.keyringSession.epoch;
+    const derived: { hdIndex: number; name: string; publicKey: string }[] = [];
+
+    for (const { hdIndex, name } of entries) {
+      if (!isHdIndex(hdIndex)) {
+        throw new AppError(AppErrorCode.INVALID_REQUEST, 'This account index is not available');
+      }
+
+      derived.push({ hdIndex, name, publicKey: toBase64(await this.keyringSession.withKeyPair(keyringId, hdIndex, async keyPair => keyPair.publicKey)) });
+    }
+
+    if (this.keyringSession.epoch !== epoch) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet is locked');
+    }
+
+    const accounts = [...this.getAccounts()];
+    const added: Account[] = [];
+
+    for (const entry of derived) {
+      if (accounts.some(account => account.publicKey === entry.publicKey || (account.keyringId === keyringId && account.hdIndex === entry.hdIndex))) {
+        continue;
+      }
+
+      const account: Account = {
+        id: createId(),
+        keyringId,
+        keyringType: KeyringType.HD_WALLET,
+        name: entry.name,
+        hdIndex: entry.hdIndex,
+        publicKey: entry.publicKey,
+        createdAt: Date.now(),
+        ...this.resolveAvatarColor(accounts),
+      };
+
+      accounts.push(account);
+      added.push(account);
+    }
+
+    if (added.length > 0) {
+      this.accountRepository.saveAccounts(accounts);
+
+      if (!this.accountRepository.getCurrentAccountId()) {
+        this.accountRepository.setCurrentAccountId(added[0].id);
+      }
+    }
+
+    return added;
+  }
+
   private resolveAvatarColor(existing: Account[], avatarColor?: AvatarColor | null): Pick<Account, 'avatarColor'> {
     if (isAvatarColor(avatarColor)) {
       return { avatarColor };

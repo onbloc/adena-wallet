@@ -66,4 +66,24 @@ describe('WalletService.createWallet with picked HD indexes', () => {
     expect(container.accountService.getAccounts().map(account => [account.hdIndex, account.publicKey])).toEqual(before);
     expect(container.accountService.getAccounts().map(account => account.name)).toEqual(['Account 3', 'Account 8']);
   });
+
+  it('keeps the rebuild retryable when it is interrupted', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, hdIndexes: [2, 7] });
+    container.walletService.lock();
+    container.accountService.clear();
+
+    const session = (container.accountService as unknown as { keyringSession: { withKeyPair: (...args: unknown[]) => Promise<unknown> } }).keyringSession;
+    const real = session.withKeyPair.bind(session);
+    // The first index derives, the second is cut off.
+    const derive = jest.spyOn(session, 'withKeyPair').mockImplementationOnce(real).mockRejectedValueOnce(new Error('interrupted'));
+
+    await expect(container.walletService.unlock(TEST_PASSWORD)).rejects.toThrow('interrupted');
+    expect(container.accountService.getAccounts()).toEqual([]);
+
+    derive.mockRestore();
+    await container.walletService.unlock(TEST_PASSWORD);
+    expect(container.accountService.getAccounts().map(account => account.hdIndex)).toEqual([2, 7]);
+  });
 });

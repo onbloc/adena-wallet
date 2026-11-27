@@ -58,5 +58,20 @@ describe('BackupPhraseScreen', () => {
       expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED);
       expect(useOnboardingStore.getState().mnemonic).toBeNull();
     });
+
+    it('lets the user rely on a pending upload, but not on a failed one', async () => {
+      const env = createTestContainer();
+
+      await env.container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+      useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC });
+      const { unmount } = await renderScreen(BackupPhraseScreen, { env, params: { afterCreate: true } });
+
+      expect(screen.queryByTestId('backup-skip')).toBeNull();
+      await unmount();
+
+      await renderScreen(BackupPhraseScreen, { env, params: { afterCreate: true, uploadPending: true } });
+      await fireEvent.press(screen.getByTestId('backup-skip'));
+      expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED);
+    });
   });
 });

@@ -9,6 +9,7 @@ import { useFinishOnboarding } from '../use-finish-onboarding';
 
 export const BackupPhraseScreen = ({ navigation, route }: NativeStackScreenProps<OnboardingStackParamList, 'BackupPhrase'>): ReactElement => {
   const afterCreate = route.params?.afterCreate === true;
+  const uploadPending = afterCreate && route.params?.uploadPending === true;
   const mnemonic = useOnboardingStore(state => state.mnemonic);
   const finishOnboarding = useFinishOnboarding();
   const [revealed, setRevealed] = useState(false);
@@ -34,12 +35,7 @@ export const BackupPhraseScreen = ({ navigation, route }: NativeStackScreenProps
     reveal();
   };
 
-  const handleContinue = async (): Promise<void> => {
-    if (!afterCreate) {
-      navigation.navigate('ProtectWallet');
-      return;
-    }
-
+  const finish = async (): Promise<void> => {
     if (finishingRef.current) {
       return;
     }
@@ -51,6 +47,15 @@ export const BackupPhraseScreen = ({ navigation, route }: NativeStackScreenProps
     }
   };
 
+  const handleContinue = (): void => {
+    if (afterCreate) {
+      void finish();
+      return;
+    }
+
+    navigation.navigate('ProtectWallet');
+  };
+
   return (
     <BackupPhrasePage
       words={mnemonic?.split(' ') ?? []}
@@ -59,6 +64,7 @@ export const BackupPhraseScreen = ({ navigation, route }: NativeStackScreenProps
       canContinue={revealed}
       onContinue={handleContinue}
       onBack={afterCreate ? undefined : navigation.goBack}
+      onSkip={uploadPending ? (): void => void finish() : undefined}
     />
   );
 };

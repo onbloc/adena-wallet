@@ -537,19 +537,18 @@ export class WalletService {
 
     for (const keyring of keyrings) {
       if (!accounts.some(account => account.keyringId === keyring.id)) {
-        // An imported phrase records the indexes the user picked; anything else rebuilds index 0.
-        const indexes = keyring.type === KeyringType.HD_WALLET && keyring.hdIndexes?.every(isHdIndex) ? keyring.hdIndexes : [0];
-
-        for (const hdIndex of indexes) {
-          // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
-          const name = keyring.type === KeyringType.HD_WALLET && keyring.hdIndexes ? `Account ${hdIndex + 1}` : undefined;
-
-          await this.accountService.appendAccount(keyring.id, keyring.type, name, keyring.type === KeyringType.HD_WALLET ? { hdIndex } : {}).catch((error: unknown) => {
-            if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
-              throw error;
-            }
-          });
+        // An imported phrase records the indexes the user picked, rebuilt in one write so a retry never finds half of them.
+        if (keyring.type === KeyringType.HD_WALLET && keyring.hdIndexes?.length && keyring.hdIndexes.every(isHdIndex)) {
+          await this.accountService.appendHdAccounts(keyring.id, keyring.hdIndexes.map(hdIndex => ({ hdIndex, name: `Account ${hdIndex + 1}` })));
+          continue;
         }
+
+        // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
+        await this.accountService.appendAccount(keyring.id, keyring.type).catch((error: unknown) => {
+          if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
+            throw error;
+          }
+        });
       }
     }
   }

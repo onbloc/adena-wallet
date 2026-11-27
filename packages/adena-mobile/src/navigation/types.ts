@@ -12,8 +12,9 @@ import { NftCollection, NftItem } from '../domain/nft';
 export type OnboardingStackParamList = {
   Welcome: undefined;
   BackupMethod: undefined;
-  // `afterCreate`: the wallet exists but its cloud backup failed, so this is the last step before the app.
-  BackupPhrase: { afterCreate?: boolean } | undefined;
+  // `afterCreate`: the wallet exists but its cloud backup is not confirmed, so this is the last step before the app.
+  // `uploadPending`: the upload may still finish, so the user may skip writing the phrase down.
+  BackupPhrase: { afterCreate?: boolean; uploadPending?: boolean } | undefined;
   BackupPassword: undefined;
   ImportMethod: undefined;
   ImportWallet: undefined;

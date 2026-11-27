@@ -198,6 +198,17 @@ describe('CreatePasswordScreen', () => {
     expect(useToastStore.getState().toast).toMatchObject({ tone: 'warning', message: 'iCloud backup did not finish. Write down your recovery phrase now.' });
   });
 
+  it('offers the phrase step when the provider has not confirmed the upload yet', async () => {
+    useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
+    walletService.createWallet.mockResolvedValue(undefined);
+    cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp', uploading: {} });
+    await fillAndSubmit();
+
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('BackupPhrase', { afterCreate: true, uploadPending: true }));
+    expect(useSessionStore.getState().status).toBe(SessionStatus.EMPTY);
+    expect(useToastStore.getState().toast).toMatchObject({ tone: 'info', message: 'iCloud has not confirmed the upload yet. You can also write down your recovery phrase.' });
+  });
+
   it('stops waiting for a cloud backup that does not finish in time', async () => {
     jest.useFakeTimers();
 

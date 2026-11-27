@@ -78,11 +78,11 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
     }
   };
 
-  // Chosen on the backup step. False when it threw, reported an upload error or did not finish in time;
-  // a slow provider (e.g. an interactive sign-in) must not hold the new wallet on this screen.
-  const createCloudBackupIfChosen = async (): Promise<boolean> => {
+  // Chosen on the backup step. Only an upload the provider confirmed counts; a slow provider
+  // (e.g. an interactive sign-in) must not hold the new wallet on this screen.
+  const createCloudBackupIfChosen = async (): Promise<'none' | 'confirmed' | 'pending' | 'failed'> => {
     if (!backupPassword) {
-      return true;
+      return 'none';
     }
 
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -95,10 +95,14 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
         }),
       ]);
 
-      return status !== null && !(status.kind === 'backedUp' && status.uploading?.error);
+      if (status?.kind !== 'backedUp' || status.uploading?.error) {
+        return 'failed';
+      }
+
+      return status.uploading ? 'pending' : 'confirmed';
     }
     catch {
-      return false;
+      return 'failed';
     }
     finally {
       clearTimeout(timer);
@@ -148,10 +152,19 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
 
       await enableBiometricsIfChosen();
 
-      // Without a cloud copy the phrase was never shown, so the user writes it down before entering the app.
-      if (!(await createCloudBackupIfChosen())) {
-        showToast(`${cloudProviderName(cloudBackupService.provider)} backup did not finish. Write down your recovery phrase now.`, 'warning');
+      // Without a confirmed cloud copy the phrase was never safely stored, so the user sees it before the app.
+      const backup = await createCloudBackupIfChosen();
+      const provider = cloudProviderName(cloudBackupService.provider);
+
+      if (backup === 'failed') {
+        showToast(`${provider} backup did not finish. Write down your recovery phrase now.`, 'warning');
         navigation.navigate('BackupPhrase', { afterCreate: true });
+        return;
+      }
+
+      if (backup === 'pending') {
+        showToast(`${provider} has not confirmed the upload yet. You can also write down your recovery phrase.`, 'info');
+        navigation.navigate('BackupPhrase', { afterCreate: true, uploadPending: true });
         return;
       }
 
