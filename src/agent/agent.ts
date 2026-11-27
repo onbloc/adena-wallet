@@ -94,6 +94,12 @@ type PendingPreparation = {
   account: string;
   chainId: string;
 };
+
+// Hosts may return a new array view of the same immutable turn records.
+function sameHistory(left: ChatSession['turns'], right: ChatSession['turns']): boolean {
+  return left === right || (left.length === right.length && left.every((turn, index) => turn === right[index]));
+}
+
 export type AgentRunOptions = {
   account?: string;
   signal?: AbortSignal;
@@ -238,7 +244,12 @@ export class AIAgent {
   private readonly tokenSymbols: readonly string[];
   private readonly budget: Partial<Budget>;
   private active?: { controller: AbortController; expiresAt: number };
-  private continuation?: { account?: string; clarification?: PendingClarification; balance?: BalanceReferent; preparation?: PendingPreparation };
+  private continuation?: {
+    account?: string;
+    clarification?: PendingClarification;
+    balance?: BalanceReferent;
+    preparation?: { pending: PendingPreparation; history: ChatSession['turns'] };
+  };
   private revision = 0;
   private runs = 0;
   // Operation ids reach audit logs and budget reservations shared across agents and restarts.
@@ -351,6 +362,8 @@ export class AIAgent {
     let calls: CallRecord[] = [];
     let completed = false;
     const continuation = this.continuation?.account === options.account ? this.continuation : undefined;
+    let history = this.session.turns;
+    const preparation = continuation?.preparation;
     this.continuation = undefined;
     let nextClarification: PendingClarification | undefined;
     let nextBalanceReferent: BalanceReferent | undefined;
@@ -361,7 +374,8 @@ export class AIAgent {
         signal: controller.signal,
         contextTokens,
         budget,
-        pendingPreparation: options.allowTransactionPreparation ? continuation?.preparation : undefined,
+        pendingPreparation: options.allowTransactionPreparation && preparation && sameHistory(preparation.history, history)
+          ? preparation.pending : undefined,
         onAmbiguousPreparation: (pending) => { nextPreparation = pending; },
         pendingClarification: options.allowTransactionPreparation ? continuation?.clarification : undefined,
         onPreparationClarification: (text, slot) => { nextClarification = { text, slot }; },
@@ -372,7 +386,9 @@ export class AIAgent {
           nextClarification = undefined;
           nextBalanceReferent = undefined;
           nextPreparation = undefined;
+          const unchanged = sameHistory(history, this.session.turns);
           this.session.trimOldest(count);
+          if (unchanged) history = this.session.turns;
           onContextCompacted?.(count);
         },
       });
@@ -384,12 +400,17 @@ export class AIAgent {
         if (event.type === GenerateEventType.Done && !completed) {
           completed = true;
           if (revision === this.revision && !controller.signal.aborted && !event.aborted) {
+            const unchanged = sameHistory(history, this.session.turns);
+            const remember = canRememberTurn(event);
+            const remembered = remember && this.session.complete(prompt, withoutToolData(answer), describeToolRecord(calls));
             if (event.finishReason === 'stop') {
               this.continuation = { account: options.account,
                 clarification: options.allowTransactionPreparation ? nextClarification : undefined, balance: nextBalanceReferent,
-                preparation: options.allowTransactionPreparation ? nextPreparation : undefined };
+                // A selection only continues the ambiguity just recorded in this session.
+                preparation: options.allowTransactionPreparation && unchanged && remembered && nextPreparation
+                  ? { pending: nextPreparation, history: this.session.turns } : undefined };
             }
-            if (canRememberTurn(event) && !this.session.complete(prompt, withoutToolData(answer), describeToolRecord(calls))) {
+            if (remember && !remembered) {
               yield { ...event, warnings: [...event.warnings, 'This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.'] };
               continue;
             }

@@ -1234,6 +1234,29 @@ describe('stateful SDK token selection', () => {
     expect(wallet.transfer).toHaveBeenCalledTimes(1);
     expect(prepared).toEqual([]);
   });
+  it.each(['session reset', 'another completed turn'] as const)(
+    'does not accept a previous candidate after a shared history change: %s', async change => {
+      const { agent, wallet, prepared } = setupCandidate(replay);
+      await collect(agent.run({ prompt: `Send 1 GNS to ${RECIPIENT}.` }, permission));
+      if (change === 'session reset') agent.session.reset();
+      else expect(agent.session.complete('New topic.', 'What would you like to look up?')).toBe(true);
+      await collect(agent.run({ prompt: candidates[0] }, permission));
+      expect(wallet.transfer).toHaveBeenCalledTimes(1);
+      expect(prepared).toEqual([]);
+    });
+
+  it('accepts a current candidate when a host returns a fresh array of unchanged turns', async () => {
+    const { llm, harness, wallet, prepared } = setupCandidate();
+    const history = createChatSession();
+    const agent = new AIAgent({ llm, harness, wallet, onTransaction: tx => { prepared.push(tx); },
+      session: { ...history, get turns() { return [...history.turns]; } } });
+    await collect(agent.run({ prompt: `Send 1 GNS to ${RECIPIENT}.` }, permission));
+    await collect(agent.run({ prompt: candidates[0] }, permission));
+    expect(wallet.calls).toEqual([{ method: 'transfer', params: {
+      from: ACCOUNT, to: RECIPIENT, amount: '1', token: candidates[0],
+    } }]);
+    expect(prepared).toHaveLength(1);
+  });
 
   it('does not retain candidates from an audit-failed ambiguity', async () => {
     const { agent, wallet, prepared } = setupCandidate(replay, { failAudit: true });
