@@ -3,6 +3,7 @@ package agentpath
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -121,5 +122,26 @@ func enableRestorePrivilege(t *testing.T) {
 
 	if err := windows.AdjustTokenPrivileges(token, false, &privileges, 0, nil, nil); err != nil {
 		t.Skipf("enable SeRestorePrivilege: %v", err)
+	}
+}
+
+func TestEnsureDirRefusesAJunction(t *testing.T) {
+	t.Parallel()
+
+	base := t.TempDir()
+	target := filepath.Join(base, "elsewhere")
+	link := filepath.Join(base, "agent")
+
+	if err := os.Mkdir(target, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	// mklink /J needs no privilege, unlike a symbolic link.
+	if out, err := exec.Command("cmd", "/c", "mklink", "/J", link, target).CombinedOutput(); err != nil {
+		t.Skipf("cannot create a junction here: %v %s", err, out)
+	}
+
+	if err := EnsureDir(link); err == nil {
+		t.Fatal("a junction must not be trusted as the agent home")
 	}
 }

@@ -50,9 +50,14 @@ On disk (`~/.adena-agent`, or `ADENA_AGENT_HOME`; owner-only):
 `npx -y @adena-wallet/mcp@<version> setup` (or `install-host`, or the first
 `connect_wallet`):
 
-1. Copies `adena-agent-host` from the npm package to `~/.adena-agent/bin`, so
-   the browser never runs a file from the npx cache. A running copy is
-   renamed aside first (Windows cannot overwrite it).
+1. Runs the `adena-agent-host` shipped in the npm package, never a copy
+   already on disk. It checks the agent home and its `bin` directory (owner
+   and permissions; on Windows owner, ACL and links, taking over or clearing
+   what another account owns) and only then copies itself to
+   `~/.adena-agent/bin`, so the browser never runs a file from the npx cache.
+   A running copy is renamed aside first (Windows cannot overwrite it).
+   `uninstall-host` and `extensions` likewise run the packaged host, which
+   checks the directory before deleting the copy.
 2. Writes the native messaging manifest `xyz.onbloc.adena_agent` for every
    installed browser (Chrome, Chromium, Brave, Edge, Firefox), allowing the
    store builds of Adena and the ids in `extensions.json`. On Windows the

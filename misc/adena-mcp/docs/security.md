@@ -160,6 +160,10 @@ key if its key, scope, budget or expiry differ from the request
   otherwise). This stops another program from posing as the host on the
   socket path. It does not stop a process that replaces the host binary
   itself (see [Limits](#limits)).
+- `setup`, `install-host`, `uninstall-host` and `extensions` run only the
+  host shipped in the npm package. It checks the agent home before it copies
+  itself there, registers or deletes anything, so a binary planted in a
+  directory another account controls is never run.
 - Clients cannot send `cancel`; only the host does, for its own clients'
   abandoned requests.
 
@@ -206,8 +210,9 @@ decide what agents may do are therefore stored encrypted and authenticated:
 
 On Windows the agent home and the host's `bin` directory get a protected ACL
 for the user and SYSTEM; a directory owned by another account is taken over
-first, and anything inside owned by another account is removed. The socket is
-a Unix domain socket (Windows 10 1803 or later).
+first, and anything inside owned by another account is removed. A junction or
+symbolic link in place of either directory is refused. The socket is a Unix
+domain socket (Windows 10 1803 or later).
 
 ## Limits
 

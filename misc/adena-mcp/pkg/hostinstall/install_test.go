@@ -305,3 +305,49 @@ func sleepCommand() []string {
 
 	return []string{"sleep", "60"}
 }
+
+func TestRemoveHostDeletesTheCopyAndItsMarker(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	src := filepath.Join(dir, "src", "adena-agent-host")
+	bin := filepath.Join(dir, "bin")
+
+	if err := os.MkdirAll(filepath.Dir(src), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(src, []byte("host"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	target, err := CopyHost(src, bin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if markerErr := agentpath.WriteHomeMarker(bin, dir); markerErr != nil {
+		t.Fatal(markerErr)
+	}
+
+	removed, err := RemoveHost(bin, filepath.Base(target))
+	if err != nil || removed != target {
+		t.Fatalf("removed %q, %v", removed, err)
+	}
+
+	for _, path := range []string{target, filepath.Join(bin, agentpath.HomeMarker)} {
+		if _, statErr := os.Stat(path); !errors.Is(statErr, os.ErrNotExist) {
+			t.Fatalf("%s must be gone: %v", path, statErr)
+		}
+	}
+
+	// Nothing installed is not an error, and no directory is created.
+	missing := filepath.Join(dir, "missing")
+	if removed, err := RemoveHost(missing, "adena-agent-host"); err != nil || removed != "" {
+		t.Fatalf("got %q, %v", removed, err)
+	}
+
+	if _, statErr := os.Stat(missing); !errors.Is(statErr, os.ErrNotExist) {
+		t.Fatal("RemoveHost must not create the directory")
+	}
+}

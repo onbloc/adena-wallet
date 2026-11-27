@@ -203,6 +203,7 @@ func runInstall(args []string) error {
 	flags.Var(&extensionPaths, "extension-path", "unpacked Adena build directory to allow (repeatable, not on Windows)")
 	detect := flags.Bool("detect", true, "look for unpacked Adena builds loaded in Chromium profiles and offer them")
 	allowDetected := flags.Bool("allow-detected", false, "allow every detected unpacked Adena build without asking")
+	copyToHome := flags.Bool("copy", false, "copy this host into the agent home's bin directory and register the copy")
 
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -211,6 +212,14 @@ func runInstall(args []string) error {
 	hostPath, err := installedExecutable()
 	if err != nil {
 		return err
+	}
+
+	if *copyToHome {
+		if hostPath, err = copyIntoHome(hostPath); err != nil {
+			return err
+		}
+
+		fmt.Println("copied the agent host to", hostPath)
 	}
 
 	s, err := newExtensionSetup()
@@ -254,6 +263,24 @@ func runInstall(args []string) error {
 	fmt.Println("enable Settings > Security & Privacy > AI Agent Connection in Adena to connect")
 
 	return nil
+}
+
+// copyIntoHome copies the host at self into the agent home's bin directory,
+// which is checked (and on Windows taken over) before anything is written to
+// it, so the browser never runs a file from the npx cache or a directory
+// another account controls. The npm launcher runs the packaged host for this
+// instead of running a copy it made itself.
+func copyIntoHome(self string) (string, error) {
+	agentHome, err := agentpath.Home()
+	if err != nil {
+		return "", err
+	}
+
+	if err := agentpath.EnsureDir(agentHome); err != nil {
+		return "", err
+	}
+
+	return hostinstall.CopyHost(self, filepath.Join(agentHome, "bin"))
 }
 
 // installedExecutable returns this host's path, after securing the agent home

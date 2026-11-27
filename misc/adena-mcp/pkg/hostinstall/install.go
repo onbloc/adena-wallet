@@ -538,6 +538,45 @@ func CopyHost(src, binDir string) (string, error) {
 	return target, nil
 }
 
+// RemoveHost deletes the host copy name in binDir and its agent home marker,
+// after checking binDir as CopyHost does, so nothing is deleted through a
+// directory another account controls. A copy the browser still runs on
+// Windows cannot be deleted; it is moved to a retired name a later install
+// sweeps. It returns the path removed or retired.
+func RemoveHost(binDir, name string) (string, error) {
+	if _, err := os.Lstat(binDir); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+
+	if err := agentpath.EnsureDir(binDir); err != nil {
+		return "", err
+	}
+
+	marker := filepath.Join(binDir, agentpath.HomeMarker)
+	if err := os.Remove(marker); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("remove %s: %w", marker, err)
+	}
+
+	target := filepath.Join(binDir, name)
+	sweepRetired(target)
+
+	err := os.Remove(target)
+
+	switch {
+	case err == nil:
+		return target, nil
+	case errors.Is(err, os.ErrNotExist):
+		return "", nil
+	}
+
+	retired := fmt.Sprintf("%s.old.%d.%d", target, os.Getpid(), time.Now().UnixNano())
+	if renameErr := os.Rename(target, retired); renameErr != nil {
+		return "", fmt.Errorf("remove %s: %w", target, errors.Join(err, renameErr))
+	}
+
+	return retired, nil
+}
+
 func writeStaging(dir, name string, data []byte) (string, error) {
 	f, err := os.CreateTemp(dir, name+"."+strconv.Itoa(os.Getpid())+".*.tmp")
 	if err != nil {

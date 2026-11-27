@@ -13,6 +13,10 @@ import (
 // current user and SYSTEM only, inherited by everything below it, such as the
 // socket and sessions.json.
 func restrictDir(dir string) error {
+	if err := refuseReparsePoint(dir); err != nil {
+		return err
+	}
+
 	user, err := windows.GetCurrentProcessToken().GetTokenUser()
 	if err != nil {
 		return fmt.Errorf("read process user: %w", err)
@@ -71,6 +75,26 @@ func restrictDir(dir string) error {
 	}
 
 	return removeUntrusted(dir, user.User.Sid)
+}
+
+// refuseReparsePoint keeps a junction or symbolic link from redirecting a
+// directory the browser runs the host from.
+func refuseReparsePoint(path string) error {
+	name, err := windows.UTF16PtrFromString(path)
+	if err != nil {
+		return err
+	}
+
+	attributes, err := windows.GetFileAttributes(name)
+	if err != nil {
+		return fmt.Errorf("read attributes of %s: %w", path, err)
+	}
+
+	if attributes&windows.FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+		return fmt.Errorf("%s is a link or junction; remove it or choose another %s", path, HomeEnv)
+	}
+
+	return nil
 }
 
 // removeUntrusted deletes whatever below dir another account owns. Taking over

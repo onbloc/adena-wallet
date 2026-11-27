@@ -75,117 +75,16 @@ function run(binary, args) {
   });
 }
 
-// The browser runs whatever lands in the agent home's bin directory, so on
-// POSIX systems both directories must belong to this user and be closed to
-// others. Windows is checked by the host's own install, which takes over or
-// clears a directory another account owns.
-function secureDir(dir) {
-  if (process.platform === 'win32') {
-    return;
-  }
-  const info = fs.statSync(dir);
-  if (info.uid !== process.getuid()) {
-    fail(`${dir} belongs to another user; remove it or choose another ADENA_AGENT_HOME`);
-  }
-  if ((info.mode & 0o777) !== 0o700) {
-    fs.chmodSync(dir, 0o700);
-  }
-}
-
-function isAlive(pid) {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error.code === 'EPERM';
-  }
-}
-
-// The pid recorded in a retired (".old.<pid>.<time>") or staging
-// (".<pid>[.<random>].tmp") copy of base, 0 when none is, or null when name is
-// not such a copy. Go's installer uses the same names.
-function leftoverOwner(base, name) {
-  if (!name.startsWith(`${base}.`)) {
-    return null;
-  }
-  const parts = name.slice(base.length + 1).split('.');
-  let pidPart;
-  if (parts[0] === 'old') {
-    pidPart = parts[1];
-  } else if (parts[parts.length - 1] === 'tmp') {
-    pidPart = parts[0];
-  } else {
-    return null;
-  }
-  const pid = Number(pidPart);
-  return Number.isSafeInteger(pid) && pid > 0 ? pid : 0;
-}
-
-// Removes retired and leftover staging copies of target, except those of
-// another installer that is still running: it may be about to rename them. A
-// copy a running host still holds cannot be deleted on Windows; it is left for
-// the next install.
-function sweepRetired(target) {
-  const dir = path.dirname(target);
-  const base = path.basename(target);
-  for (const name of fs.readdirSync(dir)) {
-    const pid = leftoverOwner(base, name);
-    if (pid === null || (pid > 0 && pid !== process.pid && isAlive(pid))) {
-      continue;
-    }
-    try {
-      fs.rmSync(path.join(dir, name), { force: true });
-    } catch {
-      // Still in use.
-    }
-  }
-}
-
-// Browsers launch the host from the path in its manifest, and the npx cache
-// is not a stable path, so the host is copied under the agent home first.
-// Windows cannot overwrite a running executable but can rename it, so the
-// current copy is moved to a unique name before the new one takes its place.
-function copyHost() {
-  const source = path.join(binaryDir(), HOST_BINARY);
-  const targetDir = path.join(agentHome(), 'bin');
-  const target = path.join(targetDir, HOST_BINARY);
-
-  fs.mkdirSync(targetDir, { recursive: true, mode: 0o700 });
-  secureDir(agentHome());
-  secureDir(targetDir);
-  sweepRetired(target);
-
-  const staging = `${target}.${process.pid}.tmp`;
-  let retired = null;
-  try {
-    fs.copyFileSync(source, staging);
-    fs.chmodSync(staging, 0o755);
-    if (fs.existsSync(target)) {
-      retired = `${target}.old.${process.pid}.${Date.now()}`;
-      fs.renameSync(target, retired);
-    }
-    fs.renameSync(staging, target);
-  } catch (error) {
-    fs.rmSync(staging, { force: true });
-    if (retired && !fs.existsSync(target)) {
-      fs.renameSync(retired, target);
-    }
-    fail(`cannot install ${HOST_BINARY} to ${target}: ${error.message}`);
-  }
-  sweepRetired(target);
-
-  process.stdout.write(`copied ${HOST_BINARY} to ${target}\n`);
-  return target;
+// Install, uninstall and extension commands run only the host shipped in this
+// package. The host itself checks the agent home (owner, permissions or ACL,
+// links) before it copies itself there, registers or deletes anything, so no
+// file from a directory another account may control is ever run.
+function packagedHost() {
+  return path.join(binaryDir(), HOST_BINARY);
 }
 
 function installHost(args) {
-  run(copyHost(), ['install', ...args]);
-}
-
-// The installed copy when there is one, so its agent home marker applies.
-function hostBinary() {
-  const installed = path.join(agentHome(), 'bin', HOST_BINARY);
-  return fs.existsSync(installed) ? installed : path.join(binaryDir(), HOST_BINARY);
+  run(packagedHost(), ['install', '-copy', ...args]);
 }
 
 function packageVersion() {
@@ -228,7 +127,9 @@ function setup(args) {
   if (options.dryRun) {
     process.stdout.write(`would copy ${HOST_BINARY} to ${path.join(agentHome(), 'bin')} and register it\n`);
   } else {
-    const host = spawnSync(copyHost(), ['install', ...options.hostArgs], { stdio: 'inherit' });
+    const host = spawnSync(packagedHost(), ['install', '-copy', ...options.hostArgs], {
+      stdio: 'inherit',
+    });
     if (host.status !== 0) {
       fail('installing the agent host failed; see the messages above');
     }
@@ -271,43 +172,10 @@ function printHelp() {
 `);
 }
 
-// Deletes the copied host. On Windows a host the browser still runs cannot be
-// deleted, so it is moved aside instead and removed by a later install, or by
-// hand once the browser is closed.
-function removeHostCopy(target) {
-  try {
-    fs.rmSync(target, { force: true });
-    return;
-  } catch {
-    // Probably running; retire it below.
-  }
-  const retired = `${target}.old.${process.pid}.${Date.now()}`;
-  try {
-    fs.renameSync(target, retired);
-    process.stdout.write(
-      `the agent host is still running in the browser; moved it to ${retired}. ` +
-        'It is removed by a later install, or delete it after closing the browser.\n',
-    );
-  } catch (error) {
-    process.stderr.write(
-      `@adena-wallet/mcp: could not remove ${target} (${error.message}); ` +
-        'delete it after closing the browser.\n',
-    );
-  }
-}
-
+// The packaged host removes the registrations and its copy in the agent home;
+// a copy the browser still runs on Windows is moved aside for a later install.
 function uninstallHost() {
-  const target = path.join(agentHome(), 'bin', HOST_BINARY);
-  const binary = fs.existsSync(target) ? target : path.join(binaryDir(), HOST_BINARY);
-
-  const child = spawn(binary, ['uninstall'], { stdio: 'inherit' });
-  child.on('error', (error) => fail(`cannot start ${binary}: ${error.message}`));
-  child.on('exit', (code) => {
-    if (code === 0) {
-      removeHostCopy(target);
-    }
-    process.exit(code ?? 1);
-  });
+  run(packagedHost(), ['uninstall']);
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -323,7 +191,7 @@ switch (command) {
     uninstallHost();
     break;
   case 'extensions':
-    run(hostBinary(), ['extensions', ...rest]);
+    run(packagedHost(), ['extensions', ...rest]);
     break;
   case 'help':
   case '--help':
