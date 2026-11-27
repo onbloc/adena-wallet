@@ -86,4 +86,36 @@ describe('WalletService.createWallet with picked HD indexes', () => {
     await container.walletService.unlock(TEST_PASSWORD);
     expect(container.accountService.getAccounts().map(account => account.hdIndex)).toEqual([2, 7]);
   });
+
+  it('records the backup reminder before the vault is saved, so a restart right after cannot lose it', async () => {
+    const { container } = createTestContainer();
+
+    // The first account append never finishes, as if the app were stopped right after the vault write.
+    jest.spyOn(container.accountService, 'appendAccount').mockReturnValue(new Promise(() => undefined));
+    void container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, requireBackup: true });
+
+    await waitForVault(container);
+    expect(container.backupReminder.getKeyringId()).not.toBeNull();
+  });
+
+  it('drops the reminder of a wallet that was rolled back', async () => {
+    const { container } = createTestContainer();
+
+    jest.spyOn(container.accountService, 'appendAccount').mockRejectedValue(new Error('locked meanwhile'));
+    await expect(container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, requireBackup: true })).rejects.toThrow();
+    expect(container.backupReminder.getKeyringId()).toBeNull();
+  });
+
+  it('sets no reminder for a phrase the user already holds', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    expect(container.backupReminder.getKeyringId()).toBeNull();
+  });
 });
+
+const waitForVault = async (container: ReturnType<typeof createTestContainer>['container']): Promise<void> => {
+  for (let attempt = 0; attempt < 100 && (await container.walletService.getStatus()) === 'empty'; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+};

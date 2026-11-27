@@ -149,12 +149,11 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
         await cloudBackupService.restoreWallet(source.restoreBackup, password);
       }
       else if (source.mnemonic) {
-        const account = await walletService.createWallet({ mnemonic: source.mnemonic, password, hdIndexes: hdIndexes ?? undefined });
+        // The reminder is stored with the new wallet, so Home asks for a backup even after a restart.
+        const account = await walletService.createWallet({ mnemonic: source.mnemonic, password, hdIndexes: hdIndexes ?? undefined, requireBackup: !phraseSaved });
 
-        // Stored before anything else can fail or the app is closed: Home asks for a backup until it is done.
         if (!phraseSaved) {
           keyringToBackUp = account.keyringId;
-          backupReminder.require(account.keyringId);
         }
       }
 

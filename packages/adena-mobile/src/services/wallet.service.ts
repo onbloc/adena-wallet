@@ -15,6 +15,7 @@ import { findPasswordIssue, PASSWORD_ISSUE_MESSAGE } from '../security/password-
 import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { createId } from '../utils/id';
 import { AccountService } from './account.service';
+import { BackupReminder } from './backup-reminder';
 import { KeyringSession } from './keyring-session';
 import { ResetMarker } from './reset-marker';
 import { RestoreMarker } from './restore-marker';
@@ -54,6 +55,8 @@ export interface CreateWalletInput {
   accountName?: string;
   // HD indexes to add, in order (e.g. picked on the import account list); defaults to index 0.
   hdIndexes?: number[];
+  // The user has not saved this phrase yet; Home asks for a backup until they do.
+  requireBackup?: boolean;
 }
 
 export interface RestoreWalletInput {
@@ -91,6 +94,7 @@ export class WalletService {
     private readonly resetMarker?: ResetMarker,
     private readonly restoreMarker?: RestoreMarker,
     private readonly restoreScopedData?: RestoreScopedData,
+    private readonly backupReminder?: BackupReminder,
   ) {}
 
   async getStatus(): Promise<WalletStatus> {
@@ -123,7 +127,7 @@ export class WalletService {
     }
   }
 
-  async createWallet({ mnemonic, password, accountName, hdIndexes }: CreateWalletInput): Promise<Account> {
+  async createWallet({ mnemonic, password, accountName, hdIndexes, requireBackup = false }: CreateWalletInput): Promise<Account> {
     if (!isValidMnemonic(mnemonic)) {
       throw new AppError(AppErrorCode.INVALID_MNEMONIC, 'Invalid recovery phrase');
     }
@@ -148,7 +152,22 @@ export class WalletService {
     return this.accountService.runExclusive(async () => {
       // Checked before writing too: a create queued before a reset must not recreate the vault.
       this.assertCurrent(epoch);
-      const content = await this.vaultService.create([record], password);
+
+      // Written before the vault, so no restart can leave a saved wallet without it. A marker whose
+      // keyring never got saved matches no account and is dropped by Home.
+      if (requireBackup) {
+        this.backupReminder?.require(record.id);
+      }
+
+      let content: VaultContent;
+
+      try {
+        content = await this.vaultService.create([record], password);
+      }
+      catch (error) {
+        this.backupReminder?.clear(record.id);
+        throw error;
+      }
 
       // All or nothing, like restoreWallet: a wallet missing some of the picked accounts is removed again.
       try {
@@ -168,6 +187,7 @@ export class WalletService {
       }
       catch (error) {
         await this.undoCreate().catch(() => undefined);
+        this.backupReminder?.clear(record.id);
         throw error;
       }
     });

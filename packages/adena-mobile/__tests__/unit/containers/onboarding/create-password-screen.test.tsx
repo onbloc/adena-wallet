@@ -82,7 +82,7 @@ describe('CreatePasswordScreen', () => {
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, requireBackup: true });
     expect(useOnboardingStore.getState().mnemonic).toBeNull();
     expect(walletService.enableBiometricUnlock).not.toHaveBeenCalled();
   });
@@ -109,7 +109,7 @@ describe('CreatePasswordScreen', () => {
     }
 
     await act(async () => finish());
-    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD });
+    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, requireBackup: true });
   });
 
   it('leaves biometric unlock off unless it was chosen on the protect step', async () => {
@@ -165,7 +165,7 @@ describe('CreatePasswordScreen', () => {
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, hdIndexes: [0, 3, 7] });
+    expect(walletService.createWallet).toHaveBeenCalledWith({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, hdIndexes: [0, 3, 7], requireBackup: true });
     expect(useOnboardingStore.getState().hdIndexes).toBeNull();
   });
 
@@ -204,7 +204,7 @@ describe('CreatePasswordScreen', () => {
       await fireEvent.press(screen.getByTestId('password-submit'));
 
       await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-      expect(backupReminder.require).toHaveBeenCalledWith('hd-1');
+      expect(walletService.createWallet).toHaveBeenLastCalledWith(expect.objectContaining({ requireBackup: true }));
       expect(backupReminder.clear).not.toHaveBeenCalled();
       expect(useToastStore.getState().toast).toMatchObject(toast);
       await view.unmount();
@@ -224,11 +224,10 @@ describe('CreatePasswordScreen', () => {
     await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
     await fireEvent.press(screen.getByTestId('password-submit'));
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    expect(backupReminder.require).toHaveBeenCalledWith('hd-1');
+    expect(walletService.createWallet).toHaveBeenLastCalledWith(expect.objectContaining({ requireBackup: true }));
     expect(backupReminder.clear).toHaveBeenCalledWith('hd-1');
     await view.unmount();
 
-    backupReminder.require.mockClear();
     useSessionStore.setState({ status: SessionStatus.EMPTY });
     useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, phraseSaved: true });
     await render(wrapPage(<Wrapper><CreatePasswordScreen {...props} /></Wrapper>));
@@ -236,7 +235,7 @@ describe('CreatePasswordScreen', () => {
     await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
     await fireEvent.press(screen.getByTestId('password-submit'));
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    expect(backupReminder.require).not.toHaveBeenCalled();
+    expect(walletService.createWallet).toHaveBeenLastCalledWith(expect.objectContaining({ requireBackup: false }));
   });
 
   it('stops waiting for a cloud backup that does not finish in time', async () => {
