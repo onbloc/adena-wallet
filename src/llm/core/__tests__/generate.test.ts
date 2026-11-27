@@ -309,6 +309,30 @@ describe('generate', () => {
     expect(caller.signal.aborted).toBe(false);
   });
 
+  it('cancels the provider request when the consumer stops iterating early', async () => {
+    let providerSignal: AbortSignal | undefined;
+    const close = jest.fn();
+    const model = new MockLanguageModelV4({
+      doStream: async ({ abortSignal }) => {
+        providerSignal = abortSignal;
+        return { stream: new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: 'stream-start', warnings: [] });
+            text('partial').forEach(part => controller.enqueue(part));
+            // Never finishes: the request stays open until it is cancelled.
+          },
+        }) as never };
+      },
+    });
+
+    for await (const event of generate(model, { prompt: 'hi', loop: { options: {}, close } })) {
+      if (event.type === GenerateEventType.Text) break;
+    }
+
+    expect(providerSignal?.aborted).toBe(true);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it.each(['caller', 'loop', 'undefined loop signal'] as const)(
     'honors %s cancellation while generation is in flight',
     async (source) => {

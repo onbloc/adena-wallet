@@ -121,17 +121,17 @@ export async function* generate(
   const warnings: string[] = [];
   let responseMessages: ModelMessage[] = [];
   const loopSignal = loop?.options.abortSignal;
-  const controller = signal && loopSignal && signal !== loopSignal ? new AbortController() : undefined;
-  const abortSignal = controller?.signal ?? signal ?? loopSignal;
-  const abort = () => controller?.abort(signal?.aborted ? signal.reason : loopSignal?.reason);
+  // Own controller: stopping iteration early must cancel the request, not just stop reading.
+  const controller = new AbortController();
+  const abortSignal = controller.signal;
+  const abort = () => controller.abort(signal?.aborted ? signal.reason : loopSignal?.reason);
+  let streamed = false;
 
   try {
-    if (controller) {
-      signal?.addEventListener('abort', abort, { once: true });
-      loopSignal?.addEventListener('abort', abort, { once: true });
-      if (signal?.aborted || loopSignal?.aborted) abort();
-    }
-    if (abortSignal?.aborted) throw abortSignal.reason ?? new Error('Generation aborted.');
+    signal?.addEventListener('abort', abort, { once: true });
+    if (loopSignal !== signal) loopSignal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted || loopSignal?.aborted) abort();
+    if (abortSignal.aborted) throw abortSignal.reason ?? new Error('Generation aborted.');
     if (contextTokens !== undefined && (!Number.isSafeInteger(contextTokens) || contextTokens <= 0)) {
       throw new RangeError('Context tokens must be a positive safe integer.');
     }
@@ -218,16 +218,16 @@ export async function* generate(
           throw part.error;
       }
     }
-    aborted ||= abortSignal?.aborted === true;
+    streamed = true;
+    aborted ||= abortSignal.aborted;
     if (!aborted) responseMessages = await result.responseMessages;
   } catch (error) {
-    if (!abortSignal?.aborted) throw error;
+    if (!abortSignal.aborted) throw error;
     aborted = true;
   } finally {
-    if (controller) {
-      signal?.removeEventListener('abort', abort);
-      loopSignal?.removeEventListener('abort', abort);
-    }
+    signal?.removeEventListener('abort', abort);
+    loopSignal?.removeEventListener('abort', abort);
+    if (!streamed) controller.abort();
     loop?.close();
   }
 
