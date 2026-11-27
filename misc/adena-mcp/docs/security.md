@@ -10,6 +10,7 @@ referred to here.
   - [The master key (Adena)](#the-master-key-adena)
   - [Session keys (adena-mcp)](#session-keys-adena-mcp)
   - [The connection token](#the-connection-token)
+  - [Stopping an agent](#stopping-an-agent)
 - [What limits an agent](#what-limits-an-agent)
 - [Local processes](#local-processes)
 - [Web pages and other extensions](#web-pages-and-other-extensions)
@@ -107,6 +108,18 @@ and a compromised Adena or adena-mcp release.
   one captured by taking over the socket path, does not match.
 - Removing the agent under Connected Apps, turning the agent connection off,
   or losing the `nativeMessaging` permission drops its grants.
+
+### Stopping an agent
+
+- Turning the agent connection off, or removing the agent under Connected
+  Apps, stops adena-mcp from signing with its sessions: before every session
+  signature (simulations included) it checks with Adena that its process is
+  still connected, and refuses while Adena or the browser is not running.
+- That pauses the sessions; it does not revoke them. They stay valid on chain
+  until they expire or are revoked, and a transaction already signed with
+  `sign_transaction` stays valid too. The AI Agent Connection screen says so
+  and links to Manage Sessions, where the user sees the master account's
+  sessions and revokes them (one, or all).
 
 ## What limits an agent
 

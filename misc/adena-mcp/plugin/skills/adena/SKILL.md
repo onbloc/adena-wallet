@@ -85,6 +85,9 @@ setting on.
   never shown.
 - Tell the user what a session or transaction will allow before requesting
   it. They approve it in Adena.
+- Session signing needs Adena running with this agent connected. On
+  `not_connected` the user turned the agent connection off or removed the
+  agent: stop and ask before reconnecting.
 - Session keys live only in the MCP server's memory. After a restart,
   `get_sessions` shows `key_held: false`; revoke those sessions and create
   new ones.

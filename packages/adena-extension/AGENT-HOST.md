@@ -57,7 +57,11 @@ feature adds no permission prompt on update.
 
 The screen shows the connection status, including when another browser
 already serves agents (the host's `host_busy` notification). Turning the
-connection off, or removing the permission, drops every agent's grants.
+connection off, or removing the permission, drops every agent's grants, so
+adena-mcp stops signing with its sessions (it checks its connection before
+every session signature). That does not revoke the sessions on chain: the
+screen says so, counts the master account's active sessions, and links to
+Manage Sessions to revoke them.
 
 ## Handling a request
 

@@ -1,7 +1,10 @@
+import { isSessionMasterAccount } from '@common/utils/account-session';
 import { DefaultInput, Text } from '@components/atoms';
 import Toggle from '@components/atoms/toggle';
 import { BottomFixedButton } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
+import { useCurrentAccount } from '@hooks/use-current-account';
+import { useMasterSessions } from '@hooks/wallet/use-master-sessions';
 import {
   AGENT_HOST_BUSY_EVENT,
   AGENT_HOST_ENABLED_STORAGE_KEY,
@@ -20,9 +23,10 @@ import {
 import { AgentPolicyKey, resolveAgentPolicyKey } from '@inject/agent-host/agent-policy-key';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
+import { RoutePath } from '@types';
 import BigNumber from 'bignumber.js';
 import type { JSX } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 const NATIVE_MESSAGING_PERMISSION: chrome.permissions.Permissions = {
@@ -65,11 +69,37 @@ export const hostBusyText = (status: AgentHostStatus): string =>
   `Another browser${status.browser ? ` (${status.browser})` : ''} is already serving AI agents. `
   + 'Close it or turn off AI Agent Connection there, then reload Adena.';
 
+// Turning agents off stops adena-mcp from signing, but approved sessions stay
+// valid on chain; the screen says so and links to their revocation.
+export const sessionNoticeText = (enabled: boolean, activeSessions: number): string => {
+  if (!enabled && activeSessions > 0) {
+    const sessions
+      = activeSessions === 1
+        ? '1 session you approved remains'
+        : `${activeSessions} sessions you approved remain`;
+    return `Agents are off, but ${sessions} valid on chain until expiry or until you revoke them.`;
+  }
+  return 'Turning this off disconnects every agent and stops adena-mcp from signing with its '
+    + 'sessions, but does not revoke them: approved sessions stay valid on chain until they '
+    + 'expire or you revoke them.';
+};
+
 const LOCKED_POLICY_MESSAGE = 'Unlock Adena to change the agent settings.';
 
 export const AgentConnection = (): JSX.Element => {
   const theme = useTheme();
-  const { goBack } = useAppNavigate();
+  const { goBack, navigate } = useAppNavigate();
+  const { currentAccount, currentAddress } = useCurrentAccount();
+  // Sessions are revoked on chain only; switching agents off just pauses them.
+  const masterAddress
+    = currentAccount && currentAddress && isSessionMasterAccount(currentAccount)
+      ? currentAddress
+      : undefined;
+  const { entries: sessions } = useMasterSessions(masterAddress);
+  const activeSessions = useMemo(
+    () => sessions.filter(entry => entry.status === 'ACTIVE').length,
+    [sessions],
+  );
   const [enabled, setEnabled] = useState(false);
   // The policy is encrypted with the wallet password; null while unavailable.
   const [policyKey, setPolicyKey] = useState<AgentPolicyKey | null>(null);
@@ -200,6 +230,19 @@ export const AgentConnection = (): JSX.Element => {
       {reloadRequired && (
         <ActionButton type='button' onClick={(): void => chrome.runtime.reload()}>
           Reload Adena (you will need to unlock it again)
+        </ActionButton>
+      )}
+      <Text type='body3Reg' color={!enabled && activeSessions > 0 ? theme.red._5 : theme.neutral.a}>
+        {sessionNoticeText(enabled, activeSessions)}
+      </Text>
+      {masterAddress && (
+        <ActionButton
+          type='button'
+          onClick={(): void => navigate(RoutePath.ManageSessions, { state: { masterAddress } })}
+        >
+          {activeSessions > 0
+            ? `Review and revoke sessions (${activeSessions} active)`
+            : 'Review and revoke sessions'}
         </ActionButton>
       )}
       {enabled && (

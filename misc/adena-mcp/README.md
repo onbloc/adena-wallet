@@ -186,6 +186,9 @@ In short (details in [docs/security.md](docs/security.md)):
   budget within the user's maximum (10 GNOT by default), at most 7 days. The
   chain enforces each session's scope, budget and expiry.
 - A connection is bound to the approved process, identified from the OS.
+  Turning the agent connection off stops adena-mcp from signing with its
+  sessions, but only revocation (Adena's Manage Sessions) or expiry ends
+  them on chain.
   Adena keeps the policy and grants encrypted with the wallet password.
 - A prompt-injected agent that runs shell commands is a process of the same
   user: it cannot read keys, but it can change files the user owns. Read each

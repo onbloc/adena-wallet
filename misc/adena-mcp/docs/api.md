@@ -88,6 +88,8 @@ chain, then destroys the key. Works for sessions whose key was lost. Returns
 | `send_transaction` | `signer`, `session_address`, `master_address`, `chain_id`, `gas_wanted`, `gas_fee`, `tx_hash`, `height`, `gas_used`, `result` (`simulated` instead of the hash when simulating) | `signer`, `tx_hash`, `height`, `master_address`, `chain_id` |
 | `sign_transaction` | the same plus `signed_tx` (base64 amino), not broadcast | `signer`, `signed_tx`, `signer_address`, `chain_id` |
 
+With a session, nothing is signed unless Adena reports this process as still
+connected (`not_connected`, `adena_unreachable` otherwise).
 `/vm.m_addpkg` needs `signer: "wallet"`. `signer: "wallet"` needs **Allow
 master account requests** in Adena.
 
@@ -111,10 +113,10 @@ sources, must stay under 1 MiB.
 
 | Code | Meaning and fix |
 |---|---|
-| `adena_unreachable` | No host on the socket; call `get_status` for setup steps |
+| `adena_unreachable` | No host on the socket; call `get_status` for setup steps. Sessions do not sign meanwhile |
 | `host_untrusted` | Another program serves the socket; stop it and reinstall the host |
 | `host_install_failed` | `connect_wallet` could not install; run `npx -y @adena-wallet/mcp setup` |
-| `not_connected` | Call `connect_wallet`; every process needs its own approval |
+| `not_connected` | This process is not connected, or no longer is (the user turned the agent connection off or removed the agent); sessions are paused. Ask the user before calling `connect_wallet` |
 | `wallet_locked` | Ask the user to unlock Adena |
 | `user_rejected` | The user rejected it in Adena |
 | `approval_timeout` | No answer in time; the request was cancelled in Adena. Check before asking again |

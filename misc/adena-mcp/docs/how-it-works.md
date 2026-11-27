@@ -121,20 +121,25 @@ Connection → Enable agent connection**. That requests the optional
 ## Signing with a session
 
 `send_transaction` / `sign_transaction` with `signer: "session"` (the
-default) never involve Adena:
+default) open no popup:
 
 1. adena-mcp picks the named session, or the newest usable one whose
    `allow_paths` cover every message. `/vm.m_addpkg` is refused
    (`wallet_signature_required`): sessions can never deploy.
-2. It builds the messages with the user as caller and reads the session's
+2. It asks Adena whether this process is still connected (`get_status`
+   with its token) and stops if not: `not_connected` once the user turned
+   the agent connection off or removed the agent under Connected Apps,
+   `adena_unreachable` while the browser or Adena is closed. The wallet may be
+   locked. This pauses the sessions; it does not revoke them on chain.
+3. It builds the messages with the user as caller and reads the session's
    account number and sequence from the chain.
-3. It simulates at the gas ceiling, reserves 1.5× the gas used (at least
+4. It simulates at the gas ceiling, reserves 1.5× the gas used (at least
    100,000), and prices the fee from `auth/gasprice` (floor 1 ugnot per 1,000
    gas), because the chain charges the whole offered fee to the session.
-4. It runs the chain's spend check locally, signs with the session key (the
+5. It runs the chain's spend check locally, signs with the session key (the
    signature carries `session_addr`), and broadcasts with commit, or returns
    the signed transaction for `sign_transaction`.
-5. The chain enforces the session's paths, spend limit and expiry again.
+6. The chain enforces the session's paths, spend limit and expiry again.
 
 ## Signing with the wallet
 

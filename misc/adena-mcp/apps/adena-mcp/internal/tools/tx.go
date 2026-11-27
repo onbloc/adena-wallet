@@ -83,7 +83,8 @@ func registerSendTransaction(r *server.Registry, d *Deps) {
 	r.Add(&server.Tool{
 		Name: "send_transaction",
 		Description: "Signs and broadcasts a transaction of one or more messages (/vm.m_call, /vm.m_run, " +
-			"/vm.m_addpkg, /bank.MsgSend) as the user. By default it signs with a session key without a popup; " +
+			"/vm.m_addpkg, /bank.MsgSend) as the user. By default it signs with a session key without a popup, " +
+			"while Adena keeps this agent connected; " +
 			`with signer="wallet" the user approves and signs it in Adena.`,
 		InputSchema: txSchema(map[string]any{
 			"simulate": map[string]any{
@@ -253,6 +254,11 @@ func sessionTransact(ctx context.Context, d *Deps, in txArgs, signOnly bool) (se
 	record, key, err := selectSession(ctx, d, in.sessionAddress, in.messages)
 	if err != nil {
 		return server.Result{}, err
+	}
+
+	// Simulations are signed too, so every use of the key is checked.
+	if connErr := requireLiveConnection(ctx, d); connErr != nil {
+		return server.Result{}, connErr
 	}
 
 	mode := chain.Broadcast
