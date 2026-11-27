@@ -13,6 +13,7 @@ import {
   EmptyState,
   InlineAlert,
   NftCard,
+  OptionCard,
   Tabs,
   TokenImage,
   useFloatingNavigationClearance,
@@ -63,6 +64,8 @@ export interface WalletHomePageProps {
   onBuy?: () => void;
   onSend: () => void;
   onReceive: () => void;
+  // Shown until a new wallet's recovery phrase was viewed or its cloud backup confirmed.
+  onBackUpPhrase?: () => void;
   onManageNfts: () => void;
 }
 
@@ -141,6 +144,15 @@ export const WalletHomePage = (props: WalletHomePageProps): ReactElement => {
           <Button label='Send' tone='secondary' size='compact' style={styles.action} onPress={props.onSend} testID='home-send' />
           <Button label='Receive' tone='secondary' size='compact' style={styles.action} onPress={props.onReceive} testID='home-receive' />
         </View>
+        {props.onBackUpPhrase && (
+          <OptionCard
+            icon='key'
+            title='Back up your recovery phrase'
+            description='Without it, this wallet cannot be restored on another device.'
+            onPress={props.onBackUpPhrase}
+            testID='home-backup-reminder'
+          />
+        )}
         <Tabs
           items={[{ key: 'tokens', label: 'Tokens' }, { key: 'nfts', label: 'NFTs' }]}
           selected={props.tab}

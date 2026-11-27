@@ -34,6 +34,7 @@ import { AccountPhotoService } from '../services/account-photo.service';
 import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
+import { BackupReminder } from '../services/backup-reminder';
 import { BalanceService } from '../services/balance.service';
 import { CloudBackupService } from '../services/cloud-backup.service';
 import { ConnectedAppService } from '../services/connected-app.service';
@@ -111,6 +112,7 @@ export interface Services {
   preferenceService: PreferenceService;
   migrationService: MigrationService;
   cloudBackupService: CloudBackupService;
+  backupReminder: BackupReminder;
 }
 
 export type AppContainer = Services & {
@@ -197,5 +199,6 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
     cloudBackupService,
+    backupReminder: overrides.backupReminder ?? new BackupReminder(keyValueStore),
   };
 };

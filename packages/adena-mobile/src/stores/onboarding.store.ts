@@ -13,15 +13,18 @@ interface OnboardingState {
   backupPassword: string | null;
   // Biometric unlock picked on the protect step; turned on when the wallet is created.
   enableBiometrics: boolean;
+  // The user already holds the phrase (wrote it down, or imported it); otherwise Home keeps asking for a backup.
+  phraseSaved: boolean;
   setMnemonic: (mnemonic: string | null) => void;
   setRestoreBackup: (backup: BackupContent | null) => void;
   setHdIndexes: (hdIndexes: number[] | null) => void;
   setBackupPassword: (backupPassword: string | null) => void;
   setEnableBiometrics: (enableBiometrics: boolean) => void;
+  setPhraseSaved: (phraseSaved: boolean) => void;
   clear: () => void;
 }
 
-const EMPTY = { mnemonic: null, restoreBackup: null, hdIndexes: null, backupPassword: null, enableBiometrics: false };
+const EMPTY = { mnemonic: null, restoreBackup: null, hdIndexes: null, backupPassword: null, enableBiometrics: false, phraseSaved: false };
 
 export const useOnboardingStore = create<OnboardingState>(set => ({
   ...EMPTY,
@@ -31,5 +34,6 @@ export const useOnboardingStore = create<OnboardingState>(set => ({
   setHdIndexes: (hdIndexes): void => set({ hdIndexes }),
   setBackupPassword: (backupPassword): void => set({ backupPassword }),
   setEnableBiometrics: (enableBiometrics): void => set({ enableBiometrics }),
+  setPhraseSaved: (phraseSaved): void => set({ phraseSaved }),
   clear: (): void => set(EMPTY),
 }));

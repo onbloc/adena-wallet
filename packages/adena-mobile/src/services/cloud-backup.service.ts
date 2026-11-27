@@ -196,8 +196,12 @@ export class CloudBackupService {
       return Promise.reject(new AppError(AppErrorCode.WEAK_PASSWORD, issue));
     }
 
+    // The wallet this backup is for; a reset or another wallet written meanwhile makes it stale.
+    const vaultRevision = this.vaultService.revision;
+
     return this.queue.run(async () => {
       await this.store.signIn();
+      this.assertSameVault(vaultRevision);
       const saved = this.stateRepository.get();
       const pending = this.pendingWriteFor(saved);
       // A first backup whose write was never confirmed keeps its backupId, so a retry leaves no orphan file.
@@ -218,12 +222,18 @@ export class CloudBackupService {
       const newestStored = Math.max(0, ...versions.map(knownRevision).filter(revision => revision !== null));
       const revision = previous || versions.length > 0 ? Math.max(previous?.revision ?? 0, newestStored) + 1 : 1;
       const fileName = backupVersionFileName(backupId, revision, bytesToHex(randomBytes(8)));
+
+      this.assertSameVault(vaultRevision);
       const { content, fingerprint } = await this.snapshot(walletPassword, backupId, revision);
+      // Opening the vault may cache its seed, which is a write; compare against the vault as read here.
+      const snapshotRevision = this.vaultService.revision;
       const encoded = await this.codec.encode(content, backupPassword);
       const next: CloudBackupState = { backupId, fileName, backedUpAt: content.createdAt, revision, fingerprint, ...countKeyrings(content.keyrings) };
 
+      this.assertSameVault(snapshotRevision);
       this.stateRepository.savePendingWrite(next);
       await this.store.write(fileName, encoded);
+      this.assertSameVault(snapshotRevision);
       // Recorded as uploading until the provider confirms the upload; a local copy alone is no backup.
       this.stateRepository.save({ ...next, uploading: true });
       this.stateRepository.clearPendingWrite();
@@ -491,6 +501,12 @@ export class CloudBackupService {
   }
 
   // Keyrings and accounts are read together on the account queue, so the backup matches one consistent state.
+  private assertSameVault(revision: number): void {
+    if (this.vaultService.revision !== revision) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'The wallet changed while backing up');
+    }
+  }
+
   private snapshot(walletPassword: string, backupId: string, revision: number): Promise<{ content: BackupContent; fingerprint: string }> {
     return this.accountService.runExclusive(async () => {
       const vault = await this.vaultService.open(walletPassword);

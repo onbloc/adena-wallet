@@ -19,12 +19,13 @@ import { useFinishOnboarding } from '../use-finish-onboarding';
 const CLOUD_BACKUP_TIMEOUT_MS = 60_000;
 
 export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'CreatePassword'>): ReactElement => {
-  const { walletService, cloudBackupService } = useContainer();
+  const { walletService, cloudBackupService, backupReminder } = useContainer();
   const mnemonic = useOnboardingStore(state => state.mnemonic);
   const restoreBackup = useOnboardingStore(state => state.restoreBackup);
   const hdIndexes = useOnboardingStore(state => state.hdIndexes);
   const backupPassword = useOnboardingStore(state => state.backupPassword);
   const enableBiometrics = useOnboardingStore(state => state.enableBiometrics);
+  const phraseSaved = useOnboardingStore(state => state.phraseSaved);
   const biometric = useBiometricStatusQuery();
   // Fixed at mount: the flow this screen was opened for. The store is cleared on success while the button
   // still shows its progress label, and a later change there (e.g. a stale restore) must not swap the flow.
@@ -140,6 +141,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
 
     submittingRef.current = true;
     setSubmitting(true);
+    let keyringToBackUp: string | null = null;
 
     try {
       // A decrypted cloud backup is rebuilt with every keyring; otherwise one phrase becomes the wallet.
@@ -147,25 +149,27 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
         await cloudBackupService.restoreWallet(source.restoreBackup, password);
       }
       else if (source.mnemonic) {
-        await walletService.createWallet({ mnemonic: source.mnemonic, password, hdIndexes: hdIndexes ?? undefined });
+        const account = await walletService.createWallet({ mnemonic: source.mnemonic, password, hdIndexes: hdIndexes ?? undefined });
+
+        // Stored before anything else can fail or the app is closed: Home asks for a backup until it is done.
+        if (!phraseSaved) {
+          keyringToBackUp = account.keyringId;
+          backupReminder.require(account.keyringId);
+        }
       }
 
       await enableBiometricsIfChosen();
-
-      // Without a confirmed cloud copy the phrase was never safely stored, so the user sees it before the app.
       const backup = await createCloudBackupIfChosen();
       const provider = cloudProviderName(cloudBackupService.provider);
 
-      if (backup === 'failed') {
-        showToast(`${provider} backup did not finish. Write down your recovery phrase now.`, 'warning');
-        navigation.navigate('BackupPhrase', { afterCreate: true });
-        return;
+      if (backup === 'confirmed' && keyringToBackUp) {
+        backupReminder.clear(keyringToBackUp);
       }
-
-      if (backup === 'pending') {
-        showToast(`${provider} has not confirmed the upload yet. You can also write down your recovery phrase.`, 'info');
-        navigation.navigate('BackupPhrase', { afterCreate: true, uploadPending: true });
-        return;
+      else if (backup === 'failed') {
+        showToast(`${provider} backup did not finish. Back up your recovery phrase from Home.`, 'warning');
+      }
+      else if (backup === 'pending') {
+        showToast(`${provider} is still uploading your backup.`, 'info');
       }
 
       if (!(await finishOnboarding(navigation))) {

@@ -22,6 +22,7 @@ export const SelectAccountsScreen = ({ navigation }: NativeStackScreenProps<Onbo
   const { chainRegistry, networkService } = useContainer();
   const mnemonic = useOnboardingStore(state => state.mnemonic);
   const setHdIndexes = useOnboardingStore(state => state.setHdIndexes);
+  const setPhraseSaved = useOnboardingStore(state => state.setPhraseSaved);
   const showToast = useToastStore(state => state.show);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selected, setSelected] = useState<Set<number>>(() => new Set([0]));
@@ -132,6 +133,8 @@ export const SelectAccountsScreen = ({ navigation }: NativeStackScreenProps<Onbo
     }
 
     setHdIndexes(indexes);
+    // An imported phrase is one the user already has.
+    setPhraseSaved(true);
     navigation.navigate('ProtectWallet');
   };
 

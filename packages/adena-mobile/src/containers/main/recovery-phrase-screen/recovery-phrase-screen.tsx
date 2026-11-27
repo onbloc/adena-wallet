@@ -8,9 +8,11 @@ import { useContainer } from '../../../di/container-provider';
 import { usePasswordGate } from '../../../hooks/use-password-gate';
 import { useSensitiveClipboard } from '../../../hooks/use-sensitive-clipboard';
 import { MainStackParamList } from '../../../navigation/types';
+import { useSessionStore } from '../../../stores/session.store';
 
 export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenProps<MainStackParamList, 'RecoveryPhrase'>): ReactElement => {
-  const { walletService } = useContainer();
+  const { walletService, backupReminder } = useContainer();
+  const bumpRevision = useSessionStore(state => state.bumpRevision);
   const [words, setWords] = useState<string[]>();
   // Bumped on every hide so a reveal still in flight cannot show the phrase afterwards.
   const revealEpochRef = useRef(0);
@@ -23,6 +25,9 @@ export const RecoveryPhraseScreen = ({ navigation, route }: NativeStackScreenPro
 
     if (epoch === revealEpochRef.current) {
       setWords(mnemonic.split(' '));
+      // Seen once, the phrase counts as backed up and Home stops asking.
+      backupReminder.clear(route.params.keyringId);
+      bumpRevision();
     }
   }, { prompt: { title: 'Show recovery phrase', cancel: 'Use password' } });
   const { onClose: closeRevealSheet } = reveal.sheetProps;

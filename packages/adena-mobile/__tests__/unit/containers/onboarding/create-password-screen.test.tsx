@@ -78,7 +78,7 @@ describe('CreatePasswordScreen', () => {
   });
 
   it('creates the wallet and opens it', async () => {
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -90,8 +90,8 @@ describe('CreatePasswordScreen', () => {
   it('freezes both password fields while the wallet is being created', async () => {
     let finish: () => void = () => undefined;
 
-    walletService.createWallet.mockImplementation(() => new Promise<void>((resolve) => {
-      finish = resolve;
+    walletService.createWallet.mockImplementation(() => new Promise((resolve) => {
+      finish = () => resolve({ keyringId: 'hd-1' });
     }));
     await renderScreen();
     await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
@@ -114,7 +114,7 @@ describe('CreatePasswordScreen', () => {
 
   it('leaves biometric unlock off unless it was chosen on the protect step', async () => {
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -124,7 +124,7 @@ describe('CreatePasswordScreen', () => {
   it('enables biometric unlock when chosen and the device supports it', async () => {
     useOnboardingStore.setState({ enableBiometrics: true });
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     walletService.enableBiometricUnlock.mockResolvedValue(undefined);
     await fillAndSubmit();
 
@@ -138,7 +138,7 @@ describe('CreatePasswordScreen', () => {
   it('still opens the wallet when enabling biometrics fails or is cancelled', async () => {
     useOnboardingStore.setState({ enableBiometrics: true });
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     walletService.enableBiometricUnlock.mockRejectedValue(new AppError(AppErrorCode.BIOMETRICS_UNAVAILABLE, 'Cancelled'));
     await fillAndSubmit();
 
@@ -151,7 +151,7 @@ describe('CreatePasswordScreen', () => {
   it('still opens the wallet when the biometry check fails', async () => {
     useOnboardingStore.setState({ enableBiometrics: true });
     walletService.getBiometryKind.mockRejectedValue(new Error('Keychain unavailable'));
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -161,7 +161,7 @@ describe('CreatePasswordScreen', () => {
 
   it('creates the accounts picked on the import list', async () => {
     useOnboardingStore.setState({ hdIndexes: [0, 3, 7] });
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -171,7 +171,7 @@ describe('CreatePasswordScreen', () => {
 
   it('writes the cloud backup chosen earlier once the wallet exists', async () => {
     useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp' });
     await fillAndSubmit();
 
@@ -182,31 +182,61 @@ describe('CreatePasswordScreen', () => {
     expect(useToastStore.getState().toast).toBeNull();
   });
 
-  it.each([
-    ['throws', () => cloudBackupService.createBackup.mockRejectedValue(new Error('offline'))],
-    ['reports an upload error', () => cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp', uploading: { error: new Error('quota') } })],
-  ])('sends the user to write the phrase down when the cloud backup %s', async (_case, arrange) => {
-    useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
-    walletService.createWallet.mockResolvedValue(undefined);
-    arrange();
-    await fillAndSubmit();
+  it('keeps a backup reminder and still opens the wallet when the cloud backup is not confirmed', async () => {
+    const cases: [string, () => void, { tone: string; message: string }][] = [
+      ['throws', () => cloudBackupService.createBackup.mockRejectedValue(new Error('offline')), { tone: 'warning', message: 'iCloud backup did not finish. Back up your recovery phrase from Home.' }],
+      ['upload error', () => cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp', uploading: { error: new Error('quota') } }), { tone: 'warning', message: 'iCloud backup did not finish. Back up your recovery phrase from Home.' }],
+      ['pending', () => cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp', uploading: {} }), { tone: 'info', message: 'iCloud is still uploading your backup.' }],
+    ];
 
-    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('BackupPhrase', { afterCreate: true }));
-    expect(useSessionStore.getState().status).toBe(SessionStatus.EMPTY);
-    // Kept for the manual backup step.
-    expect(useOnboardingStore.getState().mnemonic).toBe(TEST_MNEMONIC);
-    expect(useToastStore.getState().toast).toMatchObject({ tone: 'warning', message: 'iCloud backup did not finish. Write down your recovery phrase now.' });
+    for (const [, arrange, toast] of cases) {
+      const backupReminder = { require: jest.fn(), clear: jest.fn() };
+
+      useSessionStore.setState({ status: SessionStatus.EMPTY });
+      useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, backupPassword: 'violet orbit lantern 42' });
+      walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
+      arrange();
+      const { Wrapper } = createWrapper({ walletService, cloudBackupService, backupReminder });
+      const view = await render(wrapPage(<Wrapper><CreatePasswordScreen {...props} /></Wrapper>));
+
+      await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+      await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
+      await fireEvent.press(screen.getByTestId('password-submit'));
+
+      await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+      expect(backupReminder.require).toHaveBeenCalledWith('hd-1');
+      expect(backupReminder.clear).not.toHaveBeenCalled();
+      expect(useToastStore.getState().toast).toMatchObject(toast);
+      await view.unmount();
+    }
   });
 
-  it('offers the phrase step when the provider has not confirmed the upload yet', async () => {
-    useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
-    walletService.createWallet.mockResolvedValue(undefined);
-    cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp', uploading: {} });
-    await fillAndSubmit();
+  it('clears the reminder once the cloud upload is confirmed, and sets none when the phrase was already saved', async () => {
+    const backupReminder = { require: jest.fn(), clear: jest.fn() };
 
-    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('BackupPhrase', { afterCreate: true, uploadPending: true }));
-    expect(useSessionStore.getState().status).toBe(SessionStatus.EMPTY);
-    expect(useToastStore.getState().toast).toMatchObject({ tone: 'info', message: 'iCloud has not confirmed the upload yet. You can also write down your recovery phrase.' });
+    useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
+    cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp' });
+    const { Wrapper } = createWrapper({ walletService, cloudBackupService, backupReminder });
+    const view = await render(wrapPage(<Wrapper><CreatePasswordScreen {...props} /></Wrapper>));
+
+    await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+    await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
+    await fireEvent.press(screen.getByTestId('password-submit'));
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(backupReminder.require).toHaveBeenCalledWith('hd-1');
+    expect(backupReminder.clear).toHaveBeenCalledWith('hd-1');
+    await view.unmount();
+
+    backupReminder.require.mockClear();
+    useSessionStore.setState({ status: SessionStatus.EMPTY });
+    useOnboardingStore.setState({ mnemonic: TEST_MNEMONIC, phraseSaved: true });
+    await render(wrapPage(<Wrapper><CreatePasswordScreen {...props} /></Wrapper>));
+    await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);
+    await fireEvent.changeText(screen.getByTestId('password-confirm'), TEST_PASSWORD);
+    await fireEvent.press(screen.getByTestId('password-submit'));
+    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
+    expect(backupReminder.require).not.toHaveBeenCalled();
   });
 
   it('stops waiting for a cloud backup that does not finish in time', async () => {
@@ -214,14 +244,14 @@ describe('CreatePasswordScreen', () => {
 
     try {
       useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
-      walletService.createWallet.mockResolvedValue(undefined);
+      walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
       cloudBackupService.createBackup.mockReturnValue(new Promise(() => undefined));
       await fillAndSubmit();
       await act(async () => {
         await jest.advanceTimersByTimeAsync(60_000);
       });
 
-      expect(navigation.navigate).toHaveBeenCalledWith('BackupPhrase', { afterCreate: true });
+      expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED);
     }
     finally {
       jest.useRealTimers();
@@ -229,7 +259,7 @@ describe('CreatePasswordScreen', () => {
   });
 
   it('skips the cloud backup when none was chosen', async () => {
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -280,7 +310,7 @@ describe('CreatePasswordScreen', () => {
   it('does not reopen the wallet when it was locked during the biometric prompt', async () => {
     useOnboardingStore.setState({ enableBiometrics: true });
     walletService.getBiometryKind.mockResolvedValue(BiometryKind.FACE);
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     // e.g. the error boundary locked the keyring while the prompt was open.
     walletService.enableBiometricUnlock.mockImplementation(async () => {
       walletService.getStatus.mockResolvedValue(SessionStatus.LOCKED);
@@ -293,7 +323,7 @@ describe('CreatePasswordScreen', () => {
   });
 
   it('starts onboarding over when the new wallet was removed meanwhile', async () => {
-    walletService.createWallet.mockResolvedValue(undefined);
+    walletService.createWallet.mockResolvedValue({ keyringId: 'hd-1' });
     walletService.getStatus.mockResolvedValue(SessionStatus.EMPTY);
     await fillAndSubmit();
 
@@ -304,8 +334,8 @@ describe('CreatePasswordScreen', () => {
   it('blocks leaving the screen while the wallet is being created', async () => {
     let finish: () => void = () => undefined;
 
-    walletService.createWallet.mockImplementation(() => new Promise<void>((resolve) => {
-      finish = resolve;
+    walletService.createWallet.mockImplementation(() => new Promise((resolve) => {
+      finish = () => resolve({ keyringId: 'hd-1' });
     }));
     await renderScreen();
     await fireEvent.changeText(screen.getByTestId('password-input'), TEST_PASSWORD);

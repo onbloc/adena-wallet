@@ -15,24 +15,16 @@ export interface BackupPhrasePageProps {
   // Continue stays off until the words were shown once.
   canContinue: boolean;
   onContinue: () => void;
-  // Hidden when there is no going back (the wallet was already created).
-  onBack?: () => void;
-  // Lets the user go on without writing the words down (e.g. a cloud upload still pending).
-  onSkip?: () => void;
+  onBack: () => void;
 }
 
-export const BackupPhrasePage = ({ words, masked, onReveal, canContinue, onContinue, onBack, onSkip }: BackupPhrasePageProps): ReactElement => {
+export const BackupPhrasePage = ({ words, masked, onReveal, canContinue, onContinue, onBack }: BackupPhrasePageProps): ReactElement => {
   const styles = useStyles();
 
   return (
     <Screen
       header={<TopBar onBack={onBack} />}
-      footer={(
-        <>
-          <Button label='Continue' disabled={!canContinue} onPress={onContinue} testID='backup-continue' />
-          {onSkip && <Button label='Rely on the cloud backup' tone='tertiary' onPress={onSkip} testID='backup-skip' />}
-        </>
-      )}
+      footer={<Button label='Continue' disabled={!canContinue} onPress={onContinue} testID='backup-continue' />}
     >
       <PageHeading
         eyebrow='Backup / Recovery guide'
