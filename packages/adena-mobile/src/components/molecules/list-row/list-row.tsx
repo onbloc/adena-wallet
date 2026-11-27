@@ -46,7 +46,7 @@ export const ListRow = ({
         <Text variant='row' color={labelColor} numberOfLines={1}>{label}</Text>
         {description && <Text variant='meta' color={disabled ? 'disabled' : 'secondary'} numberOfLines={1}>{description}</Text>}
       </View>
-      {value !== undefined && <Text variant='meta' color={disabled ? 'disabled' : valueColor} numberOfLines={1}>{value}</Text>}
+      {value !== undefined && <Text variant='meta' color={disabled ? 'disabled' : valueColor} numberOfLines={1} style={styles.value}>{value}</Text>}
       {trailing}
       {chevron && <Icon name='chevronRight' size={20} color={disabled ? colors.text.disabled : colors.icon.primary} />}
     </>

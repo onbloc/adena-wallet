@@ -12,6 +12,7 @@ export const useStyles = makeStyles(colors => ({
   rows: { gap: spacing.space8 },
   readMore: { alignSelf: 'center', paddingVertical: spacing.space8, minHeight: sizes.touchTarget, justifyContent: 'center' },
   footer: { flexDirection: 'row', gap: spacing.space8, paddingHorizontal: sizes.screenInset, paddingTop: spacing.space12, paddingBottom: sizes.footerBottom },
-  action: { flex: 1 },
+  // Up to three equal buttons; the default inset truncates "Receive" on 375pt screens.
+  action: { flex: 1, paddingHorizontal: spacing.space8 },
   unavailable: { alignItems: 'center', paddingVertical: spacing.space32 },
 }));

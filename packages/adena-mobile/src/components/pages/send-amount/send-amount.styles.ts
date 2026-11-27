@@ -1,6 +1,8 @@
 import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
 export const useStyles = makeStyles(colors => ({
+  body: { flex: 1 },
+  bodyContent: { gap: spacing.space16, paddingBottom: spacing.space8 },
   amountBlock: { gap: spacing.space8 },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.space16 },
   // Hero amount, larger than the display role.
@@ -17,7 +19,8 @@ export const useStyles = makeStyles(colors => ({
   },
   tokenSelectorPressed: { backgroundColor: colors.background.pressed },
   availableRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  keypad: { marginTop: 'auto' },
+  tokenList: { flexGrow: 0 },
+  tokenListContent: { gap: spacing.space12 },
   reviewAmount: { alignItems: 'center', gap: spacing.space4 },
   reviewAmountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.space12, alignSelf: 'stretch' },
   reviewAmountLabel: { flexShrink: 1 },

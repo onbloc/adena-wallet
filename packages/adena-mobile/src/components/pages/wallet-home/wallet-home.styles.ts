@@ -8,7 +8,8 @@ export const useStyles = makeStyles(colors => ({
   content: { paddingHorizontal: sizes.screenInset, paddingTop: sizes.contentTop, gap: spacing.space12 },
   network: { flexDirection: 'row' },
   actions: { flexDirection: 'row', gap: spacing.space12, marginTop: spacing.space8 },
-  action: { flex: 1 },
+  // Three equal buttons leave ~53pt per label on 375pt screens with the default inset.
+  action: { flex: 1, paddingHorizontal: spacing.space8 },
   assetList: { gap: spacing.space12 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: spacing.space16 },
   gridCell: { width: '48%' },

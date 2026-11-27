@@ -92,7 +92,7 @@ export const SwapSettingsSheet = (props: SwapSettingsSheetProps): ReactElement =
 
   return (
     <BottomSheet visible={props.visible} title={TITLES[view]} onClose={props.onClose}>
-      <ScrollView keyboardShouldPersistTaps='handled' contentContainerStyle={styles.settingsContent}>
+      <ScrollView keyboardShouldPersistTaps='handled' keyboardDismissMode='interactive' contentContainerStyle={styles.settingsContent}>
         {view === 'main' && (
           <>
             <View>

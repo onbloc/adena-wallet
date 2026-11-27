@@ -41,8 +41,8 @@ export const ReceivePage = ({ accountName, address, networkName, onCopy, onShare
           <Text variant='body' align='center' tabular selectable>{address}</Text>
         </View>
         <View style={styles.actions}>
-          <Button label='Copy address' leadingIcon='copy' style={styles.action} onPress={onCopy} />
-          <Button label='Share' tone='secondary' style={styles.action} onPress={onShare} />
+          <Button label='Copy address' leadingIcon='copy' fullWidth={false} style={styles.action} onPress={onCopy} />
+          <Button label='Share' tone='secondary' fullWidth={false} style={styles.action} onPress={onShare} />
         </View>
         <Text variant='meta' color='secondary' align='center'>{`Only send ${networkName} assets to this address.`}</Text>
         {onScan && <Button label='Scan a QR code' leadingIcon='scan' tone='secondary' size='compact' onPress={onScan} />}

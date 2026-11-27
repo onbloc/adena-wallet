@@ -1,8 +1,9 @@
-import React, { ReactElement, useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, PressableStateCallbackType, ScrollView, StyleProp, TextInputInstance, useWindowDimensions, View, ViewStyle } from 'react-native';
+import React, { ReactElement, useRef } from 'react';
+import { Pressable, PressableStateCallbackType, ScrollView, StyleProp, TextInputInstance, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { LocalTokenIcon } from '../../../domain/token';
+import { useKeyboardHeight } from '../../../hooks/use-keyboard-height';
 import { Badge, Skeleton, Text } from '../../atoms';
 import { BottomSheet, EmptyState, InlineAlert, SearchField, SectionLabel, TokenImage } from '../../molecules';
 import { useStyles } from './swap.styles';
@@ -37,21 +38,6 @@ export interface SwapTokenSheetProps {
 const LIST_HEIGHT_RATIO = 0.5;
 const SHEET_CHROME_HEIGHT = 200;
 const MIN_LIST_HEIGHT = 160;
-
-const useKeyboardHeight = (): number => {
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const subscriptions = [
-      Keyboard.addListener('keyboardWillShow', event => setHeight(event.endCoordinates.height)),
-      Keyboard.addListener('keyboardWillHide', () => setHeight(0)),
-    ];
-
-    return (): void => subscriptions.forEach(subscription => subscription.remove());
-  }, []);
-
-  return height;
-};
 
 // A fixed list height keeps the fit-to-contents sheet from resizing as results load or filter,
 // and shrinks it while the keyboard is up so the title and search field stay on screen.

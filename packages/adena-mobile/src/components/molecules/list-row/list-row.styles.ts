@@ -12,4 +12,6 @@ export const useStyles = makeStyles(colors => ({
   },
   idle: { backgroundColor: colors.background.subtle },
   texts: { flex: 1, gap: 2 },
+  // Long values (memos, custom network names) truncate instead of pushing the label and chevron out.
+  value: { flexShrink: 1, maxWidth: '50%' },
 }));

@@ -1,5 +1,5 @@
 import React, { ReactElement, useRef } from 'react';
-import { Pressable, PressableStateCallbackType, StyleProp, TextInputInstance, View, ViewStyle } from 'react-native';
+import { Pressable, PressableStateCallbackType, ScrollView, StyleProp, TextInputInstance, useWindowDimensions, View, ViewStyle } from 'react-native';
 
 import { LocalTokenIcon } from '../../../domain/token';
 import { useThemeColors } from '../../../theme';
@@ -134,8 +134,15 @@ const MemoSheet = ({ visible, memo, onChangeMemo, onClose }: MemoSheetProps): Re
   );
 };
 
+// Below this window height (iPhone SE and mini) the keypad rows shrink so the form and keypad fit.
+const COMPACT_HEIGHT = 820;
+const COMPACT_KEY_HEIGHT = 44;
+// Share of the window the token list may take before it scrolls.
+const TOKEN_LIST_MAX_HEIGHT_RATIO = 0.6;
+
 export const SendAmountPage = (props: SendAmountPageProps): ReactElement => {
   const styles = useStyles();
+  const { height } = useWindowDimensions();
 
   return (
     <Screen
@@ -152,32 +159,32 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => {
         />
       )}
     >
-      <View style={styles.amountBlock}>
-        <Text variant='meta' color='secondary'>You send</Text>
-        <View style={styles.amountRow}>
-          <Text variant='display' tabular numberOfLines={1} adjustsFontSizeToFit style={styles.amount}>
-            {props.amount || '0'}
-          </Text>
-          <TokenSelector symbol={props.symbol} localIcon={props.tokenLocalIcon} imageUrl={props.tokenImageUrl} onPress={props.onOpenTokenPicker} />
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} keyboardShouldPersistTaps='handled'>
+        <View style={styles.amountBlock}>
+          <Text variant='meta' color='secondary'>You send</Text>
+          <View style={styles.amountRow}>
+            <Text variant='display' tabular numberOfLines={1} adjustsFontSizeToFit style={styles.amount}>
+              {props.amount || '0'}
+            </Text>
+            <TokenSelector symbol={props.symbol} localIcon={props.tokenLocalIcon} imageUrl={props.tokenImageUrl} onPress={props.onOpenTokenPicker} />
+          </View>
+          {props.fiatLabel ? <Text variant='meta' color='secondary' tabular>{props.fiatLabel}</Text> : null}
         </View>
-        {props.fiatLabel ? <Text variant='meta' color='secondary' tabular>{props.fiatLabel}</Text> : null}
-      </View>
-      <View style={styles.availableRow}>
-        <Text variant='meta' color='secondary' tabular>{`Available ${props.available ?? '…'} ${props.symbol}`}</Text>
-        <Chip label='Max' onPress={props.onMax} disabled={props.available === undefined} />
-      </View>
-      <ListRow
-        leading={<Avatar name={props.recipientLabel} />}
-        label={props.recipientLabel}
-        description={formatAddress(props.recipientAddress)}
-        onPress={props.onChangeRecipient}
-      />
-      <ListRow label='Memo' value={props.memo || 'Optional'} onPress={props.onOpenMemo} />
-      {props.error && <InlineAlert tone='error' title={props.error} />}
-      {!props.error && props.notice && <InlineAlert tone='warning' title={props.notice} />}
-      <View style={styles.keypad}>
-        <NumericKeypad onKeyPress={props.onKeyPress} />
-      </View>
+        <View style={styles.availableRow}>
+          <Text variant='meta' color='secondary' tabular>{`Available ${props.available ?? '…'} ${props.symbol}`}</Text>
+          <Chip label='Max' onPress={props.onMax} disabled={props.available === undefined} />
+        </View>
+        <ListRow
+          leading={<Avatar name={props.recipientLabel} />}
+          label={props.recipientLabel}
+          description={formatAddress(props.recipientAddress)}
+          onPress={props.onChangeRecipient}
+        />
+        <ListRow label='Memo' value={props.memo || 'Optional'} onPress={props.onOpenMemo} />
+        {props.error && <InlineAlert tone='error' title={props.error} />}
+        {!props.error && props.notice && <InlineAlert tone='warning' title={props.notice} />}
+      </ScrollView>
+      <NumericKeypad onKeyPress={props.onKeyPress} keyHeight={height < COMPACT_HEIGHT ? COMPACT_KEY_HEIGHT : undefined} />
       {props.review && (
         <ReviewSheet
           visible
@@ -221,19 +228,26 @@ export const SendAmountPage = (props: SendAmountPageProps): ReactElement => {
       )}
       <MemoSheet visible={props.memoSheetVisible} memo={props.memo} onChangeMemo={props.onChangeMemo} onClose={props.onCloseMemo} />
       <BottomSheet visible={props.tokenPickerVisible} title='Select token' onClose={props.onCloseTokenPicker}>
-        {props.tokenOptions.map((option) => {
-          const handlePress = (): void => props.onSelectToken(option.key);
+        <ScrollView
+          style={[styles.tokenList, { maxHeight: Math.round(height * TOKEN_LIST_MAX_HEIGHT_RATIO) }]}
+          contentContainerStyle={styles.tokenListContent}
+          keyboardShouldPersistTaps='handled'
+          nestedScrollEnabled
+        >
+          {props.tokenOptions.map((option) => {
+            const handlePress = (): void => props.onSelectToken(option.key);
 
-          return (
-            <ListRow
-              key={option.key}
-              label={option.name}
-              description={option.balanceLabel ?? option.symbol}
-              showChevron={false}
-              onPress={handlePress}
-            />
-          );
-        })}
+            return (
+              <ListRow
+                key={option.key}
+                label={option.name}
+                description={option.balanceLabel ?? option.symbol}
+                showChevron={false}
+                onPress={handlePress}
+              />
+            );
+          })}
+        </ScrollView>
       </BottomSheet>
     </Screen>
   );
