@@ -62,12 +62,12 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
     })));
     const inputTokenUpperBound = estimateInputTokens({ model, messages, instructions, tools: await definitions });
     const limit = run.beginStep(maxOutputTokens, inputTokenUpperBound);
-    if (limit === undefined) throw new Error('ADENA_RUN_CANNOT_START_STEP');
+    if (limit === undefined) throw new Error('AGENT_RUN_CANNOT_START_STEP');
     if (budget.kind === 'cloud' && !await budget.reserveStep({ operationId: run.operationId, stepNumber, inputTokenUpperBound, maxOutputTokens: limit, signal: run.signal })) {
       run.close();
-      throw new Error('ADENA_CLOUD_BUDGET_EXHAUSTED');
+      throw new Error('AGENT_CLOUD_BUDGET_EXHAUSTED');
     }
-    if (run.signal.aborted) throw new Error('ADENA_RUN_CANCELLED');
+    if (run.signal.aborted) throw new Error('AGENT_RUN_CANCELLED');
     return { maxOutputTokens: limit };
   };
   const onStepEnd: GenerateTextOnStepEndCallback<ToolSet> = ({ usage }) => {

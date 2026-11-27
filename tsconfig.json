@@ -3,5 +3,6 @@
   "compilerOptions": {
     "strict": true,
     "types": ["jest"]
-  }
+  },
+  "exclude": ["node_modules", "dist", "src/mock/app/ios", "src/mock/app/android"]
 }

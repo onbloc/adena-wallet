@@ -33,17 +33,29 @@ export type AllowanceSummary = AllowanceParams & {
 };
 
 /**
- * A transaction the wallet built. Nothing here is signed or sent: the app signs it. `summary` is
- * what the model and the user are told; `tx` is the wallet SDK's own transaction object, passed
- * on untouched (the model never sees it).
+ * A transaction the host prepared. `summary` describes the action; `tx` is a host-defined payload
+ * passed through untouched. No wallet SDK or transaction encoding is required, and the model
+ * never sees `tx`. Nothing here is signed or sent.
  */
 export type PreparedTransaction<Summary = TransferSummary | AllowanceSummary> = {
   summary: Summary;
   tx: unknown;
 };
 
-/** Receives each transaction the agent's tools prepare. */
-export type TransactionHandler = (prepared: PreparedTransaction) => void | Promise<void>;
+/** Shared by a run's wallet operations and transaction callbacks. */
+export type WalletOperationOptions = Readonly<{
+  /** Aborts on caller cancellation, the run deadline, or run close. Wallets may stop work cooperatively. */
+  signal: AbortSignal;
+}>;
+
+/**
+ * Receives a prepared transaction only while the run is active. A callback already invoked cannot
+ * be retracted; use the signal to cancel any asynchronous host work when the run stops.
+ */
+export type TransactionHandler = (
+  prepared: PreparedTransaction,
+  options: WalletOperationOptions
+) => void | Promise<void>;
 
 /** One allowance an account has given. */
 export type Allowance = { spender: string; token: string; amount: string };
@@ -63,18 +75,20 @@ export class WalletError extends Error {
 }
 
 /**
- * What the agent needs to build transactions. A wallet app implements this over its own SDK.
- * It only builds transactions from the arguments it is given: it never signs, sends, or hands
- * out a private key. Optional methods are optional features: a tool is offered to the model only
- * if the wallet implements its method.
+ * What the agent needs to prepare transactions. The host implements this interface; no SDK class
+ * or transaction format is required. It never signs, sends, or hands out a private key.
+ * Optional methods expose optional features: a tool is offered to the model only if the host
+ * implements its method.
+ * Operations may honor the supplied signal to stop work. The agent discards late results and
+ * never starts a transaction callback after that signal aborts, even if the wallet ignores it.
  */
 export interface WalletSdk {
   /** The user's address book. The model may name a contact instead of writing its address. */
-  getContacts?(): Promise<Contact[]>;
+  getContacts?(options?: WalletOperationOptions): Promise<Contact[]>;
   /** Builds a transfer. Signs and sends nothing. */
-  transfer(params: TransferParams): Promise<PreparedTransaction<TransferSummary>>;
+  transfer(params: TransferParams, options?: WalletOperationOptions): Promise<PreparedTransaction<TransferSummary>>;
   /** Builds a token allowance. Signs and sends nothing. */
-  approve?(params: AllowanceParams): Promise<PreparedTransaction<AllowanceSummary>>;
+  approve?(params: AllowanceParams, options?: WalletOperationOptions): Promise<PreparedTransaction<AllowanceSummary>>;
   /** The allowances an account has given, oldest first. */
-  getAllowances?(owner: string): Promise<Allowance[]>;
+  getAllowances?(owner: string, options?: WalletOperationOptions): Promise<Allowance[]>;
 }

@@ -2,9 +2,9 @@ import { asSchema, type ToolSet } from 'ai';
 import { createAiSdkRun } from './aiSdkBridge';
 import { guardAnswer } from './answerGuard';
 import { buildWalletPrompt } from './prompts';
-import type { TransactionHandler, WalletSdk } from './wallet/port';
+import type { Contact, TransactionHandler, WalletSdk } from './wallet/port';
 import { createWalletTools } from './wallet/tools';
-import type { Harness } from '../harness/core';
+import type { Budget, Harness, HarnessRun } from '../harness/core';
 import { GNO_MAINNET_CHAIN } from '../harness/mcp';
 import type { GenerateEvent, GenerateSettings, LLM, ToolLoop } from '../llm/core';
 
@@ -28,7 +28,29 @@ const BYTES_PER_TOKEN = 2;
 const RUN_TIMEOUT_MS = 5 * 60_000;
 // Max model calls per run with wallet tools (e.g. a balance read -> transfer -> answer).
 const MAX_STEPS = 5;
-  
+
+async function loadContacts(wallet: WalletSdk, signal: AbortSignal): Promise<Contact[]> {
+  signal.throwIfAborted();
+  if (!wallet.getContacts) return [];
+  let cancel!: () => void;
+  const cancelled = new Promise<never>((_, reject) => {
+    cancel = () => reject(signal.reason);
+    signal.addEventListener('abort', cancel, { once: true });
+  });
+  try {
+    const contacts = await Promise.race([
+      cancelled,
+      Promise.resolve().then(() => {
+        signal.throwIfAborted();
+        return wallet.getContacts?.({ signal }) ?? [];
+      }),
+    ]);
+    signal.throwIfAborted();
+    return contacts;
+  } finally {
+    signal.removeEventListener('abort', cancel);
+  }
+}
 
 export type AIAgentOptions = {
   llm: LLM;
@@ -36,6 +58,11 @@ export type AIAgentOptions = {
   harness: Harness;
   /** The chain of the accounts. Defaults to Gno mainnet. */
   chainId?: string;
+  /**
+   * Limits wallet-backed runs. Defaults: 5 model steps, 4 harness read calls, twice the model
+   * context in total tokens, and 300000 ms. Wallet actions do not consume maxToolCalls.
+   */
+  budget?: Partial<Budget>;
 } & (
   | { wallet?: undefined; onTransaction?: undefined }
   | {
@@ -57,20 +84,23 @@ export class AIAgent {
   readonly wallet?: WalletSdk;
   private readonly onTransaction?: TransactionHandler;
   private readonly chainId: string;
+  private readonly budget: Partial<Budget>;
   private runs = 0;
 
-  constructor({ llm, harness, wallet, onTransaction, chainId = GNO_MAINNET_CHAIN }: AIAgentOptions) {
+  constructor({ llm, harness, wallet, onTransaction, chainId = GNO_MAINNET_CHAIN, budget = {} }: AIAgentOptions) {
     this.llm = llm;
     this.harness = harness;
     this.wallet = wallet;
     this.onTransaction = onTransaction;
     this.chainId = chainId;
+    this.budget = { ...budget };
   }
 
   /**
    * Answers one prompt or conversation. Same events as `llm.generate`; with a wallet the text is
    * held back until the answer is vetted (see `guardAnswer`). `settings.tools` are ignored: the
-   * tools are the wallet's and the harness's. Use this, not `agent.llm.generate`, to stay bounded.
+   * tools are the wallet's and the harness's. `budget.maxSteps`, not `settings.maxSteps`, bounds
+   * wallet-backed model calls. Use this, not `agent.llm.generate`, to stay bounded.
    *
    * With a wallet, `account` is required: the address the run acts for. The app picks it for each
    * run (a wallet holds many accounts and the user switches between them). It is whose holdings
@@ -87,56 +117,65 @@ export class AIAgent {
       return;
     }
     if (!account) throw new TypeError('An agent with a wallet needs the account to act for: run(settings, { account })');
-    const contacts = (await wallet.getContacts?.()) ?? [];
-    const walletTools = createWalletTools({ sdk: wallet, account, contacts, onTransaction });
-    const { loop, isRead } = await this.startLoop({
-      account,
-      walletTools,
-      maxOutputTokens: settings.maxOutputTokens ?? 512,
-      signal,
+    const contextTokens = this.llm.contextTokens;
+    if (!Number.isSafeInteger(contextTokens) || contextTokens <= 0) throw new RangeError('Invalid model context token limit');
+    if (this.budget.maxTokens === undefined && contextTokens > Math.floor(Number.MAX_SAFE_INTEGER / 2)) {
+      throw new RangeError('Default token budget exceeds safe integer range');
+    }
+    const maxOutputTokens = settings.maxOutputTokens ?? 512;
+    if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens <= 0) throw new RangeError('Invalid output token limit');
+    if (maxOutputTokens > contextTokens) throw new RangeError('Output token limit exceeds model context');
+    signal?.throwIfAborted();
+    const run = await this.harness.startRun({
+      account, chainId: this.chainId, operationId: `agent-${++this.runs}`,
+      scope: 'read-only', purpose: 'mainnet-read', signal,
+      budget: {
+        maxSteps: this.budget.maxSteps ?? MAX_STEPS,
+        maxToolCalls: this.budget.maxToolCalls ?? MAX_STEPS - 1,
+        maxTokens: this.budget.maxTokens ?? contextTokens * 2,
+        timeoutMs: this.budget.timeoutMs ?? RUN_TIMEOUT_MS,
+      },
     });
     try {
+      const contacts = await loadContacts(wallet, run.signal);
+      const walletTools = createWalletTools({ sdk: wallet, account, contacts, signal: run.signal, onTransaction });
+      const { loop, isRead } = await this.startLoop({ run, walletTools, maxOutputTokens, contextTokens });
+      run.signal.throwIfAborted();
       const system = settings.system ?? buildWalletPrompt({ contacts, approvals: wallet.getAllowances !== undefined });
       yield* guardAnswer(
-        this.llm.generate({ ...settings, system, tools: undefined }, { signal, loop }),
+        this.llm.generate({ ...settings, maxOutputTokens, system, tools: undefined }, { signal: run.signal, loop }),
         isRead
       );
     } finally {
-      loop.close();
+      run.close();
     }
   }
 
   /**
-   * Starts a harness run. The wallet tools bypass the harness, so their schemas are added to
-   * the input estimate here.
+   * Adds the wallet tools to a harness run and includes their schemas in the input estimate.
    */
-  private async startLoop({ account, walletTools, maxOutputTokens, signal }: {
-    account: string;
+  private async startLoop({ run, walletTools, maxOutputTokens, contextTokens }: {
+    run: HarnessRun;
     walletTools: ToolSet;
     maxOutputTokens: number;
-    signal?: AbortSignal;
+    contextTokens: number;
   }): Promise<{ loop: ToolLoop; isRead(toolName: string): boolean }> {
-    const contextTokens = this.llm.contextTokens;
-    const totalTokens = 2 * contextTokens;
     const walletDefinitions = await Promise.all(Object.entries(walletTools).map(async ([name, { description, inputSchema }]) => (
       { name, description, inputSchema: await asSchema(inputSchema).jsonSchema }
     )));
-    const run = await this.harness.startRun({
-      account, chainId: this.chainId, operationId: `agent-${++this.runs}`,
-      scope: 'read-only', purpose: 'mainnet-read', signal,
-      budget: { maxSteps: MAX_STEPS, maxToolCalls: MAX_STEPS - 1, maxTokens: totalTokens, timeoutMs: RUN_TIMEOUT_MS },
-    });
     if (run.tools.length === 0) {
-      run.close();
       throw new Error('No read tools are available. Check the account, the chain and the harness tool sources.');
     }
     const options = createAiSdkRun({
-      run, maxOutputTokens: Math.min(maxOutputTokens, 512), budget: { kind: 'local' },
+      run, maxOutputTokens, budget: { kind: 'local' },
       estimateInputTokens: ({ instructions, messages, tools }) => {
         // Conservative local estimate. Reserve enough room for the output in the device context.
         const bytes = new TextEncoder().encode(JSON.stringify([instructions, messages, tools, walletDefinitions])).byteLength;
         const estimate = Math.ceil(bytes / BYTES_PER_TOKEN) + 512;
-        return estimate + Math.min(maxOutputTokens, 512) > contextTokens ? totalTokens : estimate;
+        if (estimate > contextTokens - maxOutputTokens) {
+          throw new RangeError('Input estimate and output reserve exceed model context');
+        }
+        return estimate;
       },
       projectResult: compactHoldings,
       onInterrupt: () => run.close(),

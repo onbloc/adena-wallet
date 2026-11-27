@@ -28,6 +28,7 @@ export type GenerateSettings = GenerateInput & {
 };
 
 export type GenerateOptions = GenerateSettings & {
+  /** Cancels alongside any abort signal supplied by the loop. */
   signal?: AbortSignal;
   /** Tools and per-step hooks from the layer above; closed when the generation ends. */
   loop?: ToolLoop;
@@ -107,14 +108,35 @@ export async function* generate(
   let aborted = false;
   const warnings: string[] = [];
   let responseMessages: ModelMessage[] = [];
+  const loopSignal = loop?.options.abortSignal;
+  let abortSignal = signal ?? loopSignal;
+  let detachAbortSignals: (() => void) | undefined;
 
   try {
+    if (signal && loopSignal && signal !== loopSignal) {
+      const controller = new AbortController();
+      abortSignal = controller.signal;
+      const abortFromCaller = () => controller.abort(signal.reason);
+      const abortFromLoop = () => controller.abort(loopSignal.reason);
+      if (signal.aborted) {
+        abortFromCaller();
+      } else if (loopSignal.aborted) {
+        abortFromLoop();
+      } else {
+        detachAbortSignals = () => {
+          signal.removeEventListener('abort', abortFromCaller);
+          loopSignal.removeEventListener('abort', abortFromLoop);
+        };
+        signal.addEventListener('abort', abortFromCaller, { once: true });
+        loopSignal.addEventListener('abort', abortFromLoop, { once: true });
+      }
+    }
     const result = streamText({
       model,
       ...options,
       ...(maxSteps !== undefined && { stopWhen: isStepCount(maxSteps) }),
-      abortSignal: signal,
       ...loop?.options,
+      abortSignal,
       onError: () => {}, // errors are rethrown from the stream below
     });
     // Part types in the cases below are the AI SDK's; yielded events use GenerateEventType.
@@ -172,9 +194,10 @@ export async function* generate(
     }
     if (!aborted) responseMessages = await result.responseMessages;
   } catch (error) {
-    if (!signal?.aborted && !loop?.options.abortSignal?.aborted) throw error;
+    if (!abortSignal?.aborted) throw error;
     aborted = true;
   } finally {
+    detachAbortSignals?.();
     loop?.close();
   }
 

@@ -1,9 +1,8 @@
 import { GenerateEventType, type GenerateEvent } from '../llm/core';
 
 /**
- * Holds the model's text back and shows it only if the tools support it. Answers that rest on
- * no lookup, or on a failed one, are replaced by a fixed message, and such a turn is not
- * remembered (`messages` is emptied). `isRead` tells the read tools from the wallet actions.
+ * Holds the model's text until the final step. Failed tool calls replace the answer with a fixed
+ * message and the turn is not remembered (`messages` is emptied).
  */
 export async function* guardAnswer(
   events: AsyncIterable<GenerateEvent>,
@@ -48,13 +47,11 @@ export async function* guardAnswer(
           yield event;
           break;
         }
-        const trusted = (readSucceeded || actionRan) && !readFailed;
-        const answer = !readSucceeded && !actionRan ? 'No Onbloc lookup returned verified data.'
-          : readFailed ? 'Some Onbloc lookups failed. Review the individual tool results.'
-            : text || (readSucceeded ? 'Onbloc returned data; no model summary was produced.'
-              : 'The wallet action ran; no model summary was produced.');
+        const answer = readFailed ? 'Some Onbloc lookups failed. Review the individual tool results.'
+          : text || (readSucceeded ? 'Onbloc returned data; no model summary was produced.'
+            : actionRan ? 'The wallet action ran; no model summary was produced.' : '');
         yield { type: GenerateEventType.Text, delta: answer };
-        yield trusted ? event : { ...event, messages: [] };
+        yield readFailed ? { ...event, messages: [] } : event;
         break;
       }
       default:

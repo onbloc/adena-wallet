@@ -66,7 +66,10 @@ export class LLMOnDevice implements LLM {
     options: LLMGenerateOptions = {}
   ): AsyncGenerator<GenerateEvent> {
     const model = this.runtime.model;
-    if (!model) throw new Error('Model is not loaded');
+    if (!model) {
+      options.loop?.close();
+      throw new Error('Model is not loaded');
+    }
     // With tools on, native llama may publish a tool call before its arguments are complete.
     const toolsOn = options.loop !== undefined || settings.tools !== undefined;
     yield* generate(toolsOn ? withCompletedToolCalls(model) : model, { ...settings, ...options });

@@ -1,14 +1,14 @@
 import { simulateStreamingMiddleware, wrapLanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 
-import { Harness } from '../../harness/core';
+import { Harness, type Budget, type HarnessRun } from '../../harness/core';
 import { createOnblocToolSource } from '../../harness/mcp';
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { GenerateEventType, LLMFromModel, type GenerateEvent, type GenerateSettings } from '../../llm/core';
 import { AIAgent } from '../agent';
 import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet } from '../testing/fakeWallet';
 import { ToolName, WalletStatus } from '../wallet/constants';
-import type { PreparedTransaction } from '../wallet/port';
+import type { PreparedTransaction, TransferSummary, WalletOperationOptions } from '../wallet/port';
 
 const account = ACCOUNT;
 
@@ -35,8 +35,18 @@ const collect = async (events: AsyncIterable<GenerateEvent>) => {
 const results = (events: GenerateEvent[]) =>
   events.filter((event) => event.type === GenerateEventType.ToolResult);
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
 /** An agent over a scripted model, a fake Onbloc MCP and a fake wallet; `prepared` collects what it builds. */
-function setup(steps: Step[], { balance = '10000000' }: { balance?: string } = {}) {
+function setup(steps: Step[], { balance = '10000000', budget, contextTokens }: {
+  balance?: string;
+  budget?: Partial<Budget>;
+  contextTokens?: number;
+} = {}) {
   const mcp = fakeOnblocMcp([
     { name: 'get_native_balance', output: { address: account, denom: 'ugnot', balance } },
   ]);
@@ -49,7 +59,7 @@ function setup(steps: Step[], { balance = '10000000' }: { balance?: string } = {
     },
     doGenerate: steps,
   });
-  const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }));
+  const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }), { contextTokens });
   const harness = new Harness({
     toolSources: [createOnblocToolSource({ endpoint: 'https://example.test/mcp', fetcher: mcp.fetcher })],
   });
@@ -57,6 +67,7 @@ function setup(steps: Step[], { balance = '10000000' }: { balance?: string } = {
     llm,
     harness,
     wallet,
+    budget,
     onTransaction: (transaction) => {
       prepared.push(transaction);
     },
@@ -145,16 +156,31 @@ describe('AIAgent', () => {
     expect(prompt).not.toContain('get_approvals');
   });
 
-  it('replaces an answer that rests on no lookup and no action', async () => {
-    const { agent } = setup([answer('You have 5 GNOT')]);
+  it('keeps ordinary conversation and passes it to the next turn', async () => {
+    const { agent, model, mcp } = setup([answer('Hello Mina'), answer('Your name is Mina')]);
+    const first = await collect(agent.run({ messages: [{ role: 'user', content: 'My name is Mina' }] }));
+    const done = first[first.length - 1];
+    if (done.type !== GenerateEventType.Done) throw new Error('Expected done');
 
-    const events = await collect(agent.run({ prompt: 'go' }));
+    expect(first).toContainEqual({ type: GenerateEventType.Text, delta: 'Hello Mina' });
+    expect(done.messages).toEqual([expect.objectContaining({ role: 'assistant' })]);
+    const second = await collect(agent.run({ messages: [
+      { role: 'user', content: 'My name is Mina' },
+      ...done.messages,
+      { role: 'user', content: 'What is my name?' },
+    ] }));
+    expect(second).toContainEqual({ type: GenerateEventType.Text, delta: 'Your name is Mina' });
+    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain('Hello Mina');
+    expect(mcp.calls).toEqual([]);
+  });
 
-    expect(events).toContainEqual({
-      type: GenerateEventType.Text,
-      delta: 'No Onbloc lookup returned verified data.',
-    });
-    expect(events).not.toContainEqual({ type: GenerateEventType.Text, delta: 'You have 5 GNOT' });
+  it('shows a request for missing transfer details without a tool call', async () => {
+    const { agent, prepared } = setup([answer('Who should receive the tokens?')]);
+    const events = await collect(agent.run({ prompt: 'Send 1 GNOT' }));
+
+    expect(events).toContainEqual({ type: GenerateEventType.Text, delta: 'Who should receive the tokens?' });
+    expect(prepared).toEqual([]);
+    expect(events[events.length - 1]).toMatchObject({ messages: [expect.objectContaining({ role: 'assistant' })] });
   });
 
   it('reports a failed lookup even when a wallet action ran, and does not remember the turn', async () => {
@@ -223,5 +249,206 @@ describe('AIAgent', () => {
 
     await expect(collect(real.run({ prompt: 'go' }))).rejects.toThrow('needs the account');
     expect(wallet.calls).toEqual([]);
+  });
+
+  it.each(['caller', 'deadline', 'close'] as const)('discards a transfer prepared after %s cancellation', async (cancellation) => {
+    const { agent, real, wallet, prepared } = setup([send, answer('Ready')], {
+      budget: { timeoutMs: cancellation === 'deadline' ? 1000 : 300_000 },
+    });
+    const startRun = jest.spyOn(real.harness, 'startRun');
+    const started = deferred<AbortSignal>();
+    const preparation = deferred<PreparedTransaction<TransferSummary>>();
+    const transaction = await fakeWallet().transfer({ from: account, to: RECIPIENT, amount: '1', token: 'GNOT' });
+    wallet.transfer = (_params, options) => {
+      started.resolve(options!.signal);
+      return preparation.promise;
+    };
+    const controller = new AbortController();
+    const events = collect(agent.run({ prompt: 'go' }, { signal: controller.signal }));
+    const operationSignal = await started.promise;
+    const stopped = new Promise<void>((resolve) => {
+      operationSignal.addEventListener('abort', () => resolve(), { once: true });
+    });
+
+    if (cancellation === 'caller') controller.abort();
+    if (cancellation === 'close') {
+      const run: HarnessRun = await startRun.mock.results[0].value;
+      run.close();
+    }
+    await stopped;
+    preparation.resolve(transaction);
+
+    expect(operationSignal.aborted).toBe(true);
+    expect((await events).at(-1)).toMatchObject({ type: GenerateEventType.Done, aborted: true });
+    await preparation.promise;
+    expect(prepared).toEqual([]);
+  });
+
+  it('closes the wallet operation signal when a successful run ends', async () => {
+    const { agent, wallet, prepared } = setup([send, answer('Ready')]);
+    const transfer = wallet.transfer.bind(wallet);
+    let operation: WalletOperationOptions | undefined;
+    wallet.transfer = (params, options) => {
+      operation = options;
+      expect(options?.signal.aborted).toBe(false);
+      return transfer(params, options);
+    };
+
+    await collect(agent.run({ prompt: 'go' }));
+
+    expect(prepared).toHaveLength(1);
+    expect(operation?.signal.aborted).toBe(true);
+  });
+
+  it('closes the run when contact setup fails before generation', async () => {
+    const { agent, wallet, model } = setup([answer('unused')]);
+    let signal: AbortSignal | undefined;
+    wallet.getContacts = async (options) => {
+      signal = options?.signal;
+      throw new Error('contacts unavailable');
+    };
+
+    await expect(collect(agent.run({ prompt: 'go' }))).rejects.toThrow('contacts unavailable');
+
+    expect(signal?.aborted).toBe(true);
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('cancels contact setup even when the wallet ignores cancellation', async () => {
+    const { agent, wallet, model } = setup([answer('unused')]);
+    const started = deferred<AbortSignal>();
+    const contacts = deferred<[]>();
+    wallet.getContacts = (options) => {
+      started.resolve(options!.signal);
+      return contacts.promise;
+    };
+    const controller = new AbortController();
+    const completion = collect(agent.run({ prompt: 'go' }, { signal: controller.signal }));
+    const cancelled = expect(completion).rejects.toMatchObject({ name: 'AbortError' });
+    const signal = await started.promise;
+
+    controller.abort();
+    await cancelled;
+    contacts.resolve([]);
+
+    expect(signal.aborted).toBe(true);
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('does not discover tools or load contacts for an already cancelled run', async () => {
+    const { agent, real, wallet, model } = setup([answer('unused')]);
+    const startRun = jest.spyOn(real.harness, 'startRun');
+    const contacts = jest.spyOn(wallet, 'getContacts');
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(collect(agent.run({ prompt: 'go' }, { signal: controller.signal }))).rejects.toMatchObject({ name: 'AbortError' });
+
+    expect(startRun).not.toHaveBeenCalled();
+    expect(contacts).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('stops after the configured model-step limit rather than the generation setting', async () => {
+    const { agent, model, prepared } = setup([send, send, send, answer('unused')], {
+      budget: { maxSteps: 2, maxToolCalls: undefined, maxTokens: undefined, timeoutMs: undefined },
+    });
+
+    await collect(agent.run({ prompt: 'go', maxSteps: 4 }));
+
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(prepared).toHaveLength(2);
+  });
+
+  it('honors an output reserve above 512 on every model step', async () => {
+    const { agent, model } = setup([send, answer('Ready')]);
+
+    await collect(agent.run({ prompt: 'go', maxOutputTokens: 1024 }));
+
+    expect(model.doGenerateCalls.map(({ maxOutputTokens }) => maxOutputTokens)).toEqual([1024, 1024]);
+  });
+
+  it('refuses a model step when its requested output reserve exceeds remaining context capacity', async () => {
+    const { agent, model } = setup([answer('unused')], { contextTokens: 8192 });
+
+    await expect(collect(agent.run({ prompt: 'go', maxOutputTokens: 8192 })))
+      .rejects.toThrow('Input estimate and output reserve exceed model context');
+
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('enforces the total-token budget before starting a model step', async () => {
+    const { agent, model } = setup([answer('unused')], { budget: { maxTokens: 1 } });
+
+    await expect(collect(agent.run({ prompt: 'go' }))).rejects.toThrow(Error);
+
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it.each([
+    { maxSteps: 0 }, { maxToolCalls: -1 }, { maxTokens: Number.MAX_SAFE_INTEGER + 1 },
+    { timeoutMs: 2_147_483_648 }, { maxSteps: 1.5 },
+  ])('rejects an invalid run policy before loading contacts: %j', async (budget) => {
+    const { agent, wallet, model } = setup([answer('unused')], { budget });
+    const contacts = jest.spyOn(wallet, 'getContacts');
+
+    await expect(collect(agent.run({ prompt: 'go' }))).rejects.toThrow(RangeError);
+
+    expect(contacts).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1])('rejects invalid output token limits: %s', async (maxOutputTokens) => {
+    const { agent, model } = setup([answer('unused')]);
+
+    await expect(collect(agent.run({ prompt: 'go', maxOutputTokens }))).rejects.toThrow(RangeError);
+
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('rejects an unsafe derived token budget before starting a run', async () => {
+    const { agent, real, model } = setup([answer('unused')], { contextTokens: Number.MAX_SAFE_INTEGER });
+    const startRun = jest.spyOn(real.harness, 'startRun');
+
+    await expect(collect(agent.run({ prompt: 'go' }))).rejects.toThrow('Default token budget exceeds safe integer range');
+
+    expect(startRun).not.toHaveBeenCalled();
+    expect(model.doGenerateCalls).toEqual([]);
+  });
+
+  it('limits harness reads without counting wallet preparations as read calls', async () => {
+    const { agent, mcp, prepared } = setup([
+      call('get_native_balance', {}), send, call('get_native_balance', {}), answer('Ready'),
+    ], { budget: { maxToolCalls: 1 } });
+
+    const events = await collect(agent.run({ prompt: 'go' }));
+
+    expect(mcp.calls).toHaveLength(1);
+    expect(prepared).toHaveLength(1);
+    expect(results(events)).toContainEqual(expect.objectContaining({
+      name: 'get_native_balance', output: { kind: 'denied', code: 'BUDGET_EXHAUSTED' },
+    }));
+  });
+
+  it('lets a cooperative wallet stop preparation when the caller aborts', async () => {
+    const { agent, wallet, prepared } = setup([send, answer('unused')]);
+    const started = deferred<void>();
+    let stopped = false;
+    wallet.transfer = (_params, options) => new Promise((_resolve, reject) => {
+      options!.signal.addEventListener('abort', () => {
+        stopped = true;
+        reject(options!.signal.reason);
+      }, { once: true });
+      started.resolve();
+    });
+    const controller = new AbortController();
+    const completion = collect(agent.run({ prompt: 'go' }, { signal: controller.signal }));
+    await started.promise;
+
+    controller.abort();
+
+    expect((await completion).at(-1)).toMatchObject({ type: GenerateEventType.Done, aborted: true });
+    expect(stopped).toBe(true);
+    expect(prepared).toEqual([]);
   });
 });

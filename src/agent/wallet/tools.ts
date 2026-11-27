@@ -14,6 +14,8 @@ export type WalletToolsContext = {
   account: string;
   /** Address book: the model may name a contact instead of writing its address. */
   contacts: readonly Contact[];
+  /** The effective run signal, including its deadline and close. */
+  signal: AbortSignal;
   /** Gets every transaction a tool prepares; the app signs it. The model never sees it. */
   onTransaction: TransactionHandler;
 };
@@ -23,10 +25,11 @@ export type ToolResult = { status: WalletStatus; [key: string]: unknown };
 const PREPARED_MESSAGE = 'The transaction is ready. The user signs it in their wallet; nothing was sent.';
 
 /** Wallet refusals become results the model can read; anything else is a real failure. */
-async function refusalsAsResults(run: () => Promise<ToolResult>): Promise<ToolResult> {
+async function refusalsAsResults(signal: AbortSignal, run: () => Promise<ToolResult>): Promise<ToolResult> {
   try {
     return await run();
   } catch (error) {
+    signal.throwIfAborted();
     if (!(error instanceof WalletError)) throw error;
     return { status: WalletStatus.Error, code: error.code, message: error.message };
   }
@@ -43,7 +46,8 @@ const resolveContact = (contacts: readonly Contact[], recipient: string) =>
  * sources for the same fact. `approve` and `get_approvals` are offered only if the wallet
  * implements them.
  */
-export function createWalletTools({ sdk, account, contacts, onTransaction }: WalletToolsContext) {
+export function createWalletTools({ sdk, account, contacts, signal, onTransaction }: WalletToolsContext) {
+  const options = { signal };
   const approve = sdk.approve?.bind(sdk);
   const getAllowances = sdk.getAllowances?.bind(sdk);
   return {
@@ -56,14 +60,17 @@ export function createWalletTools({ sdk, account, contacts, onTransaction }: Wal
         token: z.string().describe('Token symbol, e.g. GNOT'),
       }),
       execute: ({ to, amount, token }) =>
-        refusalsAsResults(async () => {
+        refusalsAsResults(signal, async () => {
+          signal.throwIfAborted();
           const prepared = await sdk.transfer({
             from: account,
             to: resolveContact(contacts, to),
             amount,
             token,
-          });
-          await onTransaction(prepared);
+          }, options);
+          signal.throwIfAborted();
+          await onTransaction(prepared, options);
+          signal.throwIfAborted();
           const { summary } = prepared;
           return {
             status: WalletStatus.Prepared,
@@ -85,14 +92,17 @@ export function createWalletTools({ sdk, account, contacts, onTransaction }: Wal
           token: z.string().describe('Token symbol, e.g. GNOT'),
         }),
         execute: ({ spender, amount, token }) =>
-          refusalsAsResults(async () => {
+          refusalsAsResults(signal, async () => {
+            signal.throwIfAborted();
             const prepared = await approve({
               from: account,
               spender: resolveContact(contacts, spender),
               amount,
               token,
-            });
-            await onTransaction(prepared);
+            }, options);
+            signal.throwIfAborted();
+            await onTransaction(prepared, options);
+            signal.throwIfAborted();
             const { summary } = prepared;
             return {
               status: WalletStatus.Prepared,
@@ -110,11 +120,12 @@ export function createWalletTools({ sdk, account, contacts, onTransaction }: Wal
         description: 'List the token approvals the user has given to other addresses.',
         inputSchema: z.object({}),
         execute: () =>
-          refusalsAsResults(async () => ({
-            status: WalletStatus.Ok,
-            address: account,
-            approvals: await getAllowances(account),
-          })),
+          refusalsAsResults(signal, async () => {
+            signal.throwIfAborted();
+            const approvals = await getAllowances(account, options);
+            signal.throwIfAborted();
+            return { status: WalletStatus.Ok, address: account, approvals };
+          }),
       }),
     }),
   } satisfies ToolSet;

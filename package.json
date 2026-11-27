@@ -1,36 +1,100 @@
 {
   "name": "adena-ai-llm-poc",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./llm": {
+      "types": "./dist/types/llm/core/index.d.ts",
+      "import": "./dist/llm.js",
+      "require": "./dist/llm.cjs"
+    },
+    "./llm/remote": {
+      "types": "./dist/types/llm/remote/index.d.ts",
+      "import": "./dist/llm/remote.js",
+      "require": "./dist/llm/remote.cjs"
+    },
+    "./llm/device": {
+      "types": "./dist/types/llm/device/index.d.ts",
+      "import": "./dist/llm/device.js",
+      "require": "./dist/llm/device.cjs"
+    },
+    "./harness": {
+      "types": "./dist/types/harness/core/index.d.ts",
+      "import": "./dist/harness.js",
+      "require": "./dist/harness.cjs"
+    },
+    "./harness/onbloc": {
+      "types": "./dist/types/harness/mcp/index.d.ts",
+      "import": "./dist/harness/onbloc.js",
+      "require": "./dist/harness/onbloc.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "llm": ["dist/types/llm/core/index.d.ts"],
+      "llm/remote": ["dist/types/llm/remote/index.d.ts"],
+      "llm/device": ["dist/types/llm/device/index.d.ts"],
+      "harness": ["dist/types/harness/core/index.d.ts"],
+      "harness/onbloc": ["dist/types/harness/mcp/index.d.ts"]
+    }
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
-    "@adena-wallet/sdk": "^0.1.3",
+    "@cfworker/json-schema": "^4.1.6",
+    "@ai-sdk/anthropic": "^4.0.108",
+    "@ai-sdk/openai": "^4.0.123",
+    "@ai-sdk/openai-compatible": "^3.0.94",
     "@modelcontextprotocol/sdk": "1.32.2",
-    "@react-native-ai/llama": "^0.13.0",
-    "@stardazed/streams-text-encoding": "^1.0.2",
-    "@ungap/structured-clone": "^1.4.0",
     "ai": "^7.0.179",
-    "expo": "~58.0.26",
-    "expo-status-bar": "~58.0.5",
-    "llama.rn": "^0.13.0-rc.12",
-    "react": "19.3.0",
-    "react-native": "0.88.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@ai-sdk/openai-compatible": "^3.0.94",
+    "@react-native-ai/llama": "^0.13.0",
+    "@stardazed/streams-text-encoding": "^1.0.2",
+    "@ungap/structured-clone": "^1.4.0",
     "@types/jest": "30.0.0",
     "@types/react": "~19.3.0",
     "eslint": "^9.39.5",
+    "esbuild": "^0.28.2",
+    "expo": "~58.0.26",
+    "expo-status-bar": "~58.0.5",
     "eslint-config-expo": "~58.0.4",
     "jest": "~30.5.2",
     "jest-expo": "~58.0.15",
+    "llama.rn": "^0.13.0-rc.12",
+    "react": "19.3.0",
+    "react-native": "0.88.1",
     "typescript": "~6.0.3"
   },
+  "peerDependencies": {
+    "@react-native-ai/llama": "^0.13.0",
+    "llama.rn": "^0.13.0-rc.12",
+    "react": ">=18",
+    "react-native": ">=0.76"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-ai/llama": { "optional": true },
+    "llama.rn": { "optional": true },
+    "react": { "optional": true },
+    "react-native": { "optional": true }
+  },
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "prebuild": "expo prebuild",
+    "start": "npm --prefix src/mock/app run start --",
+    "android": "npm --prefix src/mock/app run android --",
+    "ios": "npm --prefix src/mock/app run ios --",
+    "native:prebuild": "npm --prefix src/mock/app run prebuild --",
+    "build": "node scripts/build.mjs",
+    "prepack": "npm run build",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "test": "jest",
@@ -39,11 +103,8 @@
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|ai/|@ai-sdk/.*|@workflow/.*|@standard-schema/.*|eventsource-parser/|zod/|uuid/|@noble/|@scure/)"
-    ],
-    "moduleNameMapper": {
-      "^@web3auth/no-modal$": "<rootDir>/src/adena/testing/web3authNoModal.ts"
-    }
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|ai/|@ai-sdk/.*|@workflow/.*|@standard-schema/.*|eventsource-parser/|zod/|@cfworker/.*)"
+    ]
   },
   "private": true
 }

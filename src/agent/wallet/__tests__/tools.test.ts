@@ -1,6 +1,6 @@
 import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet, type FakeWalletOptions } from '../../testing/fakeWallet';
 import { ToolName, TransactionType, WalletErrorCode, WalletStatus } from '../constants';
-import { WalletError, type PreparedTransaction } from '../port';
+import { WalletError, type PreparedTransaction, type WalletOperationOptions, type WalletSdk } from '../port';
 import { createWalletTools, type ToolResult } from '../tools';
 
 function setup(options: FakeWalletOptions = {}) {
@@ -10,6 +10,7 @@ function setup(options: FakeWalletOptions = {}) {
     sdk: wallet,
     account: ACCOUNT,
     contacts: [FRIEND],
+    signal: new AbortController().signal,
     onTransaction: (transaction) => {
       prepared.push(transaction);
     },
@@ -96,6 +97,7 @@ describe('transfer', () => {
       sdk: fakeWallet(),
       account: ACCOUNT,
       contacts: [],
+      signal: new AbortController().signal,
       onTransaction: () => {
         throw new Error('app is gone');
       },
@@ -180,5 +182,89 @@ describe('createWalletTools', () => {
   it('offers approve only if the wallet implements it', () => {
     expect(Object.keys(setup({ approve: false }).all)).toEqual([ToolName.Transfer]);
     expect(Object.keys(setup().all).sort()).toEqual([ToolName.Approve, ToolName.Transfer]);
+  });
+});
+
+describe('wallet operation cancellation', () => {
+  it('never starts an operation after its run is cancelled', async () => {
+    const controller = new AbortController();
+    const reason = new Error('run closed');
+    const sdk = { transfer: jest.fn(), approve: jest.fn(), getAllowances: jest.fn() } satisfies WalletSdk;
+    const onTransaction = jest.fn();
+    const tools = createWalletTools({
+      sdk, account: ACCOUNT, contacts: [], signal: controller.signal, onTransaction,
+    });
+    controller.abort(reason);
+
+    for (const [name, args] of [
+      [ToolName.Transfer, input],
+      [ToolName.Approve, { spender: RECIPIENT, amount: '1', token: 'GNS' }],
+      [ToolName.GetApprovals, {}],
+    ] as const) {
+      await expect(run(tools[name]!, args)).rejects.toBe(reason);
+    }
+
+    expect(sdk.transfer).not.toHaveBeenCalled();
+    expect(sdk.approve).not.toHaveBeenCalled();
+    expect(sdk.getAllowances).not.toHaveBeenCalled();
+    expect(onTransaction).not.toHaveBeenCalled();
+  });
+
+  it('discards an approval prepared after cancellation, even when the abort reason is a wallet refusal', async () => {
+    const controller = new AbortController();
+    const reason = new WalletError(WalletErrorCode.WalletFailed, 'wallet closed');
+    const wallet = fakeWallet();
+    const approve = wallet.approve!.bind(wallet);
+    const onTransaction = jest.fn();
+    wallet.approve = async (params, options) => {
+      expect(options?.signal).toBe(controller.signal);
+      const prepared = await approve(params, options);
+      controller.abort(reason);
+      return prepared;
+    };
+    const tools = createWalletTools({
+      sdk: wallet, account: ACCOUNT, contacts: [], signal: controller.signal, onTransaction,
+    });
+
+    await expect(run(tools[ToolName.Approve]!, { spender: RECIPIENT, amount: '1', token: 'GNS' })).rejects.toBe(reason);
+
+    expect(onTransaction).not.toHaveBeenCalled();
+  });
+
+  it('does not return allowances that complete after cancellation', async () => {
+    const controller = new AbortController();
+    const reason = new Error('read cancelled');
+    const wallet: WalletSdk = {
+      ...fakeWallet(),
+      getAllowances: async (_owner, options) => {
+        expect(options?.signal).toBe(controller.signal);
+        controller.abort(reason);
+        return [{ spender: RECIPIENT, token: 'GNS', amount: '1' }];
+      },
+    };
+    const tools = createWalletTools({
+      sdk: wallet, account: ACCOUNT, contacts: [], signal: controller.signal, onTransaction: () => {},
+    });
+
+    await expect(run(tools[ToolName.GetApprovals]!, {})).rejects.toBe(reason);
+  });
+
+  it('lets an already invoked host callback observe cancellation without reporting a prepared result', async () => {
+    const controller = new AbortController();
+    const reason = new Error('host stopped');
+    const onTransaction = jest.fn(async (_prepared: PreparedTransaction, { signal }: WalletOperationOptions) => {
+      expect(signal).toBe(controller.signal);
+      expect(signal.aborted).toBe(false);
+      controller.abort(reason);
+      await Promise.resolve();
+      expect(signal.aborted).toBe(true);
+    });
+    const tools = createWalletTools({
+      sdk: fakeWallet(), account: ACCOUNT, contacts: [], signal: controller.signal, onTransaction,
+    });
+
+    await expect(run(tools[ToolName.Transfer], input)).rejects.toBe(reason);
+
+    expect(onTransaction).toHaveBeenCalledTimes(1);
   });
 });

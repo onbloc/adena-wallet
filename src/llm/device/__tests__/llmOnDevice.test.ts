@@ -92,6 +92,17 @@ describe('LLMOnDevice', () => {
     await expect(collect(llm.generate({ prompt: 'hi' }))).rejects.toThrow('Model is not loaded');
   });
 
+  it('closes the acquired loop when generation fails before the model is loaded', async () => {
+    const llm = new LLMOnDevice();
+    const close = jest.fn();
+
+    await expect(
+      collect(llm.generate({ prompt: 'hi' }, { loop: { options: {}, close } }))
+    ).rejects.toThrow('Model is not loaded');
+
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it('reports its load through status and subscribe', async () => {
     mocked.isModelDownloaded.mockResolvedValue(true);
     mocked.llama.languageModel.mockReturnValue(llamaModel(streaming()) as never);

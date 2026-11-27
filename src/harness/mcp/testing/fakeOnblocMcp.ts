@@ -1,11 +1,18 @@
 // An in-process Onbloc MCP server for tests: answers the streamable-HTTP calls the harness makes.
 
-export type FakeOnblocTool = { name: string; output: Record<string, unknown> };
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
-/** Every listed tool takes the account `address` and returns its fixed `output`. */
+export type FakeOnblocTool = {
+  name: string;
+  output: Record<string, unknown>;
+  inputSchema?: Tool['inputSchema'];
+  outputSchema?: Tool['outputSchema'];
+};
+
+/** Tools default to an account `address` input and return their fixed `output`. */
 export function fakeOnblocMcp(tools: readonly FakeOnblocTool[]) {
   const calls: { name: string; arguments: unknown }[] = [];
-  const inputSchema = {
+  const defaultInputSchema: Tool['inputSchema'] = {
     type: 'object',
     properties: { address: { type: 'string' } },
     required: ['address'],
@@ -27,10 +34,11 @@ export function fakeOnblocMcp(tools: readonly FakeOnblocTool[]) {
         break;
       case 'tools/list':
         result = {
-          tools: tools.map(({ name }) => ({
+          tools: tools.map(({ name, inputSchema = defaultInputSchema, outputSchema }) => ({
             name,
             description: name,
             inputSchema,
+            outputSchema,
             annotations: { readOnlyHint: true },
           })),
         };
