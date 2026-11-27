@@ -5,34 +5,28 @@
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": { "types": "./dist/types/index.d.ts", "default": "./dist/index.js" },
+      "require": { "types": "./dist/types/index.d.cts", "default": "./dist/index.cjs" }
     },
     "./llm": {
-      "types": "./dist/types/llm/core/index.d.ts",
-      "import": "./dist/llm.js",
-      "require": "./dist/llm.cjs"
+      "import": { "types": "./dist/types/llm/core/index.d.ts", "default": "./dist/llm.js" },
+      "require": { "types": "./dist/types/llm/core/index.d.cts", "default": "./dist/llm.cjs" }
     },
     "./llm/remote": {
-      "types": "./dist/types/llm/remote/index.d.ts",
-      "import": "./dist/llm/remote.js",
-      "require": "./dist/llm/remote.cjs"
+      "import": { "types": "./dist/types/llm/remote/index.d.ts", "default": "./dist/llm/remote.js" },
+      "require": { "types": "./dist/types/llm/remote/index.d.cts", "default": "./dist/llm/remote.cjs" }
     },
     "./llm/device": {
-      "types": "./dist/types/llm/device/index.d.ts",
-      "import": "./dist/llm/device.js",
-      "require": "./dist/llm/device.cjs"
+      "import": { "types": "./dist/types/llm/device/index.d.ts", "default": "./dist/llm/device.js" },
+      "require": { "types": "./dist/types/llm/device/index.d.cts", "default": "./dist/llm/device.cjs" }
     },
     "./harness": {
-      "types": "./dist/types/harness/core/index.d.ts",
-      "import": "./dist/harness.js",
-      "require": "./dist/harness.cjs"
+      "import": { "types": "./dist/types/harness/core/index.d.ts", "default": "./dist/harness.js" },
+      "require": { "types": "./dist/types/harness/core/index.d.cts", "default": "./dist/harness.cjs" }
     },
     "./harness/onbloc": {
-      "types": "./dist/types/harness/mcp/index.d.ts",
-      "import": "./dist/harness/onbloc.js",
-      "require": "./dist/harness/onbloc.cjs"
+      "import": { "types": "./dist/types/harness/mcp/index.d.ts", "default": "./dist/harness/onbloc.js" },
+      "require": { "types": "./dist/types/harness/mcp/index.d.cts", "default": "./dist/harness/onbloc.cjs" }
     },
     "./package.json": "./package.json"
   },
@@ -47,17 +41,16 @@
   },
   "files": ["dist"],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12"
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.6",
     "@ai-sdk/openai": "^4.0.123",
-    "@ai-sdk/openai-compatible": "^3.0.94",
-    "@modelcontextprotocol/sdk": "1.32.2",
-    "ai": "^7.0.179",
-    "zod": "^4.6.7"
+    "@modelcontextprotocol/sdk": "1.32.2"
   },
   "devDependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.94",
+    "ai": "^7.0.179",
     "@react-native-ai/llama": "^0.13.0",
     "@stardazed/streams-text-encoding": "^1.0.2",
     "@ungap/structured-clone": "^1.4.0",
@@ -76,9 +69,12 @@
     "react": "19.3.0",
     "react-native": "0.88.1",
     "react-native-blob-util": "0.24.13",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
+    "ai": "^7.0.179",
+    "zod": "^4.6.7",
     "@react-native-ai/llama": "^0.13.0",
     "llama.rn": "^0.13.0-rc.12",
     "react": ">=18",

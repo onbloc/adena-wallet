@@ -41,32 +41,36 @@ execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', 'ts
 });
 
 // Explicit declaration specifiers also resolve under NodeNext, not just bundlers.
+// dist is `type: module`, so `.d.ts` is ESM-typed; CommonJS consumers get a `.d.cts` twin whose
+// specifiers end in `.cjs`.
 const typesRoot = path.join(outdir, 'types');
 const declarations = (await readdir(typesRoot, { recursive: true })).filter(file => file.endsWith('.d.ts'));
 const declarationPaths = new Set(declarations.map(file => path.join(typesRoot, file)));
 for (const relative of declarations) {
   const file = path.join(typesRoot, relative);
   const source = ts.createSourceFile(file, await readFile(file, 'utf8'), ts.ScriptTarget.Latest, true);
-  const result = ts.transform(source, [context => {
-    function visit(node) {
-      const parent = node.parent;
-      const moduleSpecifier = parent && (
-        ((ts.isImportDeclaration(parent) || ts.isExportDeclaration(parent)) && parent.moduleSpecifier === node) ||
-        (ts.isLiteralTypeNode(parent) && ts.isImportTypeNode(parent.parent) && parent.parent.argument === parent)
-      );
-      if (moduleSpecifier && ts.isStringLiteral(node) && node.text.startsWith('.')) {
-        const resolved = path.resolve(path.dirname(file), node.text);
-        const fileImport = declarationPaths.has(`${resolved}.d.ts`);
-        if (!fileImport && !declarationPaths.has(path.join(resolved, 'index.d.ts'))) {
-          throw new Error(`Unresolved declaration import: ${node.text} in ${file}`);
+  for (const [extension, target] of [['js', file], ['cjs', file.replace(/\.d\.ts$/, '.d.cts')]]) {
+    const result = ts.transform(source, [context => {
+      function visit(node) {
+        const parent = node.parent;
+        const moduleSpecifier = parent && (
+          ((ts.isImportDeclaration(parent) || ts.isExportDeclaration(parent)) && parent.moduleSpecifier === node) ||
+          (ts.isLiteralTypeNode(parent) && ts.isImportTypeNode(parent.parent) && parent.parent.argument === parent)
+        );
+        if (moduleSpecifier && ts.isStringLiteral(node) && node.text.startsWith('.')) {
+          const resolved = path.resolve(path.dirname(file), node.text);
+          const fileImport = declarationPaths.has(`${resolved}.d.ts`);
+          if (!fileImport && !declarationPaths.has(path.join(resolved, 'index.d.ts'))) {
+            throw new Error(`Unresolved declaration import: ${node.text} in ${file}`);
+          }
+          const specifier = fileImport ? `${node.text}.${extension}` : `${node.text}/index.${extension}`;
+          return ts.factory.createStringLiteral(specifier);
         }
-        const specifier = fileImport ? `${node.text}.js` : `${node.text}/index.js`;
-        return ts.factory.createStringLiteral(specifier);
+        return ts.visitEachChild(node, visit, context);
       }
-      return ts.visitEachChild(node, visit, context);
-    }
-    return node => ts.visitNode(node, visit);
-  }]);
-  await writeFile(file, ts.createPrinter().printFile(result.transformed[0]));
-  result.dispose();
+      return node => ts.visitNode(node, visit);
+    }]);
+    await writeFile(target, ts.createPrinter().printFile(result.transformed[0]));
+    result.dispose();
+  }
 }

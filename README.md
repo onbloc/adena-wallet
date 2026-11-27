@@ -8,7 +8,7 @@ The mock app and CLI are testbeds; neither is part of the library package.
 
 ## Stack
 
-Library: TypeScript, AI SDK v7, Zod v4, MCP. Browser builds target ES2022; Node requires 22+.
+Library: TypeScript, AI SDK v7, Zod v4, MCP. Browser builds target ES2022; Node requires 22.12+.
 The optional native playground uses Expo SDK 58 / React Native 0.88 and llama.rn.
 
 ## Use as a library
@@ -24,8 +24,8 @@ module resolution. The repository builds with TypeScript 6.0.
 npm install
 npm run build
 npm pack --pack-destination /tmp
-# In the consuming project:
-npm install /tmp/adena-ai-llm-poc-1.0.0.tgz
+# In the consuming project (`ai` and `zod` are peers: their types appear in the public API, so the app supplies one shared copy):
+npm install /tmp/adena-ai-llm-poc-1.0.0.tgz ai zod
 ```
 
 The package remains private; packing does not publish it. Only `dist`, the README, and package
