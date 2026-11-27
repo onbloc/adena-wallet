@@ -3,19 +3,21 @@ import Toggle from '@components/atoms/toggle';
 import { BottomFixedButton } from '@components/molecules';
 import useAppNavigate from '@hooks/use-app-navigate';
 import {
+  AGENT_HOST_BUSY_EVENT,
   AGENT_HOST_ENABLED_STORAGE_KEY,
   AGENT_HOST_RELOAD_REQUIRED,
   AGENT_HOST_STATUS_STORAGE_KEY,
   AgentHostStatus,
 } from '@inject/agent-host/agent-host-protocol';
 import {
+  AgentPolicy,
+  DEFAULT_AGENT_POLICY,
   dropConnectionGrants,
-  getMaxSpendLimitUgnot,
-  isMasterRequestsAllowed,
   isValidMaxSpendLimit,
-  setMasterRequestsAllowed as saveMasterRequestsAllowed,
-  setMaxSpendLimitUgnot,
+  readAgentPolicy,
+  writeAgentPolicy,
 } from '@inject/agent-host/agent-host-settings';
+import { AgentPolicyKey, resolveAgentPolicyKey } from '@inject/agent-host/agent-policy-key';
 import mixins from '@styles/mixins';
 import { fonts } from '@styles/theme';
 import BigNumber from 'bignumber.js';
@@ -59,11 +61,19 @@ const readStatus = async (): Promise<AgentHostStatus | null> => {
   return (stored?.[AGENT_HOST_STATUS_STORAGE_KEY] as AgentHostStatus | undefined) ?? null;
 };
 
+export const hostBusyText = (status: AgentHostStatus): string =>
+  `Another browser${status.browser ? ` (${status.browser})` : ''} is already serving AI agents. `
+  + 'Close it or turn off AI Agent Connection there, then reload Adena.';
+
+const LOCKED_POLICY_MESSAGE = 'Unlock Adena to change the agent settings.';
+
 export const AgentConnection = (): JSX.Element => {
   const theme = useTheme();
   const { goBack } = useAppNavigate();
   const [enabled, setEnabled] = useState(false);
-  const [masterRequestsAllowed, setMasterRequestsAllowed] = useState(false);
+  // The policy is encrypted with the wallet password; null while unavailable.
+  const [policyKey, setPolicyKey] = useState<AgentPolicyKey | null>(null);
+  const [policy, setPolicy] = useState<AgentPolicy>({ ...DEFAULT_AGENT_POLICY });
   const [status, setStatus] = useState<AgentHostStatus | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedMaxSpendGnot, setSavedMaxSpendGnot] = useState('');
@@ -72,9 +82,11 @@ export const AgentConnection = (): JSX.Element => {
 
   useEffect(() => {
     readEnabled().then(setEnabled);
-    isMasterRequestsAllowed().then(setMasterRequestsAllowed);
-    getMaxSpendLimitUgnot().then((ugnot) => {
-      const gnot = ugnotToGnot(ugnot);
+    resolveAgentPolicyKey().then(async (key) => {
+      setPolicyKey(key);
+      const current = await readAgentPolicy(key);
+      setPolicy(current);
+      const gnot = ugnotToGnot(current.maxSpendLimitUgnot);
       setSavedMaxSpendGnot(gnot);
       setMaxSpendGnot(gnot);
     });
@@ -113,10 +125,32 @@ export const AgentConnection = (): JSX.Element => {
     setEnabled(activated);
   }, []);
 
-  const onToggleMasterRequests = useCallback(async (activated: boolean) => {
-    await saveMasterRequestsAllowed(activated);
-    setMasterRequestsAllowed(activated);
-  }, []);
+  const updatePolicy = useCallback(
+    async (update: Partial<AgentPolicy>): Promise<AgentPolicy | null> => {
+      if (!policyKey) {
+        setErrorMessage(LOCKED_POLICY_MESSAGE);
+        return null;
+      }
+      const next = await writeAgentPolicy(policyKey, update);
+      setPolicy(next);
+      return next;
+    },
+    [policyKey],
+  );
+
+  const onToggleMasterRequests = useCallback(
+    async (activated: boolean) => {
+      await updatePolicy({ masterRequestsAllowed: activated });
+    },
+    [updatePolicy],
+  );
+
+  const onToggleVmRun = useCallback(
+    async (activated: boolean) => {
+      await updatePolicy({ vmRunAllowed: activated });
+    },
+    [updatePolicy],
+  );
 
   const onSaveMaxSpend = useCallback(async () => {
     const ugnot = gnotToUgnot(maxSpendGnot);
@@ -124,24 +158,30 @@ export const AgentConnection = (): JSX.Element => {
       setMaxSpendError('Enter a positive GNOT amount with up to 6 decimal places.');
       return;
     }
-    await setMaxSpendLimitUgnot(ugnot);
-    const gnot = ugnotToGnot(ugnot);
+    const next = await updatePolicy({ maxSpendLimitUgnot: ugnot });
+    if (!next) {
+      return;
+    }
+    const gnot = ugnotToGnot(next.maxSpendLimitUgnot);
     setSavedMaxSpendGnot(gnot);
     setMaxSpendGnot(gnot);
     setMaxSpendError(null);
-  }, [maxSpendGnot]);
+  }, [maxSpendGnot, updatePolicy]);
 
-  const reloadRequired = enabled && status?.error === AGENT_HOST_RELOAD_REQUIRED;
+  const hostBusy = enabled && status?.error === AGENT_HOST_BUSY_EVENT;
+  const reloadRequired = enabled && (status?.error === AGENT_HOST_RELOAD_REQUIRED || hostBusy);
 
   const statusText = !enabled
     ? 'Disabled'
     : status?.connected
       ? 'Connected'
-      : reloadRequired
-        ? 'Reload Adena to finish turning on the agent connection.'
-        : status?.error
-          ? `Not connected: ${status.error}`
-          : 'Not connected';
+      : hostBusy && status
+        ? hostBusyText(status)
+        : reloadRequired
+          ? 'Reload Adena to finish turning on the agent connection.'
+          : status?.error
+            ? `Not connected: ${status.error}`
+            : 'Not connected';
 
   return (
     <Wrapper>
@@ -166,12 +206,21 @@ export const AgentConnection = (): JSX.Element => {
         <>
           <ToggleRow>
             <Text type='body2Bold'>Allow master account requests</Text>
-            <Toggle activated={masterRequestsAllowed} onToggle={onToggleMasterRequests} />
+            <Toggle activated={policy.masterRequestsAllowed} onToggle={onToggleMasterRequests} />
           </ToggleRow>
           <Text type='body3Reg' color={theme.neutral.a}>
             When on, agents may ask you to approve and sign transactions with your account directly,
             including package deployments. When off, agents can only act through session accounts
             you approve.
+          </Text>
+          <ToggleRow>
+            <Text type='body2Bold'>Allow script (vm/run) sessions</Text>
+            <Toggle activated={policy.vmRunAllowed} onToggle={onToggleVmRun} />
+          </ToggleRow>
+          <Text type='body3Reg' color={theme.neutral.a}>
+            When on, agents may ask for sessions that run their own code (vm/run). That code acts as
+            you and can call any realm, including moving tokens and NFTs the spend limit does not
+            cover. When off, sessions can only call the realms you approve one by one.
           </Text>
           <SettingTitle type='body2Bold'>Maximum session spend limit (GNOT)</SettingTitle>
           <InputRow>
@@ -198,9 +247,9 @@ export const AgentConnection = (): JSX.Element => {
             </Text>
           )}
           <Text type='body3Reg' color={theme.neutral.a}>
-            Agents cannot ask for a session that spends more GNOT than this, gas fees included. It
-            does not limit tokens or NFTs held by realms: a session allowed to call a realm can move
-            them, so approve realm paths with care.
+            The most GNOT one agent session can spend over its whole lifetime, gas fees included,
+            even if its spend limit resets periodically. It does not limit tokens or NFTs held by
+            realms: a session allowed to call a realm can move them, so approve realm paths with care.
           </Text>
         </>
       )}

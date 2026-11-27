@@ -10,20 +10,31 @@ export const AGENT_HOST_NAME = 'xyz.onbloc.adena_agent';
 export const AGENT_HOST_ENABLED_STORAGE_KEY = 'AGENT_HOST_ENABLED';
 export const AGENT_HOST_STATUS_STORAGE_KEY = 'AGENT_HOST_STATUS';
 export const AGENT_HOST_RELOAD_REQUIRED = 'reload_required';
-// Off by default: agents sign with session accounts unless the user allows
-// them to ask for master-account signatures directly.
-export const AGENT_MASTER_REQUESTS_STORAGE_KEY = 'AGENT_HOST_ALLOW_MASTER_REQUESTS';
-// The largest ugnot spend limit the user lets an agent session ask for.
-export const AGENT_MAX_SPEND_LIMIT_STORAGE_KEY = 'AGENT_HOST_MAX_SPEND_LIMIT';
+// Sent by a host that found another browser already serving agents.
+export const AGENT_HOST_BUSY_EVENT = 'host_busy';
+// The user's agent policy (master requests, spend cap, vm/run sessions),
+// encrypted with the wallet password.
+export const AGENT_POLICY_STORAGE_KEY = 'AGENT_HOST_POLICY';
+// The largest total ugnot an agent session may spend over its lifetime.
 export const AGENT_DEFAULT_MAX_SPEND_LIMIT_UGNOT = '10000000';
-// Hashes of the connection tokens issued to approved agent processes.
+// Connection grants: an unencrypted index, used only to tell a locked wallet
+// apart, and the authoritative copy encrypted with the wallet password.
 export const AGENT_CONNECTION_TOKENS_STORAGE_KEY = 'AGENT_HOST_CONNECTION_TOKENS';
+export const AGENT_CONNECTION_GRANTS_STORAGE_KEY = 'AGENT_HOST_CONNECTION_GRANTS';
+// Plaintext settings of earlier builds; deleted, never read.
+export const AGENT_LEGACY_STORAGE_KEYS = [
+  'AGENT_HOST_ALLOW_MASTER_REQUESTS',
+  'AGENT_HOST_MAX_SPEND_LIMIT',
+];
 
 // Agent sessions are bounded tighter than the chain allows: revoking needs the
 // user, so a short expiry is what limits an abandoned session.
 export const AGENT_SESSION_MAX_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 export const AGENT_SESSION_SPEND_DENOM = 'ugnot';
 
+// Covers a creation block timestamped before Adena's clock.
+const SPEND_CLOCK_SKEW_SECONDS = 300;
+const MAX_ALLOW_PATHS = 16;
 const MAX_AGENT_NAME_LENGTH = 32;
 const SECP256K1_COMPRESSED_PUBKEY_LENGTH = 33;
 const MAX_TRANSACTION_MESSAGES = 32;
@@ -100,7 +111,15 @@ export interface AgentHostResponse {
 export interface AgentHostStatus {
   connected: boolean;
   error?: string;
+  // The browser already serving agents, for host_busy.
+  browser?: string;
   updatedAt: number;
+}
+
+// The parts of the user's agent policy that bound a session request.
+export interface AgentSessionPolicy {
+  maxSpendUgnot: bigint;
+  vmRunAllowed: boolean;
 }
 
 // The account and chain the agent expects a session admin request to act on.
@@ -262,9 +281,7 @@ export const normalizeAgentName = (value: unknown): string => {
   return normalized || 'agent';
 };
 
-// Agent sessions may only spend ugnot, so the user's cap bounds every coin
-// the session can move.
-const parseSpendLimit = (value: unknown, maxUgnot: bigint): string => {
+const parseSpendAmount = (value: unknown): bigint => {
   const match = typeof value === 'string' ? UGNOT_AMOUNT_PATTERN.exec(value.trim()) : null;
   if (!match) {
     throw new AgentHostRequestError(
@@ -276,42 +293,137 @@ const parseSpendLimit = (value: unknown, maxUgnot: bigint): string => {
   if (amount <= BigInt(0)) {
     throw new AgentHostRequestError('policy_violation', 'spend_limit must be positive');
   }
-  if (amount > maxUgnot) {
+  return amount;
+};
+
+// The chain resets the spend limit every spend_period, so the user's cap
+// bounds the limit times the periods the session can live through.
+export const spendPeriodsOf = (spendPeriod: number, lifetimeSeconds: number): bigint =>
+  spendPeriod === 0
+    ? BigInt(1)
+    : BigInt(Math.floor((lifetimeSeconds + SPEND_CLOCK_SKEW_SECONDS) / spendPeriod) + 1);
+
+const requireTotalSpendWithin = (
+  amount: bigint,
+  spendPeriod: number,
+  lifetimeSeconds: number,
+  maxUgnot: bigint,
+): void => {
+  const periods = spendPeriodsOf(spendPeriod, lifetimeSeconds);
+  const total = amount * periods;
+  if (total <= maxUgnot) {
+    return;
+  }
+  const max = `${maxUgnot}${AGENT_SESSION_SPEND_DENOM}`;
+  if (spendPeriod === 0) {
     throw new AgentHostRequestError(
       'policy_violation',
-      `spend_limit exceeds the maximum the user allows for agent sessions (${maxUgnot}${AGENT_SESSION_SPEND_DENOM})`,
+      `spend_limit exceeds the maximum the user allows for agent sessions (${max})`,
     );
   }
-  return `${amount}${AGENT_SESSION_SPEND_DENOM}`;
+  throw new AgentHostRequestError(
+    'policy_violation',
+    `spend_limit ${amount}${AGENT_SESSION_SPEND_DENOM} resets every ${spendPeriod}s, so the session `
+    + `could spend it ${periods} times (${total}${AGENT_SESSION_SPEND_DENOM} in total) before it `
+    + `expires; the user allows at most ${max} per session. Use spend_period 0 (a lifetime cap), `
+    + 'a lower spend_limit or a shorter expiry',
+  );
+};
+
+const REALM_SEGMENT = 'r';
+const MIN_REALM_PATH_SEGMENTS = 4;
+
+// A path the chain treats as one realm and its sub-paths, such as
+// gno.land/r/demo/counter. vm/exec entries match by prefix on chain, so
+// shorter paths would cover a namespace or every realm.
+const isRealmPath = (path: string): boolean => {
+  if (/\s|\*/.test(path) || path.endsWith('/')) {
+    return false;
+  }
+  const segments = path.split('/');
+  return (
+    segments.length >= MIN_REALM_PATH_SEGMENTS
+    && segments[1] === REALM_SEGMENT
+    && segments.every(segment => segment.length > 0)
+  );
+};
+
+const policyViolation = (message: string): AgentHostRequestError =>
+  new AgentHostRequestError('policy_violation', message);
+
+const parseAllowPathEntry = (entry: string, vmRunAllowed: boolean): string => {
+  if (entry === 'bank/send') {
+    return entry;
+  }
+  if (entry === 'vm/run') {
+    if (!vmRunAllowed) {
+      throw policyViolation(
+        'vm/run sessions can run any code as the user, including calls to every realm, and are '
+        + 'turned off in Adena (Settings > Security & Privacy > AI Agent Connection > Allow script '
+        + '(vm/run) sessions). Use vm/exec:<realm path> entries, or ask the user to turn it on',
+      );
+    }
+    return entry;
+  }
+  if (entry === '*') {
+    throw policyViolation(
+      'wildcard allow_paths are not allowed for agent sessions; list each realm as '
+      + 'vm/exec:<realm path>',
+    );
+  }
+  if (entry === 'vm/exec') {
+    throw policyViolation(
+      'vm/exec without a realm path allows every realm; use vm/exec:<realm path>, such as '
+      + 'vm/exec:gno.land/r/<namespace>/<name>',
+    );
+  }
+  if (entry.startsWith('vm/exec:')) {
+    if (!isRealmPath(entry.slice('vm/exec:'.length))) {
+      throw policyViolation(
+        `allow_paths entry "${entry}" must name one realm, such as `
+        + 'vm/exec:gno.land/r/<namespace>/<name>; shorter paths cover a whole namespace or '
+        + 'every realm',
+      );
+    }
+    return entry;
+  }
+  if (entry === 'bank/multisend') {
+    throw policyViolation('bank/multisend is not allowed for agent sessions; use bank/send');
+  }
+  throw policyViolation(
+    `unsupported allow_paths entry "${entry}"; use vm/exec:<realm path>, bank/send or vm/run`,
+  );
+};
+
+// Agent sessions get an allow-list narrower than the chain's: one realm per
+// vm/exec entry, bank/send, and vm/run only when the user allows scripts.
+const parseAllowPaths = (value: unknown, vmRunAllowed: boolean): string[] => {
+  if (
+    !Array.isArray(value)
+    || value.length === 0
+    || !value.every(entry => typeof entry === 'string' && entry.length > 0)
+  ) {
+    throw invalidParams('allow_paths must be a non-empty string array');
+  }
+  const unique = [...new Set(value as string[])];
+  if (unique.length > MAX_ALLOW_PATHS) {
+    throw policyViolation(`at most ${MAX_ALLOW_PATHS} allow_paths are allowed`);
+  }
+  return unique.map(entry => parseAllowPathEntry(entry, vmRunAllowed));
 };
 
 export const parseCreateSessionParams = (
   params: Record<string, unknown> | undefined,
   nowSeconds: number,
-  maxSpendUgnot: bigint,
+  policy: AgentSessionPolicy,
 ): CreateAgentSessionParams => {
   if (!params) {
     throw invalidParams('params are required');
   }
 
   const sessionPublicKey = parseSessionPublicKey(params.session_public_key);
-
-  const { allow_paths: allowPaths } = params;
-  if (
-    !Array.isArray(allowPaths)
-    || allowPaths.length === 0
-    || !allowPaths.every(entry => typeof entry === 'string' && entry.length > 0)
-  ) {
-    throw invalidParams('allow_paths must be a non-empty string array');
-  }
-  if (allowPaths.includes('*')) {
-    throw new AgentHostRequestError(
-      'policy_violation',
-      'wildcard allow_paths are not allowed for agent sessions',
-    );
-  }
-
-  const spendLimit = parseSpendLimit(params.spend_limit, maxSpendUgnot);
+  const allowPaths = parseAllowPaths(params.allow_paths, policy.vmRunAllowed);
+  const amount = parseSpendAmount(params.spend_limit);
 
   const spendPeriod
     = params.spend_period === undefined
@@ -329,10 +441,12 @@ export const parseCreateSessionParams = (
     );
   }
 
+  requireTotalSpendWithin(amount, spendPeriod, expiresAt - nowSeconds, policy.maxSpendUgnot);
+
   return {
     sessionPublicKey,
-    allowPaths: allowPaths as string[],
-    spendLimit,
+    allowPaths,
+    spendLimit: `${amount}${AGENT_SESSION_SPEND_DENOM}`,
     spendPeriod,
     expiresAt,
     agentName: normalizeAgentName(params.agent_name),

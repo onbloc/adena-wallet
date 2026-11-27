@@ -37,11 +37,13 @@ import {
 } from './agent-host-protocol';
 import {
   addConnectionToken,
+  AgentPolicy,
+  AgentPolicyKey,
   AgentProcess,
   createConnectionToken,
-  getMaxSpendLimitUgnot,
   hasConnectionToken,
-  isMasterRequestsAllowed,
+  hasUnverifiedConnectionToken,
+  readAgentPolicy,
 } from './agent-host-settings';
 import { existsAdenaPopups, requirePopupFits } from './agent-popup';
 
@@ -90,18 +92,34 @@ const requireWallet = async (core: InjectCore): Promise<string> => {
 const agentProcessOf = (peer: AgentPeer | undefined): AgentProcess | undefined =>
   peer?.pid && peer.start ? { pid: peer.pid, start: peer.start } : undefined;
 
-const isAgentConnected = async (
+// connected: the encrypted grant matches (unlocked wallet). locked: only the
+// unencrypted index matches, which cannot be verified until the user unlocks.
+type ConnectionState = 'connected' | 'locked' | 'not_connected';
+
+const connectionStateOf = async (
   core: InjectCore,
   accountId: string,
   agentName: string,
   request: AgentHostRequest,
-): Promise<boolean> => {
+): Promise<ConnectionState> => {
   const siteName = agentSiteName(agentName);
   if (!(await core.establishService.isEstablishedBy(accountId, siteName))) {
-    return false;
+    return 'not_connected';
   }
-  return hasConnectionToken(accountId, siteName, request.token, agentProcessOf(request.peer));
+  const agentProcess = agentProcessOf(request.peer);
+  const key = await core.getAgentPolicyKey();
+  if (key) {
+    return (await hasConnectionToken(accountId, siteName, request.token, agentProcess, key))
+      ? 'connected'
+      : 'not_connected';
+  }
+  return (await hasUnverifiedConnectionToken(accountId, siteName, request.token, agentProcess))
+    ? 'locked'
+    : 'not_connected';
 };
+
+const walletLockedError = (): AgentHostRequestError =>
+  new AgentHostRequestError('wallet_locked', 'unlock Adena and retry');
 
 // Returns the account the connection was checked for.
 const requireConnected = async (
@@ -110,7 +128,11 @@ const requireConnected = async (
   request: AgentHostRequest,
 ): Promise<string> => {
   const accountId = await requireWallet(core);
-  if (!(await isAgentConnected(core, accountId, agentName, request))) {
+  const state = await connectionStateOf(core, accountId, agentName, request);
+  if (state === 'locked') {
+    throw walletLockedError();
+  }
+  if (state !== 'connected') {
     throw new AgentHostRequestError(
       'not_connected',
       'this agent process is not connected to Adena; call connect_wallet first',
@@ -119,9 +141,22 @@ const requireConnected = async (
   return accountId;
 };
 
+// The policy needs the password, so it is read after the wallet context
+// resolved, i.e. while the wallet is unlocked.
+const requirePolicyKey = async (core: InjectCore): Promise<AgentPolicyKey> => {
+  const key = await core.getAgentPolicyKey();
+  if (!key) {
+    throw walletLockedError();
+  }
+  return key;
+};
+
+const readPolicy = async (core: InjectCore): Promise<AgentPolicy> =>
+  readAgentPolicy(await requirePolicyKey(core));
+
 // Refuses before any popup opens, so a disabled setting never prompts the user.
-const requireMasterRequestsAllowed = async (): Promise<void> => {
-  if (!(await isMasterRequestsAllowed())) {
+const requireMasterRequestsAllowed = async (core: InjectCore): Promise<void> => {
+  if (!(await readPolicy(core)).masterRequestsAllowed) {
     throw new AgentHostRequestError(
       'master_requests_disabled',
       'direct master account requests are turned off in Adena '
@@ -141,7 +176,7 @@ const resolveWalletContext = async (
   const inMemoryKey = await core.getInMemoryKey();
   const account = await core.getCurrentAccount(inMemoryKey).catch(() => undefined);
   if (!account) {
-    throw new AgentHostRequestError('wallet_locked', 'unlock Adena and retry');
+    throw walletLockedError();
   }
   if (expectedAccountId !== undefined && account.id !== expectedAccountId) {
     throw new AgentHostRequestError(
@@ -390,21 +425,26 @@ const handleGetStatus = async (
     return { version, has_wallet: false, connected: false };
   }
 
-  const connected = await isAgentConnected(core, accountId, agentNameOf(request), request);
-  if (!connected) {
+  const state = await connectionStateOf(core, accountId, agentNameOf(request), request);
+  if (state === 'not_connected') {
     return { version, has_wallet: true, connected: false };
   }
+  // An unverified grant learns only that it has to wait for an unlock.
+  if (state === 'locked') {
+    return { version, has_wallet: true, connected: true, locked: true };
+  }
 
-  const locked = await core.isLockedBy(await core.getInMemoryKey());
+  const policy = await readPolicy(core);
   const network = await core.getCurrentNetwork();
 
   return {
     version,
     has_wallet: true,
-    locked,
-    connected,
-    master_requests_allowed: await isMasterRequestsAllowed(),
-    max_spend_limit: `${await getMaxSpendLimitUgnot()}${AGENT_SESSION_SPEND_DENOM}`,
+    locked: false,
+    connected: true,
+    master_requests_allowed: policy.masterRequestsAllowed,
+    max_spend_limit: `${policy.maxSpendLimitUgnot}${AGENT_SESSION_SPEND_DENOM}`,
+    vm_run_allowed: policy.vmRunAllowed,
     chain_id: network?.chainId ?? null,
     rpc_url: network?.rpcUrl ?? null,
   };
@@ -443,8 +483,14 @@ const handleConnect = async (
 
   const grant = await connectQueue.run(async () => {
     const accountId = await requireWallet(core);
-    if (request.token && (await isAgentConnected(core, accountId, agentName, request))) {
-      return { token: request.token, accountId };
+    if (request.token) {
+      const state = await connectionStateOf(core, accountId, agentName, request);
+      if (state === 'connected') {
+        return { token: request.token, accountId };
+      }
+      if (state === 'locked') {
+        throw walletLockedError();
+      }
     }
     throwIfCancelled(signal);
 
@@ -481,6 +527,7 @@ const handleConnect = async (
       issued,
       agentProcess,
       !establishedBefore || approvedAccountId !== accountId,
+      await requirePolicyKey(core),
     );
     return { token: issued, accountId: approvedAccountId };
   }, signal);
@@ -518,13 +565,12 @@ const handleCreateSession = async (
   request: AgentHostRequest,
   signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
-  const maxSpendUgnot = BigInt(await getMaxSpendLimitUgnot());
-  const params = parseCreateSessionParams(
-    request.params,
-    Math.floor(Date.now() / 1000),
-    maxSpendUgnot,
-  );
   const context = await resolveWalletContext(core, request.authorizedAccountId);
+  const policy = await readPolicy(core);
+  const params = parseCreateSessionParams(request.params, Math.floor(Date.now() / 1000), {
+    maxSpendUgnot: BigInt(policy.maxSpendLimitUgnot),
+    vmRunAllowed: policy.vmRunAllowed,
+  });
   requireSessionSupport(context);
   requireExpectedContext(context, params);
 
@@ -584,8 +630,8 @@ const handleSendTransaction = async (
   request: AgentHostRequest,
   signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
-  await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core, request.authorizedAccountId);
+  await requireMasterRequestsAllowed(core);
   const tx = parseTransactionParams(request.params, context.address);
   return broadcastViaPopup(signal, context, tx, agentNameOf(request));
 };
@@ -595,8 +641,8 @@ const handleSignTransaction = async (
   request: AgentHostRequest,
   signal: AbortSignal,
 ): Promise<Record<string, unknown>> => {
-  await requireMasterRequestsAllowed();
   const context = await resolveWalletContext(core, request.authorizedAccountId);
+  await requireMasterRequestsAllowed(core);
   const tx = parseTransactionParams(request.params, context.address);
 
   const rejectType = WalletResponseRejectType.SIGN_REJECTED;

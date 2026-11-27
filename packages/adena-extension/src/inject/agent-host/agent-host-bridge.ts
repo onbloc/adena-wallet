@@ -2,6 +2,7 @@ import { MemoryProvider } from '@common/provider/memory/memory-provider';
 
 import { cancelAllAgentApprovals, handleAgentHostMessage } from './agent-host-handler';
 import {
+  AGENT_HOST_BUSY_EVENT,
   AGENT_HOST_ENABLED_STORAGE_KEY,
   AGENT_HOST_NAME,
   AGENT_HOST_RELOAD_REQUIRED,
@@ -15,6 +16,18 @@ const NATIVE_MESSAGING_PERMISSION: chrome.permissions.Permissions = {
 };
 
 let port: chrome.runtime.Port | null = null;
+
+// A host that found another browser serving agents says so once, then exits.
+export const hostBusyStatusOf = (
+  message: unknown,
+): Omit<AgentHostStatus, 'updatedAt'> | null => {
+  const event = message as { event?: unknown; browser?: unknown } | null;
+  if (typeof event !== 'object' || event === null || event.event !== AGENT_HOST_BUSY_EVENT) {
+    return null;
+  }
+  const browser = typeof event.browser === 'string' ? event.browser.slice(0, 64) : '';
+  return { connected: false, error: AGENT_HOST_BUSY_EVENT, ...(browser ? { browser } : {}) };
+};
 
 const writeStatus = async (status: Omit<AgentHostStatus, 'updatedAt'>): Promise<void> => {
   await chrome.storage.session
@@ -68,8 +81,15 @@ const connect = (inMemoryProvider: MemoryProvider): void => {
     return;
   }
   port = connected;
+  let busy: Omit<AgentHostStatus, 'updatedAt'> | null = null;
 
   connected.onMessage.addListener((message: unknown) => {
+    const busyStatus = hostBusyStatusOf(message);
+    if (busyStatus) {
+      busy = busyStatus;
+      writeStatus(busyStatus);
+      return;
+    }
     handleAgentHostMessage(inMemoryProvider, message).then((response) => {
       if (response && port === connected) {
         connected.postMessage(response);
@@ -85,7 +105,8 @@ const connect = (inMemoryProvider: MemoryProvider): void => {
       port = null;
       cancelAllAgentApprovals();
     }
-    writeStatus({ connected: false, error: reason });
+    // The exit that follows host_busy must not hide why the host left.
+    writeStatus(busy ?? { connected: false, error: reason });
   });
 
   writeStatus({ connected: true });

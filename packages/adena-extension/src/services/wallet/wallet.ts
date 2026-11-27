@@ -1,5 +1,10 @@
 import { QUESTIONNAIRE_EXPIRATION_MIN } from '@common/constants/storage.constant';
 import { WalletError } from '@common/errors/wallet/wallet-error';
+import {
+  AgentPolicyKey,
+  clearAgentStorage,
+  reencryptAgentStorage,
+} from '@inject/agent-host/agent-host-settings';
 import { CommandMessage } from '@inject/message/command-message';
 import { WalletRepository } from '@repositories/wallet';
 import {
@@ -330,14 +335,36 @@ export class WalletService {
 
   public changePassword = async (password: string): Promise<boolean> => {
     try {
+      const previous = await this.currentAgentPolicyKey();
       const wallet = await this.loadWallet();
       await this.saveWallet(wallet, password);
+      // The agent policy and grants are encrypted with the password too.
+      const salt = await this.walletRepository.getKdfSalt();
+      if (salt) {
+        await reencryptAgentStorage(previous, { password, salt });
+      }
+      else {
+        await clearAgentStorage();
+      }
     }
     catch (e) {
       console.error(e);
       return false;
     }
     return true;
+  };
+
+  private currentAgentPolicyKey = async (): Promise<AgentPolicyKey | null> => {
+    try {
+      const [password, salt] = await Promise.all([
+        this.walletRepository.getWalletPassword(),
+        this.walletRepository.getKdfSalt(),
+      ]);
+      return password && salt ? { password, salt } : null;
+    }
+    catch {
+      return null;
+    }
   };
 
   public isSkipQuestionnaire = async (): Promise<boolean> => {
@@ -390,6 +417,7 @@ export class WalletService {
     await this.walletRepository.deleteSerializedWallet();
     await this.walletRepository.deleteWalletPassword();
     await this.walletRepository.deleteKdfSalt();
+    await clearAgentStorage();
     return true;
   };
 }

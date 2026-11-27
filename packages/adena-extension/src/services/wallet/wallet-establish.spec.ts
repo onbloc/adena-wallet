@@ -1,12 +1,28 @@
+/**
+ * @vitest-environment node
+ */
 import {
   addConnectionToken,
+  AgentPolicyKey,
   createConnectionToken,
   hasConnectionToken,
 } from '@inject/agent-host/agent-host-settings';
+import { resolveAgentPolicyKey } from '@inject/agent-host/agent-policy-key';
 import { EstablishSite, WalletEstablishRepository } from '@repositories/wallet';
 import { ChainRegistry } from 'adena-module';
 
 import { WalletEstablishService } from './wallet-establish';
+
+const KEY: AgentPolicyKey = { password: 'pw', salt: new Uint8Array(16).fill(2) };
+
+vi.mock('adena-module', async importOriginal =>
+  (await import('@inject/agent-host/agent-host-test-aead')).withFastAead(await importOriginal()),
+);
+
+// The unlocked popup resolves the wallet password; tests choose per case.
+vi.mock('@inject/agent-host/agent-policy-key', () => ({
+  resolveAgentPolicyKey: vi.fn(async () => null),
+}));
 
 const ACCOUNT = 'acc-1';
 const HOSTNAME = 'dapp.example';
@@ -185,8 +201,8 @@ describe('WalletEstablishService agent connections', () => {
           set: vi.fn(async (items: Record<string, unknown>) => {
             Object.assign(store, items);
           }),
-          remove: vi.fn(async (key: string) => {
-            delete store[key];
+          remove: vi.fn(async (keys: string | string[]) => {
+            (Array.isArray(keys) ? keys : [keys]).forEach(key => delete store[key]);
           }),
         },
       },
@@ -199,6 +215,7 @@ describe('WalletEstablishService agent connections', () => {
 
   it('drops the grants of a disconnected agent, and only those', async () => {
     installStorage();
+    vi.mocked(resolveAgentPolicyKey).mockResolvedValueOnce(KEY);
     const service = new WalletEstablishService(
       makeRepo({
         [ACCOUNT]: [
@@ -216,15 +233,31 @@ describe('WalletEstablishService agent connections', () => {
     );
     const kept = createConnectionToken();
     const dropped = createConnectionToken();
-    await addConnectionToken(ACCOUNT, AGENT_SITE, dropped, PROCESS, false);
-    await addConnectionToken(ACCOUNT, 'agent://cursor.agent', kept, PROCESS, false);
+    await addConnectionToken(ACCOUNT, AGENT_SITE, dropped, PROCESS, false, KEY);
+    await addConnectionToken(ACCOUNT, 'agent://cursor.agent', kept, PROCESS, false, KEY);
 
     await service.unEstablishBy(ACCOUNT, AGENT_SITE);
 
-    await expect(hasConnectionToken(ACCOUNT, AGENT_SITE, dropped, PROCESS)).resolves.toBe(false);
-    await expect(hasConnectionToken(ACCOUNT, 'agent://cursor.agent', kept, PROCESS)).resolves.toBe(
+    await expect(hasConnectionToken(ACCOUNT, AGENT_SITE, dropped, PROCESS, KEY)).resolves.toBe(false);
+    await expect(hasConnectionToken(ACCOUNT, 'agent://cursor.agent', kept, PROCESS, KEY)).resolves.toBe(
       true,
     );
+  });
+
+  it('drops every grant when a disconnect cannot get the password', async () => {
+    installStorage();
+    const service = new WalletEstablishService(
+      makeRepo() as unknown as WalletEstablishRepository,
+      makeChainRegistry(),
+    );
+    const other = createConnectionToken();
+    await addConnectionToken(ACCOUNT, 'agent://cursor.agent', other, PROCESS, false, KEY);
+
+    await service.unEstablishBy(ACCOUNT, AGENT_SITE);
+
+    await expect(
+      hasConnectionToken(ACCOUNT, 'agent://cursor.agent', other, PROCESS, KEY),
+    ).resolves.toBe(false);
   });
 
   it('drops every grant when all connections are cleared', async () => {
@@ -234,10 +267,10 @@ describe('WalletEstablishService agent connections', () => {
       makeChainRegistry(),
     );
     const token = createConnectionToken();
-    await addConnectionToken(ACCOUNT, AGENT_SITE, token, PROCESS, false);
+    await addConnectionToken(ACCOUNT, AGENT_SITE, token, PROCESS, false, KEY);
 
     await service.clear();
 
-    await expect(hasConnectionToken(ACCOUNT, AGENT_SITE, token, PROCESS)).resolves.toBe(false);
+    await expect(hasConnectionToken(ACCOUNT, AGENT_SITE, token, PROCESS, KEY)).resolves.toBe(false);
   });
 });

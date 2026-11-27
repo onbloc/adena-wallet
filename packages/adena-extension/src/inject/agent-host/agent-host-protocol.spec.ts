@@ -11,11 +11,13 @@ import {
   parseRevokeSessionParams,
   parseSessionPublicKey,
   parseTransactionParams,
+  spendPeriodsOf,
   toErrorResponse,
 } from './agent-host-protocol';
 
 const NOW = 1_800_000_000;
-const MAX_SPEND = BigInt(10_000_000);
+const MAX_SPEND = { maxSpendUgnot: BigInt(10_000_000), vmRunAllowed: false };
+const WITH_VM_RUN = { ...MAX_SPEND, vmRunAllowed: true };
 
 const compressedKey = (): Uint8Array => {
   const key = new Uint8Array(33).fill(7);
@@ -128,6 +130,49 @@ describe('parseCreateSessionParams', () => {
     );
   });
 
+  it('allows only single realms, bank/send and opted-in vm/run', () => {
+    const allowed = (paths: unknown[], policy = MAX_SPEND): string[] =>
+      parseCreateSessionParams({ ...validParams(), allow_paths: paths }, NOW, policy).allowPaths;
+
+    expect(
+      allowed([
+        'vm/exec:gno.land/r/demo/counter',
+        'vm/exec:gno.land/r/g1abc/app/v2',
+        'bank/send',
+        'bank/send',
+      ]),
+    ).toEqual(['vm/exec:gno.land/r/demo/counter', 'vm/exec:gno.land/r/g1abc/app/v2', 'bank/send']);
+    expect(allowed(['vm/run'], WITH_VM_RUN)).toEqual(['vm/run']);
+
+    for (const entry of [
+      '*',
+      'vm/exec',
+      'vm/exec:',
+      'vm/exec:gno.land',
+      'vm/exec:gno.land/r',
+      'vm/exec:gno.land/r/demo',
+      'vm/exec:gno.land/r/demo/',
+      'vm/exec:gno.land/p/demo/avl',
+      'vm/exec:gno.land/r//counter',
+      'vm/exec:gno.land/r/demo/*',
+      'vm/exec:gno.land/r/demo/a b',
+      'vm/run',
+      'bank/multisend',
+      'auth/create_session',
+      'vm/add_package',
+    ]) {
+      expectErrorCode(() => allowed([entry]), 'policy_violation');
+    }
+  });
+
+  it('caps the number of allow paths', () => {
+    const paths = Array.from({ length: 17 }, (_, i) => `vm/exec:gno.land/r/demo/r${i}`);
+    expectErrorCode(
+      () => parseCreateSessionParams({ ...validParams(), allow_paths: paths }, NOW, MAX_SPEND),
+      'policy_violation',
+    );
+  });
+
   it('rejects empty allow paths', () => {
     expectErrorCode(
       () => parseCreateSessionParams({ ...validParams(), allow_paths: [] }, NOW, MAX_SPEND),
@@ -182,6 +227,68 @@ describe('parseCreateSessionParams', () => {
         ),
       'policy_violation',
     );
+  });
+
+  it('caps the total a resetting spend limit can reach over the lifetime', () => {
+    // A 1s period resets every block, so the cap applies to the week's total.
+    expectErrorCode(
+      () =>
+        parseCreateSessionParams(
+          {
+            ...validParams(),
+            spend_limit: '10000000ugnot',
+            spend_period: 1,
+            expires_at: NOW + AGENT_SESSION_MAX_LIFETIME_SECONDS,
+          },
+          NOW,
+          MAX_SPEND,
+        ),
+      'policy_violation',
+    );
+
+    // 1 GNOT every hour for 2 hours fits a 10 GNOT cap with the clock margin.
+    expect(spendPeriodsOf(3600, 7200)).toBe(BigInt(3));
+    expect(
+      parseCreateSessionParams(
+        { ...validParams(), spend_limit: '1000000ugnot', spend_period: 3600, expires_at: NOW + 7200 },
+        NOW,
+        MAX_SPEND,
+      ).spendPeriod,
+    ).toBe(3600);
+
+    // 5 GNOT every hour for 2 hours does not.
+    expectErrorCode(
+      () =>
+        parseCreateSessionParams(
+          { ...validParams(), spend_limit: '5000000ugnot', spend_period: 3600, expires_at: NOW + 7200 },
+          NOW,
+          MAX_SPEND,
+        ),
+      'policy_violation',
+    );
+
+    // A period longer than the lifetime counts once.
+    expect(spendPeriodsOf(7 * 24 * 3600, 3600)).toBe(BigInt(1));
+    expect(spendPeriodsOf(0, 3600)).toBe(BigInt(1));
+  });
+
+  it('explains the total in a periodic spend violation', () => {
+    try {
+      parseCreateSessionParams(
+        { ...validParams(), spend_limit: '1000ugnot', spend_period: 1, expires_at: NOW + 3600 },
+        NOW,
+        { ...MAX_SPEND, maxSpendUgnot: BigInt(100_000) },
+      );
+    }
+    catch (error) {
+      const message = (error as Error).message;
+      expect(message).toContain('3901 times');
+      expect(message).toContain('3901000ugnot in total');
+      expect(message).toContain('100000ugnot');
+      expect(message).toContain('spend_period 0');
+      return;
+    }
+    throw new Error('expected a policy violation');
   });
 
   it('rejects a fractional spend period', () => {

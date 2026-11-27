@@ -9,6 +9,7 @@ import {
   makeGnoNetworkProfiles,
 } from '@common/utils/chain-utils';
 import { atomoneNetworkToProfile } from '@hooks/helpers/atomone-to-profile';
+import type { AgentPolicyKey } from '@inject/agent-host/agent-policy-key';
 import { ChainRepository, TokenRepository } from '@repositories/common';
 import {
   WalletAccountRepository,
@@ -183,6 +184,16 @@ export class InjectCore {
       return null;
     }
     return currentAccount.getAddress(network.addressPrefix);
+  }
+
+  // The key the agent policy and grants are encrypted with; null while locked.
+  public async getAgentPolicyKey(): Promise<AgentPolicyKey | null> {
+    const password = await this.getPasswordBy(await this.getInMemoryKey()).catch(() => null);
+    if (!password) {
+      return null;
+    }
+    const salt = await this.walletRepository.getKdfSalt();
+    return salt ? { password, salt } : null;
   }
 
   public async isLockedBy(inMemoryKey: CryptoKey | null): Promise<boolean> {
