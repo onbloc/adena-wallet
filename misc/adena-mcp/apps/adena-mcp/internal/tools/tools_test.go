@@ -985,3 +985,33 @@ func TestExtensionGoneReportsAnUnknownOutcome(t *testing.T) {
 		t.Fatalf("got %+v", te)
 	}
 }
+
+func TestBuildSessionMsgCarriesRunMaxSend(t *testing.T) {
+	master, err := crypto.AddressFromBech32(testMaster)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	run := func(maxSend string) json.RawMessage {
+		return json.RawMessage(`{"package":{"files":[{"name":"main.gno","body":"package main"}]},"max_send":"` +
+			maxSend + `"}`)
+	}
+
+	msg, err := buildSessionMsg(txMessage{typ: msgRun, value: run("100ugnot")}, master)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, ok := msg.(vm.MsgRun)
+	if !ok {
+		t.Fatalf("got %T, want vm.MsgRun", msg)
+	}
+
+	if want := std.NewCoins(std.NewCoin("ugnot", 100)); !got.MaxSend.IsEqual(want) {
+		t.Fatalf("max_send = %s, want %s", got.MaxSend, want)
+	}
+
+	if _, err := buildSessionMsg(txMessage{typ: msgRun, value: run("bad")}, master); err == nil {
+		t.Fatal("invalid max_send was accepted")
+	}
+}

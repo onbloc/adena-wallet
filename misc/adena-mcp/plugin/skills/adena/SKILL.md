@@ -48,10 +48,13 @@ omitted.
 
 ```json
 {"type": "/vm.m_call", "value": {"pkg_path": "gno.land/r/demo/counter", "func": "Incr", "args": [], "send": ""}}
-{"type": "/vm.m_run", "value": {"send": "", "package": {"name": "main", "path": "", "files": [{"name": "main.gno", "body": "package main\n\nfunc main() {}\n"}]}}}
+{"type": "/vm.m_run", "value": {"send": "", "package": {"name": "main", "path": "", "files": [{"name": "main.gno", "body": "package main\n\nfunc main() {}\n"}]}, "max_send": ""}}
 {"type": "/vm.m_addpkg", "value": {"package": {"name": "foo", "path": "gno.land/p/<namespace>/foo", "files": [{"name": "foo.gno", "body": "..."}]}}}
 {"type": "/bank.MsgSend", "value": {"to_address": "g1...", "amount": "1000000ugnot"}}
 ```
+
+A `/vm.m_run` script can send coins out of the wallet only up to its
+`max_send`; leave it empty when the script sends nothing.
 
 1 GNOT = 1,000,000 ugnot.
 

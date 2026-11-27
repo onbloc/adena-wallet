@@ -5,7 +5,7 @@ go 1.26.0
 require (
 	github.com/awnumar/memguard v0.23.0
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1
-	github.com/gnolang/gno v1.7.1
+	github.com/gnolang/gno v1.8.0
 	github.com/google/jsonschema-go v0.4.3
 	github.com/modelcontextprotocol/go-sdk v1.6.1
 	golang.org/x/sys v0.50.0
