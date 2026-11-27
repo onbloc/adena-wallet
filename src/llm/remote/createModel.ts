@@ -1,6 +1,8 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { wrapLanguageModel, type LanguageModel } from 'ai';
-import { REMOTE_MODEL, type RemoteLlmOptions } from './config';
+import { resolveOpenAIModel } from './catalog';
+import { DEFAULT_REMOTE_MODEL, type RemoteLlmOptions } from './config';
+import { fitCallToModel } from './modelParams';
 
 // OpenAI rejects a tool-schema `pattern` with Unicode property escapes (\p{L}) as "not a regex".
 // Like the SDK does for lookaround, drop it: the zod schema still validates the arguments client-side.
@@ -16,19 +18,30 @@ function withoutUnicodePatterns<T>(node: T): T {
   ) as T;
 }
 
-/** The AI SDK model for OpenAI (Responses API). Throws on an empty key. */
-export function createRemoteModel({ apiKey, fetch }: RemoteLlmOptions): LanguageModel {
+/**
+ * The AI SDK model for an OpenAI model of openaiModels.json (Responses API). Throws on an empty
+ * key, and on a model that is unlisted or that the agent cannot run on.
+ */
+export function createRemoteModel({ apiKey, model: modelId = DEFAULT_REMOTE_MODEL, fetch }: RemoteLlmOptions): LanguageModel {
   if (!apiKey.trim()) throw new Error('Remote LLM: apiKey is empty');
+  const catalogEntry = resolveOpenAIModel(modelId);
   return wrapLanguageModel({
-    model: createOpenAI({ apiKey, fetch })(REMOTE_MODEL),
+    model: createOpenAI({ apiKey, fetch })(modelId),
     middleware: {
       specificationVersion: 'v4',
       transformParams: async ({ params: { responseFormat, tools, ...params } }) => {
         const schema = responseFormat?.type === 'json' ? responseFormat.schema : undefined;
         // OpenAI forbids root unions. Keep object schemas strict; only unions need JSON mode.
         const rootUnion = schema?.oneOf !== undefined || schema?.anyOf !== undefined;
+        const fit = fitCallToModel(catalogEntry, params);
         return {
           ...params,
+          reasoning: fit.reasoning,
+          ...(!fit.sampling && { temperature: undefined, topP: undefined }),
+          // The SDK knows only the models of its own table; the rest would run without an effort.
+          ...(fit.forceReasoning && {
+            providerOptions: { ...params.providerOptions, openai: { ...params.providerOptions?.openai, forceReasoning: true } },
+          }),
           ...(rootUnion && {
             prompt: [
               ...params.prompt,

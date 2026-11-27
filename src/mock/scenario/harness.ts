@@ -1,7 +1,7 @@
 // Node scenario entry point: local or hosted model, fixed reads, and a host-owned unsigned wallet.
 import type { PreparedTransaction } from '../../agent';
 import { LLMFromModel, type LLM } from '../../llm/core';
-import { createLLMRemote, REMOTE_MODEL } from '../../llm/remote';
+import { createLLMRemote, DEFAULT_REMOTE_MODEL } from '../../llm/remote';
 import { connectModel, DEFAULT_MODEL_NAME, DEFAULT_SERVER_URL, SERVER_CONTEXT_TOKENS } from '../cli/lib/server';
 import type { MockTransaction, MockWalletSdk } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
@@ -34,7 +34,7 @@ const scenarioWallet: ScenarioWalletFactory = (onbloc) => {
 
 /** What the scenarios run on: the hosted OpenAI model (SCENARIO_REMOTE set) or the local server. */
 export const scenarioTarget = (env = process.env) =>
-  remoteOptionsFromEnv(env) ? `openai:${REMOTE_MODEL}` : `local:${serverUrl()}`;
+  remoteOptionsFromEnv(env) ? `openai:${DEFAULT_REMOTE_MODEL}` : `local:${serverUrl()}`;
 
 async function createScenarioLLM(): Promise<LLM> {
   const remote = remoteOptionsFromEnv(process.env);

@@ -1,7 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 
 import { DEFAULT_MODEL_ID, type RuntimeStatus } from '../../llm/device';
-import { REMOTE_MODEL } from '../../llm/remote';
+import { DEFAULT_REMOTE_MODEL } from '../../llm/remote';
 import { LLM_SOURCES, type LlmSource } from './llmSettings';
 import { Button } from './PlaygroundButton';
 import { styles } from './playgroundStyles';
@@ -44,7 +44,7 @@ export function ModelHeader({ status, remoteMode, remoteReady, blocked, load }: 
       <View style={styles.headerRow}>
         <Text style={[styles.status, styles.flex]} numberOfLines={2}>
           {remoteMode
-            ? remoteReady ? `Ready (openai: ${REMOTE_MODEL})` : 'Set the API key in Settings'
+            ? remoteReady ? `Ready (openai: ${DEFAULT_REMOTE_MODEL})` : 'Set the API key in Settings'
             : describeStatus(status)}
         </Text>
         {!remoteMode && <Button label="Load" onPress={() => { if (!blocked && status.state !== 'ready') void load(); }} disabled={blocked || status.state === 'ready'} />}
@@ -82,7 +82,7 @@ export function ModelSettings({ status, source, apiKey, keyError, blocked, onSou
       </View>
       {source !== 'device' ? (
         <>
-          <Text style={styles.mono}>{REMOTE_MODEL}</Text>
+          <Text style={styles.mono}>{DEFAULT_REMOTE_MODEL}</Text>
           <Text style={styles.label}>API key</Text>
           <TextInput style={[styles.input, keyError !== null && styles.invalid]} value={apiKey}
             onChangeText={(value) => { if (!blocked) onApiKeyChange(value); }} secureTextEntry

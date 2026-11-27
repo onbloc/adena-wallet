@@ -1,6 +1,7 @@
 import { generateText, Output, type LanguageModel } from 'ai';
 import { z } from 'zod';
-import { DEFAULT_REMOTE_CONTEXT_TOKENS, REMOTE_MODEL, type RemoteLlmOptions } from '../config';
+import { OPENAI_MODELS } from '../catalog';
+import { DEFAULT_REMOTE_CONTEXT_TOKENS, DEFAULT_REMOTE_MODEL, type RemoteLlmOptions } from '../config';
 import { createRemoteModel } from '../createModel';
 import { createLLMRemote } from '../llmRemote';
 
@@ -8,7 +9,7 @@ const options = (patch: Partial<RemoteLlmOptions> = {}): RemoteLlmOptions => ({ 
 
 const jsonResponse = (value: unknown) => new Response(JSON.stringify({
   id: 'response-test',
-  model: REMOTE_MODEL,
+  model: DEFAULT_REMOTE_MODEL,
   output: [{
     type: 'message',
     role: 'assistant',
@@ -38,12 +39,72 @@ async function sentRequest(model: LanguageModel, callOptions: Record<string, unk
 }
 
 describe('createRemoteModel', () => {
-  it('sends the key as a Bearer token to the OpenAI Responses API, asking for the fixed model', async () => {
+  it('sends the key as a Bearer token to the OpenAI Responses API, asking for the default model', async () => {
     const { url, headers, body } = await sentRequest(createRemoteModel(options()));
 
     expect(url).toBe('https://api.openai.com/v1/responses');
     expect(headers.get('authorization')).toBe('Bearer sk-test');
-    expect(body.model).toBe(REMOTE_MODEL);
+    expect(body.model).toBe(DEFAULT_REMOTE_MODEL);
+  });
+
+  it.each(['gpt-5.4', 'gpt-5.6', 'gpt-5.4-mini-2026-03-17'])('asks for the model it was given, alias and snapshot included: %s', async model => {
+    const { body } = await sentRequest(createRemoteModel(options({ model })));
+
+    expect(body.model).toBe(model);
+  });
+
+  it('rejects a model that is not in the catalog, naming what is supported', () => {
+    expect(() => createRemoteModel(options({ model: 'gpt-9' }))).toThrow(/Unknown OpenAI model "gpt-9".*gpt-6-luna/);
+  });
+
+  it.each([
+    ['gpt-5.5-pro', /no streaming/],
+    ['gpt-5.4-pro', /no structured outputs/],
+    ['gpt-image-2.6-sunburst', /Image generation/],
+  ])('rejects %s with the reason it cannot run the agent', (model, reason) => {
+    expect(() => createRemoteModel(options({ model }))).toThrow(reason);
+  });
+
+  describe.each(OPENAI_MODELS)('$id', model => {
+    const call = { reasoning: 'none', temperature: 0.2, topP: 0.9, maxOutputTokens: 512 } as const;
+
+    it('sends only the reasoning effort and sampling the model accepts', async () => {
+      const { body } = await sentRequest(createRemoteModel(options({ model: model.id })), call);
+
+      if (!model.reasoning.supported) {
+        expect(body.reasoning?.effort).toBeUndefined();
+        expect(body.temperature).toBe(0.2);
+        return;
+      }
+      expect(model.reasoning.efforts).toContain(body.reasoning.effort);
+      // The lowest effort stands in for none on a model that always reasons.
+      expect(body.reasoning.effort).toBe(model.reasoning.efforts.includes('none') ? 'none' : model.reasoning.efforts[0]);
+      if (body.reasoning.effort !== 'none') {
+        expect(body.temperature).toBeUndefined();
+        expect(body.top_p).toBeUndefined();
+      }
+    });
+
+    it('leaves the effort to the model, and drops sampling, when asked for the provider default', async () => {
+      const { body } = await sentRequest(createRemoteModel(options({ model: model.id })), { ...call, reasoning: 'provider-default' });
+
+      expect(body.reasoning?.effort).toBeUndefined();
+      if (model.reasoning.supported && model.reasoning.default !== 'none') expect(body.temperature).toBeUndefined();
+    });
+
+    it('refuses more output tokens than the model has, before calling the API', async () => {
+      const fetchMock = jest.spyOn(globalThis, 'fetch');
+      try {
+        const generation = (createRemoteModel(options({ model: model.id })) as Exclude<LanguageModel, string>).doGenerate({
+          prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }],
+          maxOutputTokens: model.maxOutputTokens + 1,
+        });
+        await expect(Promise.resolve(generation)).rejects.toThrow(RangeError);
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        fetchMock.mockRestore();
+      }
+    });
   });
 
   it.each(['oneOf', 'anyOf'])('uses JSON mode only for unsupported root %s and sends the schema as instructions', async keyword => {
@@ -171,8 +232,19 @@ describe('createRemoteModel', () => {
 });
 
 describe('createLLMRemote', () => {
-  it('reports the given context size, else the remote default', () => {
+  it('reports the given context size, else the model window capped at the remote default', () => {
     expect(createLLMRemote(options()).contextTokens).toBe(DEFAULT_REMOTE_CONTEXT_TOKENS);
     expect(createLLMRemote(options({ contextTokens: 200_000 })).contextTokens).toBe(200_000);
+    expect(createLLMRemote(options({ model: 'gpt-4o' })).contextTokens).toBe(128_000);
+  });
+
+  it('allows up to the model window and no more', () => {
+    expect(createLLMRemote(options({ contextTokens: 1_050_000 })).contextTokens).toBe(1_050_000);
+    expect(() => createLLMRemote(options({ contextTokens: 1_050_001 }))).toThrow(RangeError);
+    expect(() => createLLMRemote(options({ model: 'gpt-4o', contextTokens: 128_001 }))).toThrow(RangeError);
+  });
+
+  it('is remote whatever the model', () => {
+    expect(createLLMRemote(options({ model: 'gpt-oss-20b' })).kind).toBe('remote');
   });
 });

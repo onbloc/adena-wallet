@@ -27,7 +27,7 @@ import {
   MAX_OUTPUT_TOKENS_RANGE,
   useLlm,
 } from '../../llm/device';
-import { REMOTE_MODEL } from '../../llm/remote';
+import { DEFAULT_REMOTE_MODEL } from '../../llm/remote';
 import { FIXTURE } from '../wallet/fixture';
 import type { MockWalletSdk, WalletState } from '../wallet/mockWalletSdk';
 import { createOnblocMockWallet } from '../wallet/onblocWallet';
@@ -276,7 +276,7 @@ export default function PlaygroundScreen() {
   /** The benchmark header lines about the model; never the API key. */
   const describeLlm = () =>
     remote
-      ? ['provider: openai', `model: ${REMOTE_MODEL}`, `context: ${llm.contextTokens} tokens (hosted)`]
+      ? ['provider: openai', `model: ${DEFAULT_REMOTE_MODEL}`, `context: ${llm.contextTokens} tokens (hosted)`]
       : [
           `model: ${DEFAULT_MODEL_ID}`,
           `context: n_ctx ${local.contextTokens}`,

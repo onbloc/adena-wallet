@@ -9,7 +9,7 @@ jest.mock('react-native', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
 }));
 jest.mock('../../../llm/device', () => ({ DEFAULT_MODEL_ID: 'test-model' }));
-jest.mock('../../../llm/remote', () => ({ REMOTE_MODEL: 'hosted-model' }));
+jest.mock('../../../llm/remote', () => ({ DEFAULT_REMOTE_MODEL: 'hosted-model' }));
 
 const ready: RuntimeStatus = { state: 'ready', modelId: 'test-model', loadMs: 1 };
 const idleActivity = { preparing: false, running: false, benchmarking: false };

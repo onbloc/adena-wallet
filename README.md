@@ -36,7 +36,7 @@ wallet SDK.
 | --- | --- |
 | `adena-ai-llm-poc` | `AIAgent`, wallet contracts, generation settings/events |
 | `adena-ai-llm-poc/llm` | `LLM`, `LLMFromModel`, generation utilities |
-| `adena-ai-llm-poc/llm/remote` | `createLLMRemote`, hosted OpenAI options |
+| `adena-ai-llm-poc/llm/remote` | `createLLMRemote`, hosted OpenAI options, the model catalog |
 | `adena-ai-llm-poc/harness` | `Harness`, budgets and tool-source contracts |
 | `adena-ai-llm-poc/harness/onbloc` | Onbloc mainnet reader/tool source |
 | `adena-ai-llm-poc/llm/device` | Optional native `LLMOnDevice`, `createLLM`, React hook |
@@ -86,6 +86,39 @@ Every `LLM` reports `kind`: `local` runs on the device, `remote` sends prompts, 
 data, to a server. `LLMFromModel` defaults to `remote`; pass `{ kind: 'local' }` for a model known
 to run on the device. An agent keeps its `llm` for life: to switch, build a new `AIAgent` with
 `session: agent.session`. Pending clarifications are not carried over.
+
+### Hosted models
+
+`createLLMRemote({ apiKey, model })` runs any model of `src/llm/remote/openaiModels.json`; `model`
+defaults to `gpt-6-luna` (`DEFAULT_REMOTE_MODEL`). A model ID, alias (`gpt-5.6`) or dated snapshot
+(`gpt-5.4-2026-03-05`) is accepted. `OPENAI_MODELS` lists the catalog, e.g. for a model picker.
+
+```ts
+const llm = createLLMRemote({ apiKey, model: 'gpt-6.1-terra' });
+```
+
+The catalog holds the text models: names, status (`deprecated` models carry their shutdown date),
+access (`restricted` ones need an approved organization), context window, output limit,
+reasoning efforts and features. `unsupported` lists the models that cannot run the agent and why,
+and `excluded` the rest of OpenAI's catalog (image, audio, embedding, moderation, shut down). The agent
+streams, constrains classification with a JSON schema and calls tools, so a model needs all three:
+`gpt-5.5-pro`, `o3-pro` (no streaming), `gpt-5.4-pro` and `gpt-5.2-pro` (no structured outputs) are
+refused with that reason, as is any ID the catalog does not list. A new OpenAI model works after
+it is added to the file; the sources and retrieval date are in its header.
+
+Each model is called with what it accepts. The API answers 400 to an unsupported reasoning effort
+or sampling parameter, so the call is fitted to the catalog entry:
+
+- `reasoning: 'none'` becomes the lowest effort of a model that cannot turn reasoning off
+  (`gpt-6.2-*`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-5`, ...). Unset or `provider-default` sends no effort.
+- Temperature and top-p are sent only while the model does not reason (effort `none`, or no
+  reasoning model at all). `gpt-4o`, `gpt-4.1` and `chat-latest` take no effort.
+- `maxOutputTokens` above the model's output limit throws `RangeError` before any request.
+- `contextTokens` defaults to the model window capped at 128,000 and may be raised to the window
+  (`RangeError` above it).
+
+Efforts for `gpt-6-cyber` and `gpt-5.6-cyber` are not published; the file lists the subset
+every documented reasoning family accepts.
 
 
 ## Run
@@ -138,8 +171,8 @@ src/llm/                      The language model
   core/                         portable, no React Native: LLM (interface), LLMFromModel (any AI SDK
                                 model), generate (events, TTFT, tok/s, warnings), ToolLoop (the hook
                                 an agent drives the tool loop with), index.ts
-  remote/                       createLLMRemote({ apiKey }): the hosted OpenAI model (Responses API), fixed to
-                                `gpt-6-luna`. No React Native
+  remote/                       createLLMRemote({ apiKey, model }): hosted OpenAI models (Responses API), any model of
+                                openaiModels.json (default `gpt-6-luna`), fitted to its efforts and limits. No React Native
   device/                       LLMOnDevice (llama.rn): load/unload/generate, status for React;
                                 useLlm(llm) hook; runtime.ts, modelStorage.ts (namespaced native file cache),
                                 config.ts (model, context size); jsonGrammar.ts (structured output without the Jinja grammar)
@@ -543,7 +576,7 @@ preset replaces `fetch` with a stub, hence the separate config.
 
 ### Hosted model (OpenAI)
 
-The same scenarios run on the hosted OpenAI model (`gpt-6-luna`, fixed in `src/llm/remote/config.ts`)
+The same scenarios run on the hosted OpenAI model (`gpt-6-luna`, the default of `src/llm/remote/config.ts`)
 with `make scenario-remote`; the local run (`make scenario`) is unchanged and ignores these variables.
 Hosted runs are billed by OpenAI.
 
