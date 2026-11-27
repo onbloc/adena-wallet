@@ -66,6 +66,9 @@ def enableProguardInReleaseBuilds = true
 def releaseSigningProps = ['ADENA_UPLOAD_STORE_FILE', 'ADENA_UPLOAD_STORE_PASSWORD', 'ADENA_UPLOAD_KEY_ALIAS', 'ADENA_UPLOAD_KEY_PASSWORD']
 def hasReleaseSigning = releaseSigningProps.every { project.hasProperty(it) && project.property(it) }
 
+// CI passes -PADENA_VERSION_CODE so every store upload gets a higher versionCode.
+def adenaVersionCode = (project.findProperty('ADENA_VERSION_CODE') ?: '1').toString().toInteger()
+
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
  *
@@ -89,7 +92,7 @@ android {
         applicationId "app.adena"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode adenaVersionCode
         versionName "1.0"
     }
     signingConfigs {

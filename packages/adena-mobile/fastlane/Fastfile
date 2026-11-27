@@ -1,0 +1,80 @@
+# Beta uploads run from .github/workflows/mobile-beta.yml; secrets come from the environment.
+default_platform(:ios)
+
+def require_env(*names)
+  missing = names.reject { |name| ENV[name].to_s.strip != '' }
+  UI.user_error!("Missing environment: #{missing.join(', ')}") unless missing.empty?
+end
+
+def build_number
+  require_env('BUILD_NUMBER')
+  value = ENV['BUILD_NUMBER']
+  UI.user_error!("BUILD_NUMBER must be a positive integer, got #{value}") unless value.match?(/\A[1-9]\d*\z/)
+  value
+end
+
+platform :ios do
+  desc 'Build a signed IPA and upload it to TestFlight'
+  lane :beta do
+    require_env('ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_PATH', 'APPLE_TEAM_ID')
+    api_key = app_store_connect_api_key(
+      key_id: ENV['ASC_KEY_ID'],
+      issuer_id: ENV['ASC_ISSUER_ID'],
+      key_filepath: ENV['ASC_KEY_PATH']
+    )
+
+    # Xcode cloud signing: the API key lets xcodebuild fetch certificates and profiles.
+    auth = [
+      '-allowProvisioningUpdates',
+      "-authenticationKeyPath #{ENV['ASC_KEY_PATH'].shellescape}",
+      "-authenticationKeyID #{ENV['ASC_KEY_ID']}",
+      "-authenticationKeyIssuerID #{ENV['ASC_ISSUER_ID']}"
+    ].join(' ')
+
+    build_app(
+      workspace: 'ios/AdenaMobile.xcworkspace',
+      scheme: 'AdenaMobile',
+      configuration: 'Release',
+      export_method: 'app-store',
+      export_team_id: ENV['APPLE_TEAM_ID'],
+      export_options: { signingStyle: 'automatic', teamID: ENV['APPLE_TEAM_ID'] },
+      xcargs: "#{auth} DEVELOPMENT_TEAM=#{ENV['APPLE_TEAM_ID']} CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION=#{build_number}",
+      export_xcargs: auth,
+      output_directory: 'build/ios',
+      output_name: 'AdenaMobile.ipa'
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: 'build/ios/AdenaMobile.ipa',
+      skip_waiting_for_build_processing: true
+    )
+  end
+end
+
+platform :android do
+  desc 'Build a signed AAB and upload it to the Play internal testing track'
+  lane :internal do
+    require_env('PLAY_SERVICE_ACCOUNT_JSON', 'ORG_GRADLE_PROJECT_ADENA_UPLOAD_STORE_FILE')
+
+    gradle(
+      project_dir: 'android',
+      task: 'bundle',
+      build_type: 'Release',
+      properties: { 'ADENA_VERSION_CODE' => build_number }
+    )
+
+    upload_to_play_store(
+      package_name: 'app.adena',
+      track: 'internal',
+      # A Play app that has never been published only accepts draft releases.
+      release_status: ENV.fetch('PLAY_RELEASE_STATUS', 'completed'),
+      aab: lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH],
+      json_key_data: ENV['PLAY_SERVICE_ACCOUNT_JSON'],
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end

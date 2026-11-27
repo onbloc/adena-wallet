@@ -131,6 +131,34 @@ ADENA_UPLOAD_KEY_PASSWORD=...
 
 `packageRelease` / `bundleRelease` fail if any is missing. Release builds are minified with R8 (`android/app/proguard-rules.pro`). Debug builds use the machine's `~/.android/debug.keystore`, which the Android Gradle plugin creates.
 
+### Beta uploads (TestFlight / Play internal testing)
+
+`.github/workflows/mobile-beta.yml` builds release binaries and uploads them with fastlane (`fastlane/Fastfile`): iOS to TestFlight (`fastlane ios beta`), Android to the Play *internal testing* track (`fastlane android internal`). It runs on a `mobile-v*` tag push (both stores) or by hand from the Actions tab (pick `both`, `ios` or `android`; any branch). Only people in `STORE_SUBMITTERS` / `STORE_SUBMITTER_TEAM` (the same allow-list as `submit-store.yml`) can run it.
+
+Both stores get the same build number, `MOBILE_BUILD_NUMBER_OFFSET` (default 100) + run number × 10 + run attempt, so a re-run never reuses a number. The app version (`MARKETING_VERSION` / `versionName`) stays as committed.
+
+Secrets on the `mobile-release` environment:
+
+| Secret | Value |
+| --- | --- |
+| `ASC_KEY_ID`, `ASC_ISSUER_ID` | App Store Connect API key id and issuer id |
+| `ASC_KEY_P8` | Contents of the `.p8` key file |
+| `APPLE_TEAM_ID` | Apple Developer team id |
+| `ANDROID_UPLOAD_KEYSTORE_BASE64` | `base64 -i upload.keystore` |
+| `ANDROID_UPLOAD_STORE_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS`, `ANDROID_UPLOAD_KEY_PASSWORD` | Upload key credentials |
+| `PLAY_SERVICE_ACCOUNT_JSON` | Google Cloud service account JSON key |
+
+Repository variables (optional): `MOBILE_BUILD_NUMBER_OFFSET`, `PLAY_RELEASE_STATUS` (`completed` by default; set `draft` while the Play app has never been published, then roll the draft out from the Play Console).
+
+One-time setup:
+
+1. **App Store Connect**: create the app record for `app.adena.Adena`. Create a *Team* API key with the *Admin* role (Xcode cloud signing creates the distribution certificate and profile with it). Do the iCloud container step from *Cloud backup* above first, or signing fails.
+2. **Play Console**: create the app `app.adena`, enroll in Play App Signing, and upload the first AAB by hand (`./gradlew bundleRelease -PADENA_VERSION_CODE=1`); the API cannot create an app. Then add the Play App Signing SHA-1 to the Android OAuth client (*Cloud backup*, step 2).
+3. **Service account**: in Google Cloud, create a service account and a JSON key, enable the *Google Play Android Developer API*, then invite the account's email in Play Console → *Users and permissions* with release permissions for this app.
+4. **Testers**: add internal testers in TestFlight and in Play Console → *Internal testing* → *Testers*.
+
+TestFlight asks for export compliance on every build until `ITSAppUsesNonExemptEncryption` is set in `Info.plist`.
+
 ### Trying the dApp flow
 
 `scripts/dapp-request.mjs` builds request links and decodes responses:
