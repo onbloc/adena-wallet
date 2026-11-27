@@ -101,16 +101,16 @@ export function createAiSdkRun({ run, maxOutputTokens, estimateInputTokens, budg
     const estimate = (candidate: ModelMessage[]) => estimateInputTokens({ model, messages: candidate, instructions, tools: schemas });
     const context = contextWindow === undefined ? messages
       : compactContext(messages, candidate => estimate(candidate) + maxOutputTokens <= contextWindow);
-    if (!context) throw new Error(`ADENA_CONTEXT_LIMIT: step=${stepNumber}, window=${contextWindow}, inputEstimate=${estimate(messages)}, outputReserve=${maxOutputTokens}; message sizes=${messages.map(m => `${m.role}:${JSON.stringify(m).length}`).join(',')}`);
+    if (!context) throw new Error(`AGENT_CONTEXT_LIMIT: step=${stepNumber}, window=${contextWindow}, inputEstimate=${estimate(messages)}, outputReserve=${maxOutputTokens}; message sizes=${messages.map(m => `${m.role}:${JSON.stringify(m).length}`).join(',')}`);
     if (context.length < messages.length) onContextCompacted?.((messages.length - context.length) / 2);
     const inputTokenUpperBound = estimate(context);
     const limit = run.beginStep(maxOutputTokens, inputTokenUpperBound);
-    if (limit === undefined) throw new Error('ADENA_RUN_CANNOT_START_STEP');
+    if (limit === undefined) throw new Error('AGENT_RUN_CANNOT_START_STEP');
     if (budget.kind === 'cloud' && !await budget.reserveStep({ operationId: run.operationId, stepNumber, inputTokenUpperBound, maxOutputTokens: limit, signal: run.signal })) {
       run.close();
-      throw new Error('ADENA_CLOUD_BUDGET_EXHAUSTED');
+      throw new Error('AGENT_CLOUD_BUDGET_EXHAUSTED');
     }
-    if (run.signal.aborted) throw new Error('ADENA_RUN_CANCELLED');
+    if (run.signal.aborted) throw new Error('AGENT_RUN_CANCELLED');
     return { messages: context, maxOutputTokens: limit };
   };
   const onStepEnd: GenerateTextOnStepEndCallback<ToolSet> = ({ usage }) => {

@@ -21,15 +21,15 @@ export const FIXTURE = {
   accounts: [
     {
       name: 'Account 1',
-      address: 'g1qpzry9x8gf2tvdw0s3jn54khce6mua7lqpzry9',
+      address: 'g1axehvc90taqzngkg8amdfw7q6lfyjekfkc4n7v',
       balances: { [TokenSymbol.Gnot]: '10', [TokenSymbol.Gns]: '250' },
     },
   ] satisfies MockAccount[],
   contacts: [
-    { alias: 'alice', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s' },
+    { alias: 'alice', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2u50rw9' },
   ],
   /** An address that is in nobody's contacts; used as a recipient in tests. */
-  recipient: 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6',
+  recipient: 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpqcg7v29',
 };
 
 /** The account the user is acting as: the harness injects its address. */

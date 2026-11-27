@@ -137,7 +137,7 @@ describe('createAiSdkRun', () => {
     const run = await startRun(undefined, { maxSteps: 2, maxToolCalls: 2, maxTokens: 600, timeoutMs: 60_000 });
     const { prepareStep } = bridge(run, { estimate: 600 });
 
-    await expect((prepareStep as PrepareStep)(step)).rejects.toThrow('ADENA_RUN_CANNOT_START_STEP');
+    await expect((prepareStep as PrepareStep)(step)).rejects.toThrow('AGENT_RUN_CANNOT_START_STEP');
     run.close();
   });
 
@@ -324,7 +324,7 @@ describe('createAiSdkRun', () => {
     const run = await startRun();
     const { prepareStep } = bridge(run, { budget: { kind: 'cloud', reserveStep: async () => false } });
 
-    await expect((prepareStep as PrepareStep)(step)).rejects.toThrow('ADENA_CLOUD_BUDGET_EXHAUSTED');
+    await expect((prepareStep as PrepareStep)(step)).rejects.toThrow('AGENT_CLOUD_BUDGET_EXHAUSTED');
     expect(run.signal.aborted).toBe(true);
   });
 });

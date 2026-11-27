@@ -135,6 +135,47 @@ describe('Harness', () => {
     }
   });
 
+  it.each(['timeout', 'cancel'] as const)('preserves a completed read when audit never settles before %s', async interruption => {
+    jest.useFakeTimers();
+    const controller = new AbortController();
+    const entered = Promise.withResolvers<void>();
+    const pending = Promise.withResolvers<void>();
+    const execute = jest.fn(async () => ({ kind: 'result' as const, value: 'completed read' }));
+    const audit = jest.fn((_event: PolicyEvent) => { entered.resolve(); return pending.promise; });
+    const started = await new Harness({
+      toolSources: [async () => new Map([['ping', { ...tool('ping'), execute }]])],
+      audit,
+    }).startRun({ ...run, signal: controller.signal, budget: { timeoutMs: 25 } });
+
+    try {
+      const decision = started.dispatch({ name: 'ping', input: {} });
+      await entered.promise;
+      const queued = started.dispatch({ name: 'ping', input: {} });
+      await Promise.resolve();
+      expect(execute).toHaveBeenCalledTimes(1);
+      if (interruption === 'timeout') await jest.advanceTimersByTimeAsync(25);
+      else controller.abort();
+
+      expect(await decision).toEqual({ kind: 'result', value: 'completed read', auditFailed: true });
+      expect(await queued).toEqual({ kind: 'denied', code: 'CANCELLED', auditFailed: true });
+      expect(started.auditFailed).toBe(true);
+      expect(started.signal.aborted).toBe(true);
+      expect(started.canStartStep()).toBe(false);
+      pending.reject(new Error('Late audit failure'));
+      expect(await started.dispatch({ name: 'ping', input: {} })).toEqual({
+        kind: 'denied', code: 'CANCELLED', auditFailed: true,
+      });
+      expect(execute).toHaveBeenCalledTimes(1);
+      expect(audit.mock.calls.map(([event]) => [event.decision, event.denial])).toEqual([
+        ['result', undefined], ['denied', 'CANCELLED'], ['denied', 'CANCELLED'],
+      ]);
+    } finally {
+      pending.resolve();
+      started.close();
+      jest.useRealTimers();
+    }
+  });
+
   it('serializes reads and pauses queued calls after an audit failure', async () => {
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
@@ -268,7 +309,8 @@ describe('Harness', () => {
     started.close();
   });
 
-  it('settles a pending read on cancellation even if the tool ignores its signal', async () => {
+  it.each(['timeout', 'cancel'] as const)('settles active and queued calls on %s even if a read ignores its signal', async interruption => {
+    jest.useFakeTimers();
     const entered = Promise.withResolvers<void>();
     const release = Promise.withResolvers<void>();
     const read: WalletTool = {
@@ -279,18 +321,30 @@ describe('Harness', () => {
         throw new Error('late failure');
       },
     };
+    const prepare = jest.fn(async () => ({ kind: 'result' as const, value: 'prepared' }));
     const events: PolicyEvent[] = [];
     const controller = new AbortController();
     const started = await new Harness({ audit: event => { events.push(event); } }).startRun({
-      ...run, walletTools: { check: read }, signal: controller.signal,
+      ...run, scope: 'prepare-wallet', signal: controller.signal, budget: { maxToolCalls: 1, timeoutMs: 25 },
+      walletTools: { check: read, transfer: { ...walletTool('transfer', 'prepare'), execute: prepare } },
     });
-    const pending = started.dispatch({ name: 'check', input: {} });
-    await entered.promise;
-    controller.abort();
-    expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
-    expect(events.map(event => [event.tool, event.decision, event.denial]))
-      .toEqual([['check', 'denied', 'CANCELLED']]);
-    release.resolve();
+    try {
+      const pending = started.dispatch({ name: 'check', input: {} });
+      await entered.promise;
+      const queued = started.dispatch({ name: 'transfer', input: {} });
+      if (interruption === 'timeout') await jest.advanceTimersByTimeAsync(25);
+      else controller.abort();
+      expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+      expect(await queued).toEqual({ kind: 'denied', code: 'CANCELLED' });
+      expect(prepare).not.toHaveBeenCalled();
+      expect(events.map(event => [event.tool, event.decision, event.denial])).toEqual([
+        ['check', 'denied', 'CANCELLED'], ['transfer', 'denied', 'CANCELLED'],
+      ]);
+    } finally {
+      release.resolve();
+      started.close();
+      jest.useRealTimers();
+    }
   });
 
   it('settles discovery on cancellation even if a source ignores its signal', async () => {
@@ -522,10 +576,17 @@ describe('Harness', () => {
     expect(await started.dispatch({ name: 'ping', input: {} })).toEqual({ kind: 'denied', code: 'CANCELLED' });
   });
 
-  it('rejects an invalid budget', async () => {
-    const harness = new Harness({ toolSources: [source('ping').toolSource] });
+  it.each([0, -1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])('rejects an unsafe execution limit: %s', async limit => {
+    const harness = new Harness();
 
-    await expect(harness.startRun({ ...run, budget: { maxSteps: 0 } })).rejects.toThrow('Invalid execution budget');
+    for (const key of ['maxSteps', 'maxToolCalls', 'maxTokens', 'timeoutMs'] as const) {
+      await expect(harness.startRun({ ...run, budget: { [key]: limit } })).rejects.toThrow('Invalid execution budget');
+    }
+  });
+
+  it('rejects a timeout outside the timer range', async () => {
+    await expect(new Harness().startRun({ ...run, budget: { timeoutMs: 2_147_483_648 } }))
+      .rejects.toThrow('Timeout exceeds timer range');
   });
 
   it('audits every decision', async () => {

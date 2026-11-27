@@ -1,5 +1,5 @@
 import { TransactionType } from '../../../agent';
-import { checkRun, checkScenarioRun, checkSummaries, describeSummaries, explainNothing, type JudgedRun, type PreparedSummary } from '../check';
+import { checkRun, checkScenarioRun, checkSummaries, describeSummaries, explainNothing, judgeToolCalling, type JudgedRun, type PreparedSummary } from '../check';
 import { ACCOUNT, CAROL, RECIPIENT } from '../fixture';
 
 const transfer = (overrides: Partial<Extract<PreparedSummary, { type: typeof TransactionType.Transfer }>> = {}): PreparedSummary => ({
@@ -234,5 +234,51 @@ describe('checkRun', () => {
     const expected = { kind: 'answer', reads: [{ name: 'get_balance' }], says: ['10 GNOT', '250 GNS'] } as const;
 
     expect(checkRun(run({ calls: [call('get_balance')], text: '10 GNOT' }), expected)).toEqual({ ok: false, reason: 'the answer lacks "250 GNS"' });
+  });
+});
+
+describe('judgeToolCalling', () => {
+  const call = (name: string, input: unknown = {}, invalid = false) => ({ name, input, invalid });
+  const run = (overrides: Partial<JudgedRun> = {}): JudgedRun => ({ prepared: [], calls: [], text: '', ...overrides });
+  const gnotOne = { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } };
+  const balanceRead = { kind: 'answer', reads: [{ name: 'get_balance', input: gnotOne }] } as const;
+
+  it('judges actual calls separately from the prepared transaction arguments', () => {
+    const calls = [call('transfer')];
+    expect(judgeToolCalling(run({ calls, prepared: [transfer()] }), expectTransfer)).toEqual({ tool: true, args: true });
+    expect(judgeToolCalling(run({ calls, prepared: [transfer({ amount: '2' })] }), expectTransfer)).toEqual({ tool: true, args: false });
+    expect(judgeToolCalling(run({ calls }), expectTransfer)).toEqual({ tool: true, args: undefined });
+    expect(judgeToolCalling(run({ prepared: [transfer()] }), expectTransfer)).toEqual({ tool: false, args: undefined });
+  });
+
+  it('rejects unrelated or duplicate calls but allows balance reads', () => {
+    expect(judgeToolCalling(run({ calls: [call('approve')] }), expectTransfer)).toEqual({ tool: false, args: undefined });
+    expect(judgeToolCalling(run({ calls: [call('transfer'), call('list_account_transactions')] }), expectTransfer)).toEqual({ tool: false, args: undefined });
+    expect(judgeToolCalling(run({ calls: [call('transfer'), call('transfer')] }), expectTransfer)).toEqual({ tool: false, args: undefined });
+    expect(judgeToolCalling(run({ calls: [call('get_balance'), call('transfer')], prepared: [transfer()] }), expectTransfer)).toEqual({ tool: true, args: true });
+  });
+
+  it('does not score tool calls when the scenario specifies only no transaction', () => {
+    expect(judgeToolCalling(run({ calls: [call('transfer')] }), { kind: 'none' })).toBeUndefined();
+  });
+
+  it('judges the reads of an answer: the tool, then the exact input', () => {
+    expect(judgeToolCalling(run({ calls: [call('get_balance', gnotOne)] }), balanceRead)).toEqual({ tool: true, args: true });
+    expect(judgeToolCalling(run({ calls: [call('get_balance', { kind: 'all' })] }), balanceRead)).toEqual({ tool: true, args: false });
+    expect(judgeToolCalling(run(), balanceRead)).toEqual({ tool: false, args: undefined });
+  });
+
+  it('fails the tool for a call outside the allowed ones, and ignores a malformed call the agent retries', () => {
+    const stray = run({ calls: [call('get_balance', gnotOne), call('list_account_transactions')] });
+    const retried = run({ calls: [call('list_account_transactions', {}, true), call('get_balance', gnotOne)] });
+
+    expect(judgeToolCalling(stray, balanceRead)).toEqual({ tool: false, args: undefined });
+    expect(judgeToolCalling(retried, balanceRead)).toEqual({ tool: true, args: true });
+  });
+
+  it('expects no tool call from an explanation, and nothing to judge for an expected error', () => {
+    expect(judgeToolCalling(run(), { kind: 'answer', reads: [] })).toEqual({ tool: true, args: undefined });
+    expect(judgeToolCalling(run({ calls: [call('get_balance')] }), { kind: 'answer', reads: [] })).toEqual({ tool: false, args: undefined });
+    expect(judgeToolCalling(run(), { kind: 'error', code: 'AGENT_ACCOUNT_REQUIRED' })).toBeUndefined();
   });
 });

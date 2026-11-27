@@ -60,7 +60,8 @@ function walletTool<Schema extends z.ZodType>({ name, effect, description, schem
       if (cancelled()) return { kind: 'denied', code: 'CANCELLED' };
       if (authorize && !authorize(parsed.data)) return { kind: 'denied', code: 'TARGET_CHANGED' };
       const value = await refusalsAsResults(() => run(parsed.data, signal, cancelled));
-      return value === undefined ? { kind: 'denied', code: 'CANCELLED' } : { kind: 'result', value };
+      return value === undefined || cancelled() && value.status !== WalletStatus.Prepared
+        ? { kind: 'denied', code: 'CANCELLED' } : { kind: 'result', value };
     },
   };
 }
@@ -119,7 +120,8 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
     const resolved = resolveContact(contacts, target).trim().toLowerCase();
     const named = contacts.filter(contact => contact.alias.trim().toLowerCase() === alias);
     if (named.some(contact => contact.address.trim().toLowerCase() !== resolved)) return false;
-    if (authorizedRecipient !== undefined && resolved === authorizedRecipient.trim().toLowerCase()) return true;
+    if (authorizedRecipient !== undefined
+      && (resolved === authorizedRecipient.trim().toLowerCase() || alias === authorizedRecipient.trim().toLowerCase())) return true;
     if (mentions(text, target) || mentions(text, resolved)) return true;
     return contacts.some(contact => contact.address.trim().toLowerCase() === resolved &&
       contacts.every(other => other.alias.trim().toLowerCase() !== contact.alias.trim().toLowerCase() ||
@@ -143,7 +145,8 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
       if (onAbort) signal.removeEventListener('abort', onAbort);
     }
     if (!prepared || cancelled()) return undefined;
-    await onTransaction(prepared);
+    await onTransaction(prepared, { signal });
+    // Cancellation cannot retract a draft the host already accepted.
     return prepared;
   }
   return {
@@ -164,7 +167,7 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
           from: account,
           to: resolveTarget(contacts, to),
           ...requested,
-        }), signal, cancelled);
+        }, { signal }), signal, cancelled);
         if (!prepared) return undefined;
         const { summary } = prepared;
         return {
@@ -196,7 +199,7 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
             from: account,
             spender: resolveTarget(contacts, spender),
             ...requested,
-          }), signal, cancelled);
+          }, { signal }), signal, cancelled);
           if (!prepared) return undefined;
           const { summary } = prepared;
           return {
@@ -217,10 +220,10 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
         effect: 'read',
         description: 'List the token approvals the user has given to other addresses.',
         schema: z.object({}),
-        run: async () => ({
+        run: async (_input, signal) => ({
           status: WalletStatus.Ok,
           address: account,
-          approvals: await getAllowances(account),
+          approvals: await getAllowances(account, { signal }),
         }),
       }),
     }),

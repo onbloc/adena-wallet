@@ -1,7 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { CallToolResultSchema, ListToolsResultSchema } from '@modelcontextprotocol/sdk/types.js';
-import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
+import { CfWorkerJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/cfworker';
 import { discoveredReadTool, type DiscoveredReadPermission } from './discovered-read-tool';
 import { parseOnblocEndpoint } from './onbloc-endpoint';
 import { gnoPublicAddress, GNO_MAINNET_CHAIN } from './gno';
@@ -70,8 +70,8 @@ export function createOnblocReader({ endpoint, fetcher, allowLoopbackHttp, trust
   const url = parseOnblocEndpoint(endpoint, allowLoopbackHttp);
 
   return async (address: string, signal: AbortSignal) => {
-    const validator = new AjvJsonSchemaValidator();
-    const client = new Client({ name: 'adena-wallet-harness', version: '0.1.0' });
+    const validator = new CfWorkerJsonSchemaValidator();
+    const client = new Client({ name: 'ai-agent-harness', version: '0.1.0' }, { jsonSchemaValidator: validator });
     const transport = new StreamableHTTPClientTransport(url, { fetch: fetcher, requestInit: { redirect: 'error' } });
     const options = { signal, timeout: 12000 };
     const close = () => { void client.close().catch(() => {}); };

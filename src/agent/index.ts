@@ -1,8 +1,6 @@
 // Public API of agent: an LLM, a harness and a wallet wired into one assistant.
 export { AIAgent } from './agent';
-export type { AIAgentOptions, AgentRunOptions } from './agent';
-export { AgentConversation, createConversationPendingState } from './conversation';
-export type { ConversationOptions, ConversationPendingState, ConversationSettings } from './conversation';
+export type { AIAgentOptions, AgentRunOptions, AgentSettings } from './agent';
 export { formatBalance } from './balanceOperation';
 export type { BalanceAdapter, BalanceAsset, BalanceRead, BalanceRequest, BalanceResult, BalanceScope } from './balanceOperation';
 export {
@@ -22,5 +20,6 @@ export type {
   TransactionHandler,
   TransferParams,
   TransferSummary,
+  WalletOperationOptions,
   WalletSdk,
 } from './wallet/port';

@@ -1,7 +1,7 @@
 // Real-model scenarios: two unrelated realms expose the same ticker.
 import {
-  ACCOUNT, CAROL, GNS_PATH, TWIN_GNS_PATH, adenaTransaction, createServerScenarioRunner,
-  fakeReads, firstMessage, serverUrl, twinGnsHoldings, type ScenarioRun, type ScenarioRunner,
+  ACCOUNT, CAROL, GNS_PATH, TWIN_GNS_PATH, mockTransaction, createEnvScenarioRunner,
+  fakeReads, firstMessage, twinGnsHoldings, type ScenarioRun, type ScenarioRunner,
 } from './harness';
 
 jest.setTimeout(5 * 60_000);
@@ -11,11 +11,11 @@ function expectUnsignedB(run: ScenarioRun, func: 'Transfer' | 'Approve', prompt:
     expect(run.prepared).toHaveLength(1);
     const [prepared] = run.prepared;
     expect(prepared.summary.packagePath).toBe(TWIN_GNS_PATH);
-    expect(adenaTransaction(prepared).signatures).toEqual([]);
-    expect(adenaTransaction(prepared).messages).toHaveLength(1);
+    expect(mockTransaction(prepared).signatures).toEqual([]);
+    expect(mockTransaction(prepared).messages).toHaveLength(1);
     expect(firstMessage(prepared)).toMatchObject({
       type: '/vm.m_call',
-      value: { caller: ACCOUNT, pkg_path: TWIN_GNS_PATH, func, args: [CAROL, '125000000'], send: '', max_deposit: '' },
+      value: { caller: ACCOUNT, pkg_path: TWIN_GNS_PATH, func, args: [CAROL, '125000000'], send: '' },
     });
   } catch (error) {
     if (error instanceof Error) error.message += `\nprompt: ${prompt}\nturns: ${JSON.stringify([...prior, run].map(({ calls, results, text }) => ({ calls, results, text })))}`;
@@ -26,7 +26,7 @@ function expectUnsignedB(run: ScenarioRun, func: 'Transfer' | 'Approve', prompt:
 describe.each([false, true])('duplicate GNS holdings (reverse=%s)', (reverse) => {
   let runner: ScenarioRunner;
   beforeAll(async () => {
-    runner = await createServerScenarioRunner(serverUrl(), true, () => fakeReads(twinGnsHoldings(reverse)));
+    runner = await createEnvScenarioRunner(true, () => fakeReads(twinGnsHoldings(reverse)));
   });
 
   it('shows both holdings with their own balances and identities in the portfolio', async () => {

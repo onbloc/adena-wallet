@@ -1,4 +1,5 @@
 import type { ContextParams } from '@react-native-ai/llama';
+import { wrapLanguageModel } from 'ai';
 import {
   generate,
   resolveContextTokens,
@@ -50,12 +51,13 @@ export class LLMOnDevice implements LLM {
     runtime = new LlamaRuntime(),
   }: LLMOnDeviceOptions = {}) {
     this.modelId = modelId;
-    this.contextParams = contextParams;
+    const nCtx = contextParams.n_ctx ?? DEFAULT_CONTEXT_PARAMS.n_ctx ?? 2048;
+    this.contextParams = { ...contextParams, n_ctx: nCtx };
     this.runtime = runtime;
-    this.contextTokens = resolveContextTokens(contextParams.n_ctx ?? 2048, contextParams.n_ctx ?? 2048);
+    this.contextTokens = resolveContextTokens(nCtx, nCtx);
   }
 
-  /** Where the model is: idle, downloading, loading, ready (with its load time) or error. */
+  /** Where the model is: idle, downloading, loading, unloading, ready or error. */
   get status(): RuntimeStatus {
     return this.runtime.status;
   }
@@ -97,12 +99,47 @@ export class LLMOnDevice implements LLM {
     options: LLMGenerateOptions = {}
   ): AsyncGenerator<GenerateEvent> {
     const model = this.runtime.model;
-    if (!model) throw new Error('Model is not loaded');
-    const jsonModel = withPlainJsonGrammar(model);
-    // With tools on, native llama may publish a tool call before its arguments are complete.
-    const toolsOn = options.loop !== undefined || settings.tools !== undefined;
-    yield* generate(toolsOn ? withCompletedToolCalls(jsonModel) : jsonModel, {
-      ...settings, ...options, contextTokens: resolveContextTokens(options.contextTokens, this.contextTokens),
+    const lifecycleSignal = this.runtime.generationSignal;
+    if (!model || !lifecycleSignal) {
+      options.loop?.close();
+      throw new Error('Model is not loaded');
+    }
+    const controller = new AbortController();
+    const signals = [lifecycleSignal, options.signal, options.loop?.options.abortSignal]
+      .filter((signal): signal is AbortSignal => signal !== undefined);
+    const abort = () => controller.abort();
+    signals.forEach(signal => signal.addEventListener('abort', abort, { once: true }));
+    if (signals.some(signal => signal.aborted)) abort();
+    const sourceLoop = options.loop;
+    const loop = sourceLoop && {
+      ...sourceLoop,
+      options: { ...sourceLoop.options, abortSignal: controller.signal },
+      close: () => sourceLoop.close(),
+    };
+    const guardedModel = wrapLanguageModel({
+      model,
+      middleware: {
+        specificationVersion: 'v4',
+        wrapGenerate: async ({ doGenerate }) => {
+          controller.signal.throwIfAborted();
+          return doGenerate();
+        },
+        wrapStream: async ({ doStream }) => {
+          controller.signal.throwIfAborted();
+          return doStream();
+        },
+      },
     });
+    const jsonModel = withPlainJsonGrammar(guardedModel);
+    // With tools on, native llama may publish a tool call before its arguments are complete.
+    const toolsOn = loop !== undefined || settings.tools !== undefined;
+    try {
+      yield* generate(toolsOn ? withCompletedToolCalls(jsonModel) : jsonModel, {
+        ...settings, ...options, signal: controller.signal, loop,
+        contextTokens: resolveContextTokens(options.contextTokens, this.contextTokens),
+      });
+    } finally {
+      signals.forEach(signal => signal.removeEventListener('abort', abort));
+    }
   }
 }

@@ -166,6 +166,74 @@ describe('required normalized outcomes', () => {
     expect(complete.text).toContain('42 GNOT');
     expect(canRememberTurn(complete.done)).toBe(true);
   });
+  it('keeps fetched facts but does not remember a truncated compound explanation', async () => {
+    const intent: RequestIntent = { ...lookup, explanation: 'What is GNOT?' };
+    const answer = await guard(intent, [balance(), text('GNOT is the native'), done({ finishReason: 'length' })]);
+    expect(answer.text).toContain('42 GNOT');
+    expect(answer.text).toContain('explanation did not complete');
+    expect(answer.done.verifiedAnswer).toBeUndefined();
+    expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it.each(['tool-error', 'refusal', 'invalid'] as const)('allows a corrected retry after a recoverable %s', async failure => {
+    const name = 'list_account_transactions';
+    const first = { ...call(name, { limit: 'five' }, 'first'), invalid: failure === 'invalid' } as GenerateEvent;
+    const failed: GenerateEvent = failure === 'tool-error'
+      ? { type: 'tool-error', name, id: 'first', error: 'Read failed' }
+      : result(name, { kind: 'denied', reason: 'Invalid input' }, 'first');
+    const answer = await guard(history, [
+      first, failed, call(name, { limit: 5 }, 'retry'),
+      result(name, { kind: 'result', value: { hash: 'tx-retried' } }, 'retry'), done({ finishReason: 'tool-calls' }),
+    ], { requiredReads: [name] });
+    expect(answer.text).toContain('tx-retried');
+    expect(answer.text).not.toContain('could not be verified');
+    expect(canRememberTurn(answer.done)).toBe(true);
+  });
+  it('does not treat a concurrent success as a retry of a failed page', async () => {
+    const name = 'list_account_transactions';
+    const answer = await guard(history, [
+      call(name, { cursor: 'first' }, 'first'), call(name, { cursor: 'next' }, 'next'),
+      result(name, { kind: 'denied' }, 'first'),
+      result(name, { kind: 'result', value: { hash: 'tx-next' } }, 'next'), done(),
+    ], { requiredReads: [name] });
+    expect(answer.text).toContain('tx-next');
+    expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it('does not clear multiple failed pages with a single subsequent success', async () => {
+    const name = 'list_account_transactions';
+    const answer = await guard(history, [
+      call(name, { cursor: 'first' }, 'first'), call(name, { cursor: 'next' }, 'next'),
+      result(name, { kind: 'denied' }, 'first'), result(name, { kind: 'denied' }, 'next'),
+      call(name, { cursor: 'next' }, 'retry'), result(name, { kind: 'result', value: { hash: 'tx-next' } }, 'retry'), done(),
+    ], { requiredReads: [name] });
+    expect(answer.text).toContain('tx-next');
+    expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it('allows repeated failed corrections to resolve when their final retry succeeds', async () => {
+    const name = 'list_account_transactions';
+    const answer = await guard(history, [
+      call(name, { limit: 'five' }, 'first'), result(name, { kind: 'denied' }, 'first'),
+      call(name, { limit: -1 }, 'second'), result(name, { kind: 'denied' }, 'second'),
+      call(name, { limit: 5 }, 'final'), result(name, { kind: 'result', value: { hash: 'tx-final' } }, 'final'), done(),
+    ], { requiredReads: [name] });
+    expect(answer.text).toContain('tx-final');
+    expect(canRememberTurn(answer.done)).toBe(true);
+  });
+  it('does not erase unrelated failures, pending reads, or partial requirements after a retry', async () => {
+    const name = 'list_account_transactions';
+    const retried = [
+      call(name, {}, 'failed'), result(name, { kind: 'denied' }, 'failed'),
+      call(name, {}, 'retry'), result(name, { kind: 'result', value: { hash: 'tx-retried' } }, 'retry'),
+    ];
+    for (const unmet of [
+      [call('unrelated'), result('unrelated', { kind: 'denied' })],
+      [call('unrelated')],
+      [balance({ status: 'partial', missing: ['native'] })],
+      [call('expected', {}, 'mismatch'), result('unexpected', { kind: 'result', value: 1 }, 'mismatch')],
+    ]) {
+      const answer = await guard(history, [...unmet, ...retried, done()], { requiredReads: [name] });
+      expect(canRememberTurn(answer.done)).toBe(false);
+    }
+  });
   it.each<AnswerIntent>([{ kind: 'explanation' }, { kind: 'clarification' }])('retains tool-free $kind as unverified text', async intent => {
     const answer = await guard(intent, [text('Which recipient?'), done({ messages: [{ role: 'assistant', content: 'Which recipient?' }] })]);
     expect(answer.done.verifiedAnswer).toBeUndefined();
@@ -178,6 +246,12 @@ describe('required normalized outcomes', () => {
     expect(answer.text).not.toContain('Payment confirmed');
     expect(answer.done.warnings.some(warning => warning.includes('Audit'))).toBe(true);
     expect(canRememberTurn(answer.done)).toBe(false);
+  });
+  it('remembers a preparation that ended in a result or a refusal, so later turns know what was prepared', async () => {
+    const prepared = await guard(prepare, [call('transfer'), result('transfer', { kind: 'result', value: { status: 'prepared' } }), done()]);
+    expect(canRememberTurn(prepared.done)).toBe(true);
+    const refused = await guard(prepare, [call('transfer'), result('transfer', { kind: 'result', value: { status: 'error', message: 'Insufficient balance.' } }), done()]);
+    expect(canRememberTurn(refused.done)).toBe(true);
   });
   it('never converts wallet refusal or successful reads into preparation success', async () => {
     const refusal = await guard(prepare, [result('transfer', { kind: 'result', value: { status: 'error', message: 'Insufficient balance.' } }), text('Success.'), done()]);

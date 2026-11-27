@@ -5,6 +5,7 @@ import {
   FOLLOW_UP_SCENARIOS,
   KOREAN_SCENARIOS,
   READ_SCENARIOS,
+  REPEAT_SCENARIOS,
   ROUTING_SCENARIOS,
   SCENARIOS,
   TYPO_SCENARIOS,
@@ -121,6 +122,27 @@ describe('scenarios', () => {
     for (const scenario of FOLLOW_UP_SCENARIOS) expect(scenario.before?.length).toBeGreaterThan(0);
     for (const scenario of [...SCENARIOS, ...ARGUMENT_SCENARIOS, ...ROUTING_SCENARIOS, ...READ_SCENARIOS]) {
       expect(scenario.before).toBeUndefined();
+    }
+  });
+
+  it('runs a scenario without an account in both languages, and expects an error only there', () => {
+    const all = [...SCENARIOS, ...EXTRA_SCENARIOS];
+    const without = all.filter((scenario) => scenario.noAccount);
+
+    expect(without.length).toBeGreaterThan(0);
+    expect(without.filter(({ name }) => name.startsWith('ko: '))).toHaveLength(without.length / 2);
+    expect(all.filter(({ expected }) => expected.kind === 'error').every(({ noAccount }) => noAccount === true)).toBe(true);
+    // Both an answer that needs no wallet and a wallet action that does.
+    expect(without.some(({ expected }) => expected.kind === 'answer')).toBe(true);
+    expect(without.some(({ expected }) => expected.kind === 'error')).toBe(true);
+  });
+
+  it('repeats only English reads and follow-ups, which the other sets already hold', () => {
+    const known = [...READ_SCENARIOS, ...FOLLOW_UP_SCENARIOS];
+    expect(REPEAT_SCENARIOS.length).toBeGreaterThan(0);
+    for (const scenario of REPEAT_SCENARIOS) {
+      expect(known).toContain(scenario);
+      expect(scenario.prompt).not.toMatch(HANGUL);
     }
   });
 });

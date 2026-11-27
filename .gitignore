@@ -40,3 +40,5 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+/src/mock/app/ios
+/src/mock/app/android

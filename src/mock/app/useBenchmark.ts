@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
-import type { LLMOnDevice } from '../../llm/device';
-import { describeRuntime } from './describeRuntime';
+import type { LLM } from '../../llm/core';
 import { runBenchmark, type BenchmarkTarget } from '../scenario/benchmark';
 import { createBenchmarkWallet } from '../scenario/benchmarkWallet';
 import { ACCOUNT, FAKE_ENDPOINT, fakeReads } from '../scenario/fixture';
@@ -12,6 +11,9 @@ import { fetchOnblocBalances } from '../wallet/onblocWallet';
 /** Fixed, so results compare across devices and builds; the Settings values do not apply. */
 export const BENCHMARK_SETTINGS = { temperature: 0, maxOutputTokens: 512, reasoning: 'none' } as const satisfies ScenarioSettings;
 
+/** The Repeat set samples on purpose: at temperature 0 a repeat only repeats itself. */
+export const REPEAT_SETTINGS = { ...BENCHMARK_SETTINGS, temperature: 0.7 } as const satisfies ScenarioSettings;
+
 export const BENCHMARK_RUNS_RANGE = { min: 1, max: 1000 } as const;
 export const DEFAULT_BENCHMARK_RUNS = 10;
 
@@ -19,8 +21,8 @@ export const DEFAULT_BENCHMARK_RUNS = 10;
 const TAIL_LINES = 300;
 const REDRAW_MS = 150;
 
-/** Runs the benchmark on the loaded model and keeps its log for the screen. */
-export function useBenchmark(llm: LLMOnDevice, modelId: string) {
+/** Runs the benchmark on the given model (on-device or hosted) and keeps its log for the screen. */
+export function useBenchmark(llm: LLM) {
   const [running, setRunning] = useState(false);
   // What the screen draws; `lines` below keeps every line.
   const [view, setView] = useState<{ total: number; tail: readonly string[] }>({ total: 0, tail: [] });
@@ -56,9 +58,9 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
     };
   }, []);
 
-  /** `runs` times each scenario, or `runs` times the one prompt. */
+  /** `runs` times each scenario, or `runs` times the one prompt. `llmHeader`: log lines about the model. */
   const start = useCallback(
-    async (target: BenchmarkTarget, runs: number) => {
+    async (target: BenchmarkTarget, runs: number, llmHeader: readonly string[], settings: typeof BENCHMARK_SETTINGS | typeof REPEAT_SETTINGS = BENCHMARK_SETTINGS) => {
       if (controller.current) return;
       const abort = new AbortController();
       controller.current = abort;
@@ -66,7 +68,7 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
       setRunning(true);
       try {
         await runBenchmark({
-          runner: createScenarioRunner({ llm, createWallet: createBenchmarkWallet, settings: BENCHMARK_SETTINGS }),
+          runner: createScenarioRunner({ llm, createWallet: createBenchmarkWallet, settings }),
           target,
           runs,
           signal: abort.signal,
@@ -74,10 +76,8 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
           header: [
             `device: ${Platform.OS} ${Platform.Version}`,
             `build: ${__DEV__ ? 'development (slower JavaScript side)' : 'release'}`,
-            `model: ${modelId}`,
-            `context: n_ctx ${llm.contextTokens}`,
-            ...describeRuntime(llm.runtimeInfo(), llm.status.state === 'ready' ? llm.status.loadMs : undefined),
-            `settings: temperature ${BENCHMARK_SETTINGS.temperature}, max output tokens ${BENCHMARK_SETTINGS.maxOutputTokens}, reasoning ${BENCHMARK_SETTINGS.reasoning} (fixed)`,
+            ...llmHeader,
+            `settings: temperature ${settings.temperature}, max output tokens ${settings.maxOutputTokens}, reasoning ${settings.reasoning} (fixed${settings === REPEAT_SETTINGS ? '; Repeat samples on purpose' : ''})`,
             'wallet: mock wallet, fake Onbloc reads (10 GNOT, 250 GNS), contact carol',
             `started: ${new Date().toISOString()}`,
           ],
@@ -95,7 +95,7 @@ export function useBenchmark(llm: LLMOnDevice, modelId: string) {
         redrawNow();
       }
     },
-    [llm, modelId, log, redrawNow]
+    [llm, log, redrawNow]
   );
 
   const stop = useCallback(() => controller.current?.abort(), []);

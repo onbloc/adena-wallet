@@ -1,7 +1,7 @@
 import type { ModelMessage } from 'ai';
 
 import type { GenerateEvent, GenerateSettings, LLM, LLMGenerateOptions, Metrics } from '../../llm/core';
-import { classifyRequest, proposePreparation, selectLookupTools, type PreparationProposal, type RequestIntent } from '../requestIntent';
+import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, type PreparationProposal, type RequestIntent } from '../requestIntent';
 import { intentReplyText } from '../testing/intentReply';
 
 const metrics: Metrics = { totalMs: 25, ttftMs: 5, outputTokens: 12 };
@@ -69,7 +69,7 @@ describe('request intent classification', () => {
       explanation: 'What is a token allowance?',
     },
     { kind: 'prepare' },
-    { kind: 'unsupported' },
+    { kind: 'chat' },
   ];
 
   it.each(intents)('preserves every requirement in wire output %j without returning classifier text', async intent => {
@@ -169,7 +169,7 @@ describe('request intent classification', () => {
     }),
   ])('rejects invalid output without aliases or repair: %s', async text => {
     const { llm, calls } = scriptedLlm(classificationEvents(text));
-    await expect(classifyRequest(llm, { prompt: 'My balance?' }, options)).rejects.toThrow('ADENA_INTENT_INVALID');
+    await expect(classifyRequest(llm, { prompt: 'My balance?' }, options)).rejects.toThrow('AGENT_INTENT_INVALID');
     expect(calls).toHaveLength(1);
   });
 
@@ -227,12 +227,12 @@ describe('request intent classification', () => {
 
   it.each([undefined, 'length', 'tool-calls', 'error', 'content-filter'])('rejects finish reason %s', async finishReason => {
     const { llm } = scriptedLlm(classificationEvents('{"route":"explanation"}', { finishReason }));
-    await expect(classifyRequest(llm, { prompt: 'What is GNOT?' }, options)).rejects.toThrow('ADENA_INTENT_INVALID');
+    await expect(classifyRequest(llm, { prompt: 'What is GNOT?' }, options)).rejects.toThrow('AGENT_INTENT_INVALID');
   });
 
   it('rejects a missing terminal event', async () => {
     const { llm } = scriptedLlm([{ type: 'text', delta: '{"route":"explanation"}' }]);
-    await expect(classifyRequest(llm, { prompt: 'What is GNOT?' }, options)).rejects.toThrow('ADENA_INTENT_INVALID');
+    await expect(classifyRequest(llm, { prompt: 'What is GNOT?' }, options)).rejects.toThrow('AGENT_INTENT_INVALID');
   });
 
   it('collects hidden text chunks without including reasoning in JSON', async () => {
@@ -251,14 +251,14 @@ describe('request intent classification', () => {
     { type: 'tool-error', id: 'call', name: 'get_balance', error: 'Unavailable' },
   ])('rejects unexpected tool events: $type', async event => {
     const { llm } = scriptedLlm([event, ...classificationEvents('{"route":"explanation"}')]);
-    await expect(classifyRequest(llm, { prompt: 'Define GNOT.' }, options)).rejects.toThrow('ADENA_INTENT_INVALID');
+    await expect(classifyRequest(llm, { prompt: 'Define GNOT.' }, options)).rejects.toThrow('AGENT_INTENT_INVALID');
   });
 
   it('rejects tool calls hidden in terminal response messages', async () => {
     const { llm } = scriptedLlm(classificationEvents('{"route":"explanation"}', {
       messages: [{ role: 'assistant', content: [{ type: 'tool-call', toolCallId: 'call', toolName: 'prepare_transfer', input: {} }] }],
     }));
-    await expect(classifyRequest(llm, { prompt: 'Define GNOT.' }, options)).rejects.toThrow('ADENA_INTENT_INVALID');
+    await expect(classifyRequest(llm, { prompt: 'Define GNOT.' }, options)).rejects.toThrow('AGENT_INTENT_INVALID');
   });
 
   it('rejects trailing events and oversized output', async () => {
@@ -267,7 +267,7 @@ describe('request intent classification', () => {
       classificationEvents(' '.repeat(32769) + '{"route":"explanation"}'),
     ]) {
       const { llm } = scriptedLlm(events);
-      await expect(classifyRequest(llm, { prompt: 'Define GNOT.' }, options)).rejects.toThrow('ADENA_INTENT_INVALID');
+      await expect(classifyRequest(llm, { prompt: 'Define GNOT.' }, options)).rejects.toThrow('AGENT_INTENT_INVALID');
     }
   });
 
@@ -393,26 +393,26 @@ describe('lookup tool selection', () => {
   ])('rejects malformed, unknown, duplicate, or excessive selections: %s', async text => {
     const { llm, calls } = scriptedLlm(classificationEvents(text));
     await expect(selectLookupTools(llm, 'Read the requested facts.', tools, options))
-      .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+      .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
     expect(calls).toHaveLength(1);
   });
 
   it('rejects a known name when it is absent from the supplied catalog', async () => {
     const { llm } = scriptedLlm(classificationEvents('{"toolNames":["read_height"]}'));
     await expect(selectLookupTools(llm, 'Current height?', [], options))
-      .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+      .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
   });
 
   it.each([undefined, 'length', 'tool-calls', 'error', 'content-filter'])('rejects finish reason %s', async finishReason => {
     const { llm } = scriptedLlm(classificationEvents('{"toolNames":["read_height"]}', { finishReason }));
     await expect(selectLookupTools(llm, 'Current height?', tools, options))
-      .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+      .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
   });
 
   it('rejects missing terminal events', async () => {
     const { llm } = scriptedLlm([{ type: 'text', delta: '{"toolNames":["read_height"]}' }]);
     await expect(selectLookupTools(llm, 'Current height?', tools, options))
-      .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+      .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
   });
 
   it('rejects trailing events and oversized output', async () => {
@@ -422,7 +422,7 @@ describe('lookup tool selection', () => {
     ]) {
       const { llm } = scriptedLlm(events);
       await expect(selectLookupTools(llm, 'Current height?', tools, options))
-        .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+        .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
     }
   });
 
@@ -433,7 +433,7 @@ describe('lookup tool selection', () => {
   ])('rejects attempted tool execution during selection: $type', async event => {
     const { llm } = scriptedLlm([event, ...classificationEvents('{"toolNames":["read_height"]}')]);
     await expect(selectLookupTools(llm, 'Current height?', tools, options))
-      .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+      .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
   });
 
   it('rejects tool execution hidden in terminal messages', async () => {
@@ -441,7 +441,7 @@ describe('lookup tool selection', () => {
       messages: [{ role: 'tool', content: [{ type: 'tool-result', toolCallId: 'call', toolName: 'read_height', output: { type: 'json', value: 1 } }] }],
     }));
     await expect(selectLookupTools(llm, 'Current height?', tools, options))
-      .rejects.toThrow('ADENA_LOOKUP_TOOLS_INVALID');
+      .rejects.toThrow('AGENT_LOOKUP_TOOLS_INVALID');
   });
 
   it('does not start generation when already aborted', async () => {
@@ -520,10 +520,14 @@ describe('preparation argument proposals', () => {
   ];
 
   it.each(proposals)('returns validated data without changing or resolving arguments: %j', async proposal => {
+    // The user wrote the amount and the token, so the proposal stands.
+    const amount = proposal.operation !== 'clarification' && proposal.amount.kind === 'exact' ? proposal.amount.value : '';
+    const symbol = proposal.operation !== 'clarification' && proposal.asset.kind === 'symbol' ? proposal.asset.value : '';
+    const written: ModelMessage[] = [{ role: 'user', content: `Do this with ${amount} ${symbol}` }];
     const { llm, calls } = scriptedLlm(classificationEvents(JSON.stringify(proposal), {
       warnings: ['provider warning'],
     }));
-    const result = await proposePreparation(llm, request, options);
+    const result = await proposePreparation(llm, written, options);
     expect(result).toEqual({ aborted: false, proposal, metrics, warnings: ['provider warning'] });
     expect(calls).toHaveLength(1);
   });
@@ -533,7 +537,7 @@ describe('preparation argument proposals', () => {
     ['Approve Alice to spend 1 gno.land/r/example/GNS', 'gno.land/r/example/gns', 'gno.land/r/example/gns'],
     ['Approve Alice to spend 1 xGNS', 'gns', 'gns'],
   ])('copies only an unambiguous bare asset spelling from the request: %s', async (text, value, expected) => {
-    const proposal = { ...exact, asset: { kind: 'id', value } };
+    const proposal = { ...exact, asset: { kind: 'id', value }, amount: { kind: 'exact', value: '1' } };
     const { llm } = scriptedLlm(classificationEvents(JSON.stringify(proposal)));
     const result = await proposePreparation(llm, [{ role: 'user', content: text }], options);
     expect(result).toMatchObject({ aborted: false, proposal: { asset: { kind: 'id', value: expected } } });
@@ -562,6 +566,140 @@ describe('preparation argument proposals', () => {
     expect(followup.calls[0].settings.outputSchema!.safeParse(exact).success).toBe(true);
   });
 
+  it.each([
+    ['an address followed by a Korean particle', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6가', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'],
+    ['an address followed by a longer particle', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6한테', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'],
+    ['a Korean contact name', '철수', '철수'],
+    ['a Latin contact name', 'carol', 'carol'],
+    ['an address followed by ASCII, which the wallet must see', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6x!', 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6x!'],
+    ['text before an address', '주소g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6', '주소g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'],
+  ])('hands the wallet the address as typed: %s', async (_label, recipient, expected) => {
+    const { llm } = scriptedLlm(classificationEvents(JSON.stringify({ ...exact, recipient })));
+    await expect(proposePreparation(llm, [{ role: 'user', content: `Send 001.2500 GNOT to ${recipient}` }], options))
+      .resolves.toMatchObject({ proposal: { recipient: expected } });
+  });
+
+  describe('an exact amount the user never wrote', () => {
+    const send = (value: string): string => JSON.stringify({ ...exact, amount: { kind: 'exact', value } });
+    const say = (...texts: string[]): ModelMessage[] => texts.map(content => ({ role: 'user', content }));
+    const asks = { proposal: { operation: 'clarification', question: expect.stringContaining('amount') } };
+
+    it.each([
+      ['no number at all', say('Send GNOT to carol'), '1'],
+      ['a different number', say('Send 5 GNOT to carol'), '1'],
+      ['the number only inside an address', say('Send GNOT to g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6'), '1'],
+    ])('is turned into a question: %s', async (_label, messages, value) => {
+      const { llm } = scriptedLlm(classificationEvents(send(value)));
+      await expect(proposePreparation(llm, messages, options)).resolves.toMatchObject(asks);
+    });
+
+    it.each([
+      ['the same digits', say('Send 5 GNOT to carol'), '5'],
+      ['a decimal', say('Send 1.5 GNOT to carol'), '1.5'],
+      ['a decimal with a trailing zero', say('Send 1.50 GNOT to carol'), '1.5'],
+      ['a thousands separator', say('Send 1,000 GNOT to carol'), '1000'],
+      ['digits next to Korean', say('carol에게 3 GNOT 보내줘'), '3'],
+      ['an evidenced amount written in words', say('Send one and a half GNOT to carol'), '1.5'],
+      ['an amount written earlier in the conversation', say('Send 1 GNOT to carol', 'do it again'), '1'],
+    ])('stands when the user wrote it: %s', async (_label, messages, value) => {
+      const { llm } = scriptedLlm(classificationEvents(send(value)));
+      await expect(proposePreparation(llm, messages, options)).resolves.toMatchObject({ proposal: { amount: { kind: 'exact', value } } });
+    });
+
+    it('is never asked about a share of the balance, which has no digits to find', async () => {
+      const fraction = JSON.stringify({ ...exact, amount: { kind: 'fraction', numerator: '1', denominator: '2' } });
+      const { llm } = scriptedLlm(classificationEvents(fraction));
+      await expect(proposePreparation(llm, say('Send half of my GNOT to carol'), options)).resolves.toMatchObject({ proposal: { amount: { kind: 'fraction' } } });
+    });
+  });
+
+  describe('a token the user never wrote, or misspelled', () => {
+    const known = { ...options, tokenSymbols: ['GNOT', 'GNS'] };
+    const sendToken = (asset: object): string => JSON.stringify({ ...exact, amount: { kind: 'exact', value: '1' }, asset });
+    const symbol = (value: string) => ({ kind: 'symbol', value });
+    const say = (...texts: string[]): ModelMessage[] => texts.map(content => ({ role: 'user', content }));
+
+    it('asks which token when the user named none, whatever the model filled in', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('Send 1 to carol'), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: expect.stringContaining('token') },
+      });
+    });
+
+    it.each(['got', 'gnott', 'gsn', 'GSN'])('asks about the misspelling %s without substituting a different asset', async typed => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol(typed))));
+      await expect(proposePreparation(llm, say(`Send 1 ${typed} to carol`), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: expect.stringContaining(typed) },
+      });
+    });
+
+    it('preserves an exact known symbol regardless of case', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('gnot'))));
+      await expect(proposePreparation(llm, say('Send 1 gnot to carol'), known)).resolves.toMatchObject({
+        proposal: { asset: { kind: 'symbol', value: 'gnot' } },
+      });
+    });
+
+    it.each(['Let carol spend 1 GNOT.', 'Let carol spend 1 GNOT...', 'carol에게 1 GNOT.'])(
+      'recognizes an exact symbol before sentence punctuation: %s', async text => {
+        const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+        await expect(proposePreparation(llm, say(text), known)).resolves.toMatchObject({
+          proposal: { operation: 'transfer', asset: { kind: 'symbol', value: 'GNOT' } },
+        });
+      });
+
+    it.each(['GNOT.other', 'GNOT..other', 'xGNOT', 'GNOT/token'])(
+      'does not treat an embedded identifier as the exact GNOT symbol: %s', async identifier => {
+        const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+        await expect(proposePreparation(llm, say(`Send carol 1 ${identifier}`), known)).resolves.toMatchObject({
+          proposal: { operation: 'clarification' },
+        });
+      });
+
+    it('asks about a symbol the wallet does not know, and names the ones it does', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('foo'))));
+      await expect(proposePreparation(llm, say('Send 1 foo to carol'), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: 'I do not know the token foo. Which one: GNOT or GNS?' },
+      });
+    });
+
+    it('asks instead of choosing between two known symbols that are equally near', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('gnx'))));
+      const twoNear = { ...options, tokenSymbols: ['GNS', 'GNT'] };
+      await expect(proposePreparation(llm, say('Send 1 gnx to carol'), twoNear)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: 'I do not know the token gnx. Which one: GNS or GNT?' },
+      });
+    });
+
+    it('has nothing to check a symbol against when the host named no tokens', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('foo'))));
+      await expect(proposePreparation(llm, say('Send 1 foo to carol'), options)).resolves.toMatchObject({ proposal: { asset: { value: 'foo' } } });
+    });
+
+    it('asks which one when the request names two tokens, not carrying out one of them', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('Send 1 GNOT and 2 GNS to carol'), known)).resolves.toMatchObject({
+        proposal: { operation: 'clarification', question: 'Which token: GNOT or GNS?' },
+      });
+    });
+
+    it('counts a token once however it is written, and reads only the latest message for it', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('How much GNS do I have?', 'Send 1 gnot, I mean GNOT, to carol'), known)).resolves.toMatchObject({
+        proposal: { asset: { value: 'GNOT' } },
+      });
+    });
+
+    it('finds a token written earlier in the conversation', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken(symbol('GNOT'))));
+      await expect(proposePreparation(llm, say('Send 1 GNOT to carol', 'do it again'), known)).resolves.toMatchObject({ proposal: { asset: { value: 'GNOT' } } });
+    });
+
+    it('does not ask about an asset given by its id', async () => {
+      const { llm } = scriptedLlm(classificationEvents(sendToken({ kind: 'id', value: 'gno.land/r/demo/token' })));
+      await expect(proposePreparation(llm, say('Send 1 to carol'), known)).resolves.toMatchObject({ proposal: { asset: { kind: 'id' } } });
+    });
+  });
 
   it.each([
     '', 'not JSON', 'null', '[]', '{}',
@@ -616,7 +754,7 @@ describe('preparation argument proposals', () => {
     JSON.stringify({ operation: 'clarification', question: 'Which amount?', recipient: 'Alice' }),
   ])('fails closed on malformed, missing, excessive or extra data without retry: %s', async text => {
     const { llm, calls } = scriptedLlm(classificationEvents(text));
-    await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    await expect(proposePreparation(llm, request, options)).rejects.toThrow('AGENT_PREPARATION_INVALID');
     expect(calls).toHaveLength(1);
   });
 
@@ -653,12 +791,12 @@ describe('preparation argument proposals', () => {
     ['the amount is absent', { ...exact, amount: undefined }],
   ])('still fails closed when the amount is not the only flaw: %s', async (_label, proposal) => {
     const { llm } = scriptedLlm(classificationEvents(JSON.stringify(proposal)));
-    await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    await expect(proposePreparation(llm, request, options)).rejects.toThrow('AGENT_PREPARATION_INVALID');
   });
 
   it.each([undefined, 'length', 'tool-calls', 'error', 'content-filter'])('rejects non-complete finish reason %s', async finishReason => {
     const { llm } = scriptedLlm(classificationEvents(JSON.stringify(exact), { finishReason }));
-    await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    await expect(proposePreparation(llm, request, options)).rejects.toThrow('AGENT_PREPARATION_INVALID');
   });
 
   it('rejects missing terminal events, trailing events and oversized output', async () => {
@@ -668,7 +806,7 @@ describe('preparation argument proposals', () => {
       classificationEvents(' '.repeat(32769) + JSON.stringify(exact)),
     ]) {
       const { llm } = scriptedLlm(events);
-      await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
+      await expect(proposePreparation(llm, request, options)).rejects.toThrow('AGENT_PREPARATION_INVALID');
     }
   });
 
@@ -678,7 +816,7 @@ describe('preparation argument proposals', () => {
     { type: 'tool-error', id: 'call', name: 'prepare_approve', error: 'Unavailable' },
   ])('rejects executable events even alongside a valid proposal: $type', async event => {
     const { llm, calls } = scriptedLlm([event, ...classificationEvents(JSON.stringify(exact))]);
-    await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    await expect(proposePreparation(llm, request, options)).rejects.toThrow('AGENT_PREPARATION_INVALID');
     expect(calls).toHaveLength(1);
   });
 
@@ -687,7 +825,7 @@ describe('preparation argument proposals', () => {
     [{ role: 'tool', content: [{ type: 'tool-result', toolCallId: 'call', toolName: 'get_balance', output: { type: 'json', value: {} } }] }],
   ])('rejects executable terminal message content', async (...messages) => {
     const { llm } = scriptedLlm(classificationEvents(JSON.stringify(exact), { messages }));
-    await expect(proposePreparation(llm, request, options)).rejects.toThrow('ADENA_PREPARATION_INVALID');
+    await expect(proposePreparation(llm, request, options)).rejects.toThrow('AGENT_PREPARATION_INVALID');
   });
 
   it('does not start generation when already cancelled', async () => {
@@ -764,5 +902,34 @@ describe('preparation argument proposals', () => {
     const { llm, calls } = scriptedLlm([], () => { throw new Error('Provider unavailable'); });
     await expect(proposePreparation(llm, request, options)).rejects.toThrow('Provider unavailable');
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe('askWhichRecipient', () => {
+  const say = (...texts: string[]): ModelMessage[] => texts.map(content => ({ role: 'user', content }));
+  const carol = { alias: 'carol', address: 'g1tvdw0s3jn54khce6mua7lqpzry9x8gf2tvdw0s' };
+  const other = 'g1l7aum6echk45nj3s0wdvt2fg8x9yrzpql7aum6';
+
+  it('asks which person when the message names a contact and another address', () => {
+    expect(askWhichRecipient(say(`Send 1 GNOT to carol and to ${other}`), [carol])).toBe(`Who should receive it: carol or ${other}?`);
+  });
+
+  it('asks which person when it names two contacts, in any script around the names', () => {
+    const dave = { alias: 'dave', address: 'g1davedavedavedavedavedavedavedavedave00' };
+    expect(askWhichRecipient(say('carol이랑 Dave에게 1 GNOT 보내줘'), [carol, dave])).toBe('Who should receive it: carol or dave?');
+  });
+
+  it('does not ask when a contact is named along with that contact\'s own address', () => {
+    expect(askWhichRecipient(say(`Send 1 GNOT to carol (${carol.address})`), [carol])).toBeUndefined();
+  });
+
+  it('does not ask for one person, or for none, or when the name is only part of a word', () => {
+    expect(askWhichRecipient(say('Send 1 GNOT to carol'), [carol])).toBeUndefined();
+    expect(askWhichRecipient(say('Send 1 GNOT.'), [carol])).toBeUndefined();
+    expect(askWhichRecipient(say('Send 1 GNOT to carolina'), [carol])).toBeUndefined();
+  });
+
+  it('reads only the latest message: a person named earlier is not a second recipient', () => {
+    expect(askWhichRecipient(say(`Send 1 GNOT to ${other}`, 'now to carol'), [carol])).toBeUndefined();
   });
 });

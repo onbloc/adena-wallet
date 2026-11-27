@@ -7,7 +7,7 @@
 # DEVICE=<id> picks the phone when several are connected (iOS: UDID, Android: adb serial).
 set -eu
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../src/mock/app"
 
 fail() {
   echo "mobile: $*" >&2
@@ -27,7 +27,8 @@ ios_udid() {
     echo "$DEVICE"
     return
   fi
-  devices=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && /connected/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-Fa-f]+-[0-9A-Fa-f]+$/) print $i }')
+  # State is "connected" or "available (paired)" (tunnel not up yet; devicectl brings it up on demand).
+  devices=$(xcrun devicectl list devices 2>/dev/null | awk '/physical/ && / (connected|available)( |$)/ { for (i = 1; i <= NF; i++) if ($i ~ /^[0-9A-Fa-f]+-[0-9A-Fa-f]+$/) print $i }')
   [ -n "$devices" ] || fail "no connected iPhone (unlock it, plug in USB, trust this Mac)"
   [ "$(echo "$devices" | wc -l)" -eq 1 ] || fail "several iPhones connected: DEVICE=<udid> make deploy ios"
   echo "$devices"

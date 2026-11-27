@@ -1,5 +1,5 @@
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { createServerScenarioRunner, GNS_PATH, serverUrl } from './harness';
+import { createEnvScenarioRunner, GNS_PATH } from './harness';
 
 jest.setTimeout(5 * 60_000);
 
@@ -21,7 +21,7 @@ function reads(sourcePath: string) {
 
 it.each([['한국어', question], ['English', `Which file implements BalanceOf in ${GNS_PATH}, and what does it return?`]])(
   '%s: locate a named function and explain it using the returned source', async (_, prompt) => {
-    const run = await (await createServerScenarioRunner(serverUrl(), false, () => reads(GNS_PATH))).ask(prompt);
+    const run = await (await createEnvScenarioRunner(false, () => reads(GNS_PATH))).ask(prompt);
     expect(run.prepared).toEqual([]);
     expect(run.calls.filter(call => call.name.startsWith('get_realm_')).map(({ name, input }) => ({ name, input }))).toEqual([
       { name: 'get_realm_info', input: { path: GNS_PATH } }, { name: 'get_realm_source', input: { path: GNS_PATH, filename } },
@@ -32,7 +32,7 @@ it.each([['한국어', question], ['English', `Which file implements BalanceOf i
   });
 
 it('does not attribute a different realm’s source to the requested function', async () => {
-  const run = await (await createServerScenarioRunner(serverUrl(), false, () => reads('gno.land/r/demo/other'))).ask(question);
+  const run = await (await createEnvScenarioRunner(false, () => reads('gno.land/r/demo/other'))).ask(question);
   expect(run.calls).toContainEqual(expect.objectContaining({ name: 'get_realm_source', input: { path: GNS_PATH, filename } }));
   expect(run.prepared).toEqual([]);
   expect(run.text).not.toContain('ledger.Balance');

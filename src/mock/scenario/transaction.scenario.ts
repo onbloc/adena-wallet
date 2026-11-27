@@ -1,14 +1,15 @@
-// Scenario tests: a real model turns plain-language requests into transactions. They need a
-// running llama-server and are not part of `npm test`; run them with `make scenario`.
+// Scenario tests: a model turns plain-language requests into transactions. They run on the local
+// llama-server (`make scenario`) or a hosted model (`make scenario-remote`) and are not part of `npm test`.
 import { toBaseUnits } from '../../agent';
+import { TOKEN_DECIMALS } from '../wallet/tokens';
 import { checkScenarioRun } from './check';
 import {
   GNS_PATH,
   ACCOUNT,
-  adenaTransaction,
-  createServerScenarioRunner,
+  mockTransaction,
+  createEnvScenarioRunner,
   firstMessage,
-  serverUrl,
+  scenarioTarget,
   type ScenarioRun,
   type ScenarioRunner,
 } from './harness';
@@ -17,14 +18,12 @@ import { EXTRA_SCENARIOS, SCENARIOS, type Expected } from './scenarios';
 // A slow on-device-sized model: the agent's own run budget is 5 minutes.
 jest.setTimeout(5 * 60_000);
 
-// Every token in the scenarios has 6 decimals.
-const DECIMALS = 6;
 
 /** The message the prepared transaction will sign is exactly the requested one. */
 function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'transfer' | 'allowance' }>) {
   const [prepared] = run.prepared;
-  expect(adenaTransaction(prepared).messages).toHaveLength(1);
-  const base = String(toBaseUnits(expected.amount, DECIMALS));
+  expect(mockTransaction(prepared).messages).toHaveLength(1);
+  const base = String(toBaseUnits(expected.amount, TOKEN_DECIMALS[expected.token]));
 
   if (expected.kind === 'transfer') {
     expect(firstMessage(prepared)).toMatchObject(
@@ -40,30 +39,36 @@ function expectMessage(run: ScenarioRun, expected: Extract<Expected, { kind: 'tr
   }
 }
 
-describe('plain-language requests become transactions', () => {
+describe(`plain-language requests become transactions [${scenarioTarget()}]`, () => {
   let runner: ScenarioRunner;
 
   beforeAll(async () => {
     try {
-      runner = await createServerScenarioRunner();
+      runner = await createEnvScenarioRunner();
     } catch (error) {
-      throw new Error(`${String(error)}\nStart the server with \`make scenario\`, or set SCENARIO_URL (now ${serverUrl()}).`);
+      throw new Error(`${String(error)}\nLocal: \`make scenario\` (SCENARIO_URL to use another server). Hosted: \`make scenario-remote\`.`);
     }
   });
 
-  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [], beforeExpected = [] }) => {
-    const turns = await runner.chat([...before, prompt]);
+  it.each([...SCENARIOS, ...EXTRA_SCENARIOS])('$name', async ({ prompt, expected, before = [], beforeExpected = [], noAccount }) => {
+    const options = { account: !noAccount };
+    if (expected.kind === 'error') {
+      await expect(runner.chat([...before, prompt], options)).rejects.toThrow(expected.code);
+      return;
+    }
+    const turns = await runner.chat([...before, prompt], options);
     const run = turns[turns.length - 1];
     const context = `prompts: ${JSON.stringify([...before, prompt])}\ncalls: ${JSON.stringify(run.calls)}\nanswer: ${run.text}`;
 
     try {
       for (const [index, prior] of beforeExpected.entries()) {
-        expect(checkScenarioRun(turns[index], prior)).toEqual({ ok: true });
-        for (const prepared of turns[index].prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
-        if ((prior.kind === 'transfer' || prior.kind === 'allowance') && turns[index].prepared.length) expectMessage(turns[index], prior);
+        const turn = turns[index];
+        expect(checkScenarioRun(turn, prior)).toEqual({ ok: true });
+        for (const prepared of turn.prepared) expect(mockTransaction(prepared).signatures).toEqual([]);
+        if ((prior.kind === 'transfer' || prior.kind === 'allowance') && turn.prepared.length) expectMessage(turn, prior);
       }
       // Only outcomes matter; a corrected tool-call retry must not fail the scenario.
-      for (const prepared of run.prepared) expect(adenaTransaction(prepared).signatures).toEqual([]);
+      for (const prepared of run.prepared) expect(mockTransaction(prepared).signatures).toEqual([]);
 
       // The summaries first (what the model chose), then the message that will be signed.
       expect(checkScenarioRun(run, expected)).toEqual({ ok: true });
@@ -132,7 +137,7 @@ describe('plain-language requests become transactions', () => {
 
 describe('read-only wallet with a real model', () => {
   let runner: ScenarioRunner;
-  beforeAll(async () => { runner = await createServerScenarioRunner(serverUrl(), false); });
+  beforeAll(async () => { runner = await createEnvScenarioRunner(false); });
 
   it('reads GNS in Korean without substituting native funds', async () => {
     const turn = await runner.ask('내 GNS 얼마나 있어?');

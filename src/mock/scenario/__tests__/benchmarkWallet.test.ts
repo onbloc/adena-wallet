@@ -13,7 +13,7 @@ describe('benchmark wallet', () => {
     });
   });
 
-  it('refuses an approval of the native token like the Adena wallet, in any case', async () => {
+  it('refuses an approval of the native token in any case', async () => {
     const wallet = createBenchmarkWallet();
 
     for (const token of ['GNOT', 'gnot', ' Gnot ']) {

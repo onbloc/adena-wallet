@@ -24,11 +24,13 @@ function fakeRunner(answers: (ScenarioRun | Error)[], { ms = 1000, onAsk }: { ms
   clock = { t: 0 };
   const prompts: string[] = [];
   const signals: (AbortSignal | undefined)[] = [];
+  const accounts: (boolean | undefined)[] = [];
   const runner: ScenarioRunner = {
-    async ask(prompt, signal) {
+    async ask(prompt, options) {
       const call = prompts.length;
       prompts.push(prompt);
-      signals.push(signal);
+      signals.push(options?.signal);
+      accounts.push(options?.account);
       clock.t += Array.isArray(ms) ? ms[call] : ms;
       onAsk?.(call);
       const answer = answers[Math.min(call, answers.length - 1)];
@@ -37,7 +39,7 @@ function fakeRunner(answers: (ScenarioRun | Error)[], { ms = 1000, onAsk }: { ms
     },
     chat: async () => [],
   };
-  return { runner, prompts, signals, clock };
+  return { runner, prompts, signals, accounts, clock };
 }
 
 const collect = () => {
@@ -80,14 +82,14 @@ describe('runBenchmark over scenarios', () => {
   });
 
   it('counts an error by its code, fails that run and carries on', async () => {
-    const { runner } = fakeRunner([new Error('ADENA_INTENT_INVALID: The model did not return a valid request classification.\nmore'), run(transfer(CAROL, '1'))]);
+    const { runner } = fakeRunner([new Error('AGENT_INTENT_INVALID: The model did not return a valid request classification.\nmore'), run(transfer(CAROL, '1'))]);
     const { lines, onLog } = collect();
 
     const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [send] }, runs: 3, onLog });
 
-    expect(report).toMatchObject({ completed: 3, passed: 2, errored: 1, errors: [{ code: 'ADENA_INTENT_INVALID', count: 1 }] });
+    expect(report).toMatchObject({ completed: 3, passed: 2, errored: 1, errors: [{ code: 'AGENT_INTENT_INVALID', count: 1 }] });
     expect(lines.find((line) => line.startsWith('[1/3]'))).toBe(
-      '[1/3] FAIL send to carol  1.0s  - ADENA_INTENT_INVALID: The model did not return a valid request classification.'
+      '[1/3] FAIL send to carol  1.0s  - AGENT_INTENT_INVALID: The model did not return a valid request classification.'
     );
   });
 
@@ -130,7 +132,7 @@ describe('runBenchmark over one prompt', () => {
   });
 
   it('is not consistent when a run fails, even if the others agree', async () => {
-    const { runner } = fakeRunner([run(transfer(CAROL, '1')), new Error('ADENA_PREPARATION_INVALID: x')]);
+    const { runner } = fakeRunner([run(transfer(CAROL, '1')), new Error('AGENT_PREPARATION_INVALID: x')]);
     const { lines, onLog } = collect();
 
     await bench({ runner, target: { kind: 'prompt', prompt: 'send' }, runs: 2, onLog });
@@ -301,5 +303,99 @@ describe('runBenchmark follow-ups and answers', () => {
     const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [explain] }, runs: 2, onLog });
 
     expect(report.items[0]).toMatchObject({ runs: 2, passed: 1, reasons: [{ text: 'called get_balance({}), expected no tool call', count: 1 }] });
+  });
+});
+
+describe('runBenchmark without an account and with an expected error', () => {
+  const linkWallet: Scenario = {
+    name: 'balance without a wallet', prompt: 'my balance?', noAccount: true, expected: { kind: 'error', code: 'AGENT_ACCOUNT_REQUIRED' },
+  };
+  const raised = (code: string) => new Error(`${code}: Link a wallet to read wallet data or prepare transactions.`);
+  const target = { kind: 'scenarios', scenarios: [linkWallet] } as const;
+
+  it('runs a scenario that has no linked wallet without an account, and the others with one', async () => {
+    const { runner, accounts } = fakeRunner([raised('AGENT_ACCOUNT_REQUIRED'), run()]);
+    const { onLog } = collect();
+
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [linkWallet, ask] }, runs: 1, onLog });
+
+    expect(accounts).toEqual([false, true]);
+  });
+
+  it('passes when the agent raises exactly the expected error, which is not counted as an error', async () => {
+    const { runner } = fakeRunner([raised('AGENT_ACCOUNT_REQUIRED')]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target, runs: 1, onLog });
+
+    expect(report).toMatchObject({ passed: 1, errored: 0 });
+    expect(lines).toContain('[1/1] PASS balance without a wallet  1.0s');
+  });
+
+  it('fails, saying what happened, when another error is raised or none', async () => {
+    const other = await bench({ runner: fakeRunner([raised('AGENT_INTENT_INVALID')]).runner, target, runs: 1, onLog: collect().onLog });
+    const none = await bench({ runner: fakeRunner([run()]).runner, target, runs: 1, onLog: collect().onLog });
+
+    expect(other.items[0]).toMatchObject({ passed: 0, reasons: [{ text: 'raised AGENT_INTENT_INVALID, expected AGENT_ACCOUNT_REQUIRED', count: 1 }] });
+    expect(none.items[0]).toMatchObject({ passed: 0, reasons: [{ text: 'raised no error, expected AGENT_ACCOUNT_REQUIRED', count: 1 }] });
+  });
+});
+
+describe('runBenchmark tool calling and hit-rate intervals', () => {
+  const gnotOne = { kind: 'one', asset: { kind: 'symbol', value: 'GNOT' } };
+  const read: Scenario = {
+    name: 'balance of GNOT',
+    prompt: 'how much GNOT?',
+    expected: { kind: 'answer', reads: [{ name: 'get_balance', input: gnotOne }] },
+  };
+  const calling = (input: unknown): ScenarioRun => ({ ...run(), calls: [{ name: 'get_balance', input, invalid: false }] });
+
+  it('counts the right tool, and the arguments only of the runs that used it', async () => {
+    // Right tool and input; right tool, wrong input; no tool at all.
+    const { runner } = fakeRunner([calling(gnotOne), calling({ kind: 'all' }), run()]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 3, onLog });
+
+    expect(report.toolCalling).toEqual({ tool: { hit: 2, total: 3 }, args: { hit: 1, total: 2 } });
+    expect(lines.some((line) => line.startsWith('tool choice: 2/3 (66.7%, 95% CI '))).toBe(true);
+    expect(lines.some((line) => line.startsWith('arguments (right tool only): 1/2 (50.0%, 95% CI '))).toBe(true);
+  });
+
+  it('leaves an errored run out of the tool rates, and says so next to them', async () => {
+    const { runner } = fakeRunner([calling(gnotOne), new Error('AGENT_INTENT_INVALID: bad')]);
+    const { lines, onLog } = collect();
+
+    const report = await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 2, onLog });
+
+    expect(report).toMatchObject({ passed: 1, errored: 1, toolCalling: { tool: { hit: 1, total: 1 } } });
+    expect(lines).toContain('  (the tool rates leave out 1 errored run(s): see errors below)');
+  });
+
+  it('reports unavailable argument rates when no arguments can be judged', async () => {
+    const { runner } = fakeRunner([run()]);
+    const { lines, onLog } = collect();
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 1, onLog });
+    expect(lines).toContain('arguments (right tool only): 0/0 (N/A)');
+  });
+
+  it('gives the 95% Wilson interval of a hit rate, which is far from 100% after a few clean runs', async () => {
+    const { runner } = fakeRunner([calling(gnotOne)]);
+    const { lines, onLog } = collect();
+
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 20, onLog });
+
+    expect(lines).toContain('passed: 20/20 (100.0%, 95% CI 83.9-100.0%)');
+    expect(lines).toContain(' 20/20  balance of GNOT  [95% CI 83.9-100.0%]');
+  });
+
+  it('leaves the interval off a scenario with few runs, and reports no tool calling for a prompt', async () => {
+    const { runner } = fakeRunner([calling(gnotOne)]);
+    const { lines, onLog } = collect();
+    await bench({ runner, target: { kind: 'scenarios', scenarios: [read] }, runs: 2, onLog });
+    expect(lines).toContain('  2/2  balance of GNOT');
+
+    const prompt = await bench({ runner: fakeRunner([run()]).runner, target: { kind: 'prompt', prompt: 'send 1 to carol' }, runs: 1, onLog: collect().onLog });
+    expect(prompt.toolCalling).toBeUndefined();
   });
 });

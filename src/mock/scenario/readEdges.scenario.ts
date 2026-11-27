@@ -1,7 +1,7 @@
 // Real-model edge cases with controlled read results; no transaction is signed or broadcast.
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
 import { checkScenarioRun } from './check';
-import { ACCOUNT, CAROL, GNS_PATH, createServerScenarioRunner, serverUrl } from './harness';
+import { ACCOUNT, CAROL, GNS_PATH, createEnvScenarioRunner } from './harness';
 
 jest.setTimeout(5 * 60_000);
 
@@ -14,7 +14,7 @@ const token = (symbol: string, path: string, amount: string) =>
 
 describe('real-model read and arithmetic edges', () => {
   it('R1 distinguishes xGNS from GNS', async () => {
-    const runner = await createServerScenarioRunner(serverUrl(), true, () => fakeOnblocMcp(balances('10000000', [
+    const runner = await createEnvScenarioRunner(true, () => fakeOnblocMcp(balances('10000000', [
       token('GNS', GNS_PATH, '250000000'),
       token('xGNS', 'gno.land/r/gnoswap/xgns', '7000000'),
     ])));
@@ -24,7 +24,7 @@ describe('real-model read and arithmetic edges', () => {
   });
 
   it('T7 refuses to round half of an indivisible minimum unit', async () => {
-    const runner = await createServerScenarioRunner(serverUrl(), true, () => fakeOnblocMcp(balances('1', [])));
+    const runner = await createEnvScenarioRunner(true, () => fakeOnblocMcp(balances('1', [])));
     const turn = await runner.ask('Send exactly half of my GNOT to carol. Do not round.');
     expect(checkScenarioRun(turn, {
       kind: 'none', response: 'refusal', evidence: [/half|0\.0000005|precision|unit|divis|round/i],
@@ -32,7 +32,7 @@ describe('real-model read and arithmetic edges', () => {
   });
 
   it('T7 does not guess half when the balance lookup fails', async () => {
-    const runner = await createServerScenarioRunner(serverUrl(), true, () => fakeOnblocMcp([
+    const runner = await createEnvScenarioRunner(true, () => fakeOnblocMcp([
       { name: 'get_native_balance', isError: true, content: [{ type: 'text', text: 'Balance service unavailable' }] },
       { name: 'get_token_balances', output: { address: ACCOUNT, items: [] } },
     ]));
@@ -43,7 +43,7 @@ describe('real-model read and arithmetic edges', () => {
   });
 
   it('R7 reads the latest three transactions rather than preparing one', async () => {
-    const runner = await createServerScenarioRunner(serverUrl(), true, () => fakeOnblocMcp([
+    const runner = await createEnvScenarioRunner(true, () => fakeOnblocMcp([
       { name: 'list_account_transactions', output: { address: ACCOUNT, items: [
         { hash: 'LATESTONE', height: 300 }, { hash: 'LATESTTWO', height: 299 }, { hash: 'LATESTTHREE', height: 298 },
         { hash: 'OLDERFOUR', height: 297 },
@@ -60,7 +60,7 @@ describe('real-model read and arithmetic edges', () => {
   });
 
   it('R7 does not create an approval when asked to read existing approvals', async () => {
-    const runner = await createServerScenarioRunner();
+    const runner = await createEnvScenarioRunner();
     const turn = await runner.ask(`Show my existing token approvals for ${CAROL}. Do not create an approval.`);
     expect(checkScenarioRun(turn, {
       kind: 'none', response: 'refusal', evidence: [/approv|allowance/i, /cannot|can't|unable|unavailable|not |no |support/i],

@@ -1,5 +1,5 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
+import { CfWorkerJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/cfworker';
 import { CallToolResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import { discoveredReadTool } from './discovered-read-tool';
 import type { RemoteTool, ToolSource, WalletContext } from '../core';
@@ -67,7 +67,7 @@ export function createTrustedMcpReadToolSource(config: {
   return async (context, signal) => {
     const tools = new Map<string, RemoteTool>();
     if (!config.supports(context)) return tools;
-    const validator = new AjvJsonSchemaValidator();
+    const validator = new CfWorkerJsonSchemaValidator();
     const seen = new Set<string>();
     const cursors = new Set<string>();
     let cursor: string | undefined;

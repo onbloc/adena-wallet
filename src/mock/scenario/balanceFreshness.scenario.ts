@@ -1,5 +1,7 @@
 import { fakeOnblocMcp } from '../../harness/mcp/testing/fakeOnblocMcp';
-import { ACCOUNT, createServerScenarioRunner, serverUrl } from './harness';
+import { ACCOUNT, createEnvScenarioRunner } from './harness';
+
+jest.setTimeout(5 * 60_000);
 
 // Change the provider response, not the conversation: a stale answer cannot pass by coincidence.
 it('refreshes a verified empty wallet after its native balance changes', async () => {
@@ -10,7 +12,7 @@ it('refreshes a verified empty wallet after its native balance changes', async (
     } },
     { name: 'get_token_balances', output: { address: ACCOUNT, items: [] } },
   ]);
-  const runner = await createServerScenarioRunner(serverUrl(), false, () => reads);
+  const runner = await createEnvScenarioRunner(false, () => reads);
   const [portfolio, followUp] = await runner.chat(['Show me all my assets.', 'What about GNOT?']);
   expect(portfolio.text).toContain('0 GNOT');
   expect(portfolio.text).toMatch(/no token balances/i);
@@ -19,7 +21,7 @@ it('refreshes a verified empty wallet after its native balance changes', async (
 });
 
 it('keeps the verified native balance without declaring a partial portfolio empty', async () => {
-  const runner = await createServerScenarioRunner(serverUrl(), false, () => fakeOnblocMcp([
+  const runner = await createEnvScenarioRunner(false, () => fakeOnblocMcp([
     { name: 'get_native_balance', output: { address: ACCOUNT, denom: 'ugnot', balance: '3000000' } },
     { name: 'get_token_balances', isError: true, content: [{ type: 'text', text: 'provider unavailable' }] },
   ]));

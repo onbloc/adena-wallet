@@ -22,6 +22,15 @@ import {
 
 const MOCK_CHAIN_ID = 'gnoland-1'; // assumption, not verified
 
+export type MockMessage =
+  | { type: '/bank.MsgSend'; value: { from_address: string; to_address: string; amount: string } }
+  | { type: '/vm.m_call'; value: { caller: string; pkg_path: string; func: 'Transfer' | 'Approve'; args: [string, string]; send: string } };
+
+/** Host-owned unsigned draft; never an SDK encoding or a signed transaction. */
+export type MockTransaction = { chainId: string; messages: MockMessage[]; signatures: never[] };
+
+const GNS_PATH = 'gno.land/r/gnoswap/gns';
+
 /** What the wallet holds: balances by address. They never change. */
 export type WalletState = {
   balances: Record<string, Balances>;
@@ -34,8 +43,8 @@ export type MockWalletSdkOptions = {
 };
 
 /**
- * Read-only fixture wallet. It validates and builds transactions but never signs or sends one,
- * so balances stay as they were created.
+ * Read-only fixture wallet. Returns plain transaction descriptions, without any wallet SDK,
+ * encoding, signing, or sending. Balances stay as they were created.
  */
 export class MockWalletSdk implements WalletSdk {
   readonly #balances = new Map<string, Map<TokenSymbol, bigint>>();
@@ -88,7 +97,7 @@ export class MockWalletSdk implements WalletSdk {
 
   /** The mock's token for a symbol (any case). Throws UnknownToken. */
   #token(symbol: string): TokenSymbol {
-    const token = TOKEN_SYMBOLS.find((known) => known.toLowerCase() === symbol.trim().toLowerCase());
+    const token = symbol.trim() === GNS_PATH ? 'GNS' : TOKEN_SYMBOLS.find((known) => known.toLowerCase() === symbol.trim().toLowerCase());
     if (!token) throw new WalletError(WalletErrorCode.UnknownToken, `Unknown token ${symbol}`);
     return token;
   }
@@ -105,7 +114,7 @@ export class MockWalletSdk implements WalletSdk {
     const value = input.trim();
     if (this.#fixtureOwners.has(address) || this.#holdings.size === 0) {
       const symbol = this.#token(value);
-      return { symbol, decimals: TOKEN_DECIMALS[symbol], units: this.#units(address, symbol) };
+      return { symbol, decimals: TOKEN_DECIMALS[symbol], units: this.#units(address, symbol), ...(symbol === TokenSymbol.Gns ? { packagePath: GNS_PATH } : {}) };
     }
     const holdings = this.#holdings.get(address) ?? [];
     const exact = holdings.find((holding) => holding.packagePath === value);
@@ -173,7 +182,11 @@ export class MockWalletSdk implements WalletSdk {
       token,
       ...(asset.packagePath ? { packagePath: asset.packagePath } : {}),
     };
-    return { summary, tx: { ...summary } };
+    const message: MockMessage = asset.packagePath
+      ? { type: '/vm.m_call', value: { caller: from, pkg_path: asset.packagePath, func: 'Transfer', args: [to, String(units)], send: '' } }
+      : { type: '/bank.MsgSend', value: { from_address: from, to_address: to, amount: `${units}ugnot` } };
+    const tx: MockTransaction = { chainId: MOCK_CHAIN_ID, messages: [message], signatures: [] };
+    return { summary, tx };
   }
 
   /** Like ERC-20, an allowance may exceed the balance. */
@@ -181,6 +194,7 @@ export class MockWalletSdk implements WalletSdk {
     const from = this.#assertAddress(params.from, 'Owner is not a valid g1... address');
     const spender = this.#assertAddress(params.spender, 'Spender is not a valid g1... address');
     const asset = this.#resolve(from, params.token);
+    if (!asset.packagePath) throw new WalletError(WalletErrorCode.UnsupportedToken, 'Native GNOT does not support allowances');
     const { symbol: token, decimals } = asset;
     const units = this.#positiveUnits(params.amount, decimals);
     const summary: AllowanceSummary = {
@@ -192,7 +206,12 @@ export class MockWalletSdk implements WalletSdk {
       token,
       ...(asset.packagePath ? { packagePath: asset.packagePath } : {}),
     };
-    return { summary, tx: { ...summary } };
+    const tx: MockTransaction = {
+      chainId: MOCK_CHAIN_ID,
+      messages: [{ type: '/vm.m_call', value: { caller: from, pkg_path: asset.packagePath, func: 'Approve', args: [spender, String(units)], send: '' } }],
+      signatures: [],
+    };
+    return { summary, tx };
   }
 
   /**

@@ -5,15 +5,23 @@ export type ChatScope =
   | { mode: 'plain' | 'mock' }
   | { mode: 'onbloc'; endpoint: string; chainId: string; account: string };
 
+export const CHAT_PROMPT_MAX_LENGTH = 16_384;
+
 const maxTurns = 50;
-const turnSchema = z.strictObject({ prompt: z.string().min(1).max(16_384), answer: z.string().min(1).max(32_768) });
+const turnSchema = z.strictObject({
+  prompt: z.string().min(1).max(CHAT_PROMPT_MAX_LENGTH),
+  answer: z.string().min(1).max(32_768),
+  /** What the agent called and what came of it, written by code: see `describeToolRecord`. */
+  record: z.string().min(1).max(2_048).optional(),
+});
 const snapshotSchema = z.strictObject({ version: z.literal(1), turns: z.array(turnSchema).max(maxTurns) });
 export type ChatTurn = Readonly<z.infer<typeof turnSchema>>;
 
 export type ChatSession = {
   readonly turns: readonly ChatTurn[];
   messages(prompt: string): ModelMessage[];
-  complete(prompt: string, answer: string): boolean;
+  /** Rejects invalid or oversized turns without changing history. */
+  complete(prompt: string, answer: string, record?: string): boolean;
   trimOldest(count: number): void;
   reset(): void;
   serialize(): string;
@@ -29,7 +37,7 @@ export function canRememberTurn(event: { aborted: boolean; finishReason?: string
   return !event.aborted && (event.verifiedAnswer === true || (event.finishReason === 'stop' && event.messages.length > 0));
 }
 
-/** Persist user/answer text only, never tool calls, tool results, or wallet state. */
+/** Persists user and answer text with a compact tool record, never raw tool output or wallet state. */
 export function createChatSession(saved?: string | null): ChatSession {
   let turns: readonly ChatTurn[] = [];
   if (saved) {
@@ -42,12 +50,14 @@ export function createChatSession(saved?: string | null): ChatSession {
     get turns() { return turns; },
     messages(prompt: string): ModelMessage[] {
       const messages: ModelMessage[] = [];
-      for (const turn of turns) messages.push({ role: 'user', content: turn.prompt }, { role: 'assistant', content: turn.answer });
+      for (const turn of turns) {
+        messages.push({ role: 'user', content: turn.prompt }, { role: 'assistant', content: turn.record ? `${turn.answer}\n\n${turn.record}` : turn.answer });
+      }
       messages.push({ role: 'user', content: prompt });
       return messages;
     },
-    complete(prompt: string, answer: string): boolean {
-      const parsed = turnSchema.safeParse({ prompt, answer });
+    complete(prompt: string, answer: string, record?: string): boolean {
+      const parsed = turnSchema.safeParse({ prompt, answer, ...(record ? { record } : {}) });
       if (!parsed.success || !prompt.trim() || !answer.trim()) return false;
       turns = [...turns.slice(-(maxTurns - 1)), parsed.data];
       return true;

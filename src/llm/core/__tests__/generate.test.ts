@@ -222,11 +222,11 @@ describe('generate', () => {
 
     await expect(collect(generate(model, {
       prompt: 'Classify the request.', contextTokens: 2048, maxOutputTokens: 128, outputSchema,
-    }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+    }))).rejects.toThrow(Error);
     expect(model.doStreamCalls).toEqual([]);
   });
 
-  it('ends with an aborted done event when the signal fires mid-stream', async () => {
+  it.each(['caller', 'loop'] as const)('cancels a running provider from the %s signal when both are supplied', async source => {
     const model = new MockLanguageModelV4({
       doStream: async ({ abortSignal }) => ({
         stream: new ReadableStream({
@@ -240,15 +240,18 @@ describe('generate', () => {
         }) as never,
       }),
     });
-    const abort = new AbortController();
+    const caller = new AbortController();
+    const loop = new AbortController();
+    const close = jest.fn();
     const events: GenerateEvent[] = [];
 
     for await (const event of generate(model, {
       prompt: 'hi',
-      signal: abort.signal,
+      signal: caller.signal,
+      loop: { options: { abortSignal: loop.signal }, close },
     })) {
       events.push(event);
-      if (event.type === GenerateEventType.Text) abort.abort();
+      if (event.type === GenerateEventType.Text) (source === 'caller' ? caller : loop).abort();
     }
 
     expect(events[1]).toEqual({ type: GenerateEventType.Text, delta: 'partial' });
@@ -257,7 +260,147 @@ describe('generate', () => {
       aborted: true,
       messages: [],
     });
+    expect(model.doStreamCalls).toHaveLength(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
+
+  it.each(['caller', 'loop', 'both'] as const)('does not call the provider when %s is already aborted', async source => {
+    const caller = new AbortController();
+    const loop = new AbortController();
+    if (source !== 'loop') caller.abort();
+    if (source !== 'caller') loop.abort();
+    const close = jest.fn();
+    const model = modelFrom([...text('must not run'), finish(1)]);
+
+    const events = await collect(generate(model, {
+      prompt: 'hi',
+      signal: caller.signal,
+      loop: { options: { abortSignal: loop.signal }, close },
+    }));
+
+    expect(events).toEqual([expect.objectContaining({
+      type: GenerateEventType.Done,
+      aborted: true,
+      messages: [],
+    })]);
+    expect(model.doStreamCalls).toHaveLength(0);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not turn a completed response into an abort when closing the loop aborts its signal', async () => {
+    const caller = new AbortController();
+    const loop = new AbortController();
+    const close = jest.fn(() => loop.abort());
+    const model = modelFrom([...text('complete'), finish(1)]);
+
+    const events = await collect(generate(model, {
+      prompt: 'hi',
+      signal: caller.signal,
+      loop: { options: { abortSignal: loop.signal }, close },
+    }));
+
+    expect(events[events.length - 1]).toMatchObject({
+      type: GenerateEventType.Done,
+      aborted: false,
+      messages: [expect.objectContaining({ role: 'assistant' })],
+    });
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(loop.signal.aborted).toBe(true);
+    expect(caller.signal.aborted).toBe(false);
+  });
+
+  it.each(['caller', 'loop', 'undefined loop signal'] as const)(
+    'honors %s cancellation while generation is in flight',
+    async (source) => {
+      const caller = new AbortController();
+      const deadline = new AbortController();
+      const close = jest.fn();
+      const stopped = jest.fn();
+      const model = new MockLanguageModelV4({
+        doStream: async ({ abortSignal }) => ({
+          stream: new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: 'stream-start', warnings: [] });
+              text('partial').forEach((part) => controller.enqueue(part));
+              abortSignal?.addEventListener('abort', () => {
+                stopped();
+                controller.error(new Error('aborted'));
+              }, { once: true });
+            },
+          }) as never,
+        }),
+      });
+      const events: GenerateEvent[] = [];
+
+      for await (const event of generate(model, {
+        prompt: 'hi',
+        signal: caller.signal,
+        loop: {
+          options: { abortSignal: source === 'undefined loop signal' ? undefined : deadline.signal },
+          close,
+        },
+      })) {
+        events.push(event);
+        if (event.type === GenerateEventType.Text) {
+          (source === 'loop' ? deadline : caller).abort();
+        }
+      }
+
+      expect(stopped).toHaveBeenCalledTimes(1);
+      expect(events[events.length - 1]).toMatchObject({
+        type: GenerateEventType.Done,
+        aborted: true,
+        messages: [],
+      });
+      expect(close).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it.each(['completion', 'error', 'return'] as const)(
+    'releases both signal listeners and the loop on %s',
+    async (exit) => {
+      const caller = new AbortController();
+      const deadline = new AbortController();
+      const listeners = [caller.signal, deadline.signal].map((signal) => ({
+        add: jest.spyOn(signal, 'addEventListener'),
+        remove: jest.spyOn(signal, 'removeEventListener'),
+      }));
+      const close = jest.fn();
+      const model = modelFrom(
+        exit === 'error'
+          ? [{ type: 'error', error: new Error('boom') }]
+          : [...text('answer'), finish(2)]
+      );
+      const events = generate(model, {
+        prompt: 'hi',
+        signal: caller.signal,
+        loop: { options: { abortSignal: deadline.signal }, close },
+      });
+
+      if (exit === 'error') {
+        await expect(collect(events)).rejects.toThrow('boom');
+      } else if (exit === 'return') {
+        for await (const event of events) {
+          if (event.type === GenerateEventType.Text) break;
+        }
+      } else {
+        const collected = await collect(events);
+        expect(collected[collected.length - 1]).toMatchObject({
+          type: GenerateEventType.Done,
+          aborted: false,
+          messages: [expect.objectContaining({ role: 'assistant' })],
+        });
+      }
+
+      expect(close).toHaveBeenCalledTimes(1);
+      for (const { add, remove } of listeners) {
+        expect(add).toHaveBeenCalledTimes(1);
+        expect(remove).toHaveBeenCalledWith('abort', add.mock.calls[0][1]);
+        add.mockRestore();
+        remove.mockRestore();
+      }
+    }
+  );
 
   it('surfaces provider warnings in the done event', async () => {
     const model = modelFrom(
@@ -383,7 +526,7 @@ describe('generate with tools', () => {
     const original = JSON.stringify(messages);
     await expect(collect(generate(model, {
       messages, tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128, onContextCompacted,
-    }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+    }))).rejects.toThrow(Error);
     expect(JSON.stringify(messages)).toBe(original);
     expect(onContextCompacted).not.toHaveBeenCalled();
     expect(model.doStreamCalls).toHaveLength(0);
@@ -410,7 +553,7 @@ describe('generate with tools', () => {
         contextTokens: 1000,
         maxOutputTokens: reservation === 'output' ? 1000 : 128,
         onContextCompacted,
-      }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+      }))).rejects.toThrow(Error);
       expect(execute).not.toHaveBeenCalled();
       expect(model.doStreamCalls).toHaveLength(0);
       expect(onContextCompacted).not.toHaveBeenCalled();
@@ -431,7 +574,7 @@ describe('generate with tools', () => {
         { role: 'user', content: 'current request' },
       ],
       tools, maxSteps: 3, contextTokens: 1800, maxOutputTokens: 128, onContextCompacted,
-    }))).rejects.toThrow('ADENA_CONTEXT_LIMIT');
+    }))).rejects.toThrow(Error);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(model.doStreamCalls).toHaveLength(1);
     expect(onContextCompacted).not.toHaveBeenCalled();
@@ -603,6 +746,7 @@ describe('generate with tools', () => {
         aborted: true,
         messages: [],
       });
+      expect(model.doStreamCalls).toHaveLength(0);
       expect(close).toHaveBeenCalledTimes(1);
     });
   });

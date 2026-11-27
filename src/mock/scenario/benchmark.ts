@@ -1,6 +1,6 @@
 // Runs scenarios or one prompt many times. Scenario verdicts check prepared transactions, calls,
 // and responses. Portable across app and CLI runners.
-import { checkScenarioRun, describeSummaries, explainNothing, type Verdict } from './check';
+import { checkScenarioRun, describeSummaries, explainNothing, judgeToolCalling, type ToolCalling, type Verdict } from './check';
 import type { ScenarioRunner } from './runner';
 import type { Scenario } from './scenarios';
 import type { Stage, StageLabel } from './timing';
@@ -36,10 +36,33 @@ export type BenchmarkReport = {
   stages: StageStats[];
   /** Mean time per run outside the model calls (wallet, MCP reads, JavaScript). */
   outsideModelMs?: number;
+  /** Scenarios only: how often the right tool was chosen, and its arguments filled right. */
+  toolCalling?: { tool: Rate; args: Rate };
 };
 
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 const percent = (part: number, whole: number) => (whole === 0 ? '-' : `${((part / whole) * 100).toFixed(1)}%`);
+
+/** Runs that got something right out of the runs that could. */
+type Rate = { hit: number; total: number };
+
+/** The 95% Wilson score interval of a hit rate, in percent. */
+function wilson({ hit, total }: Rate): { low: number; high: number } {
+  if (total === 0) return { low: 0, high: 0 };
+  const z2 = 1.96 ** 2;
+  const p = hit / total;
+  const centre = (p + z2 / (2 * total)) / (1 + z2 / total);
+  const half = (1.96 * Math.sqrt((p * (1 - p)) / total + z2 / (4 * total * total))) / (1 + z2 / total);
+  return { low: Math.max(0, centre - half) * 100, high: Math.min(1, centre + half) * 100 };
+}
+
+/** `87/100 (87.0%, 95% CI 79.0-92.5%)`. */
+function rateText(rate: Rate): string {
+  if (rate.total === 0) return '0/0 (N/A)';
+  const { low, high } = wilson(rate);
+  return `${rate.hit}/${rate.total} (${percent(rate.hit, rate.total)}, 95% CI ${low.toFixed(1)}-${high.toFixed(1)}%)`;
+}
+
 const clip = (text: string, max = 160) => (text.length > max ? `${text.slice(0, max)}...` : text);
 // A failure reason names what the model asked and how the wallet answered: more than a short error line.
 const REASON_CHARS = 360;
@@ -57,11 +80,11 @@ const bump = (counts: Map<string, number>, key: string) => counts.set(key, (coun
 const ranked = (counts: Map<string, number>) =>
   [...counts].map(([text, count]) => ({ text, count })).sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
 
-/** The code of an `ADENA_*` error, else the error's name. */
+/** The code of an `AGENT_*` error, else the error's name. */
 function describeError(error: unknown): { code: string; text: string } {
   const message = error instanceof Error ? error.message : String(error);
   const firstLine = message.split('\n')[0];
-  const code = /^(ADENA_[A-Z_]+)/.exec(firstLine)?.[1] ?? (error instanceof Error ? error.name : 'Error');
+  const code = /^(AGENT_[A-Z_]+)/.exec(firstLine)?.[1] ?? (error instanceof Error ? error.name : 'Error');
   return { code, text: clip(firstLine) };
 }
 
@@ -69,7 +92,7 @@ function describeError(error: unknown): { code: string; text: string } {
 const stagesText = (stages: readonly Stage[] | undefined) =>
   stages && stages.length > 0 ? `  [${stages.map((stage) => `${stage.label} ${seconds(stage.ms)}`).join(', ')}]` : '';
 
-type RunRecord = { ms: number; stages?: Stage[]; error?: string; outcome?: string; verdict?: Verdict };
+type RunRecord = { ms: number; stages?: Stage[]; error?: string; outcome?: string; verdict?: Verdict; toolCalling?: ToolCalling };
 
 function summarizeStages(records: readonly RunRecord[]): { stages: StageStats[]; outsideModelMs?: number } {
   const byLabel = new Map<StageLabel, { ms: number[]; tokens: number[] }>();
@@ -164,8 +187,9 @@ export async function runBenchmark({
       const runStarted = now();
       const record: RunRecord = { ms: 0 };
       try {
-        // Time all turns and judge any explicitly specified earlier outcomes.
-        const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], signal) : [await runner.ask(prompt, signal)];
+        // A follow-up replays its earlier turns first; the verdict is on the last turn, the time on all.
+        const runOptions = { signal, account: !scenario?.noAccount };
+        const turns = scenario?.before?.length ? await runner.chat([...scenario.before, prompt], runOptions) : [await runner.ask(prompt, runOptions)];
         if (signal?.aborted) { aborted = true; break rounds; }
         const result = turns[turns.length - 1];
         const summaries = result.prepared.map((prepared) => prepared.summary);
@@ -173,6 +197,7 @@ export async function runBenchmark({
         record.stages = turns.flatMap((turn) => turn.stages);
         if (scenario) {
           record.verdict = checkScenarioRun(result, scenario.expected);
+          record.toolCalling = judgeToolCalling({ prepared: summaries, calls: result.calls, text: result.text }, scenario.expected);
           for (const [index, expected] of (scenario.beforeExpected ?? []).entries()) {
             const prior = checkScenarioRun(turns[index], expected);
             if (!prior.ok) {
@@ -187,8 +212,14 @@ export async function runBenchmark({
       } catch (error) {
         if (signal?.aborted) { aborted = true; break rounds; }
         const { code, text } = describeError(error);
-        record.error = text.startsWith(code) ? text : `${code}: ${text}`;
-        bump(errors, code);
+        const expectedError = scenario?.expected.kind === 'error' ? scenario.expected : undefined;
+        if (expectedError) {
+          // Raising exactly this error is the outcome the scenario expects.
+          record.verdict = code === expectedError.code ? { ok: true } : { ok: false, reason: `raised ${code}, expected ${expectedError.code}` };
+        } else {
+          record.error = text.startsWith(code) ? text : `${code}: ${text}`;
+          bump(errors, code);
+        }
       }
       record.ms = now() - runStarted;
       records.push(record);
@@ -226,6 +257,12 @@ export async function runBenchmark({
   const outcomeList = ranked(outcomes);
   const half = Math.floor(times.length / 2);
   const passed = target.kind === 'scenarios' ? sum(stats.map((item) => item.passed)) : (outcomeList[0]?.count ?? 0);
+  const judgedRuns = records.flatMap((record) => (record.toolCalling ? [record.toolCalling] : []));
+  const withArgs = judgedRuns.filter((judged) => judged.args !== undefined);
+  const toolCalling = judgedRuns.length === 0 ? undefined : {
+    tool: { hit: judgedRuns.filter((judged) => judged.tool).length, total: judgedRuns.length },
+    args: { hit: withArgs.filter((judged) => judged.args).length, total: withArgs.length },
+  };
   const report: BenchmarkReport = {
     target: target.kind,
     runsPerItem: runs,
@@ -240,6 +277,7 @@ export async function runBenchmark({
     errors: ranked(errors).map(({ text, count }) => ({ code: text, count })),
     timing: { meanMs: mean(times), p50Ms: percentile(sorted, 50), p95Ms: percentile(sorted, 95), maxMs: sorted.at(-1) ?? 0 },
     ...(times.length >= 4 && { halves: { firstMs: mean(times.slice(0, half)), secondMs: mean(times.slice(times.length - half)) } }),
+    ...(toolCalling && { toolCalling }),
     ...summarizeStages(records),
   };
   for (const line of formatReport(report)) onLog(line);
@@ -252,7 +290,12 @@ export function formatReport(report: BenchmarkReport): string[] {
   lines.push(`runs: ${report.completed}/${report.planned} completed${report.aborted ? ' (stopped early)' : ''} in ${seconds(report.totalMs)}`);
 
   if (report.target === 'scenarios') {
-    lines.push(`passed: ${report.passed}/${report.completed} (${percent(report.passed, report.completed)})`);
+    lines.push(`passed: ${rateText({ hit: report.passed, total: report.completed })}`);
+    if (report.toolCalling) {
+      lines.push(`tool choice: ${rateText(report.toolCalling.tool)}`);
+      lines.push(`arguments (right tool only): ${rateText(report.toolCalling.args)}`);
+      if (report.errored > 0) lines.push(`  (the tool rates leave out ${report.errored} errored run(s): see errors below)`);
+    }
   } else {
     const distinct = report.outcomes.length;
     const consistent = distinct === 1 && report.errored === 0 && report.completed > 0;
@@ -281,7 +324,9 @@ export function formatReport(report: BenchmarkReport): string[] {
   if (report.target === 'scenarios') {
     lines.push('', '-- per scenario (passed/runs) --');
     for (const item of report.items) {
-      lines.push(`${String(item.passed).padStart(3)}/${item.runs}  ${item.name}`);
+      const { low, high } = wilson({ hit: item.passed, total: item.runs });
+      const interval = item.runs >= 20 ? `  [95% CI ${low.toFixed(1)}-${high.toFixed(1)}%]` : '';
+      lines.push(`${String(item.passed).padStart(3)}/${item.runs}  ${item.name}${interval}`);
       for (const reason of item.reasons) lines.push(`         ${reason.count}x ${reason.text}`);
     }
   } else {
