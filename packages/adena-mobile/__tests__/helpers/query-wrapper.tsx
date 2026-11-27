@@ -7,6 +7,7 @@ import { ContainerProvider } from '../../src/di/container-provider';
 import { Account } from '../../src/domain/account';
 import { ChainFamily, Network } from '../../src/domain/network';
 import { StoragePreferenceRepository } from '../../src/repositories/preference.repository';
+import { BackupReminder } from '../../src/services/backup-reminder';
 import { PreferenceService } from '../../src/services/preference.service';
 import { MemoryKeyValueStore } from '../../src/storage/memory-key-value-store';
 
@@ -38,6 +39,7 @@ export const createWrapper = (services: Partial<Record<keyof AppContainer, unkno
     accountPhotoService: { get: () => undefined },
     hapticsService: { play: () => undefined },
     preferenceService: new PreferenceService(new StoragePreferenceRepository(new MemoryKeyValueStore())),
+    backupReminder: new BackupReminder(new MemoryKeyValueStore()),
     ...services,
   } as unknown as AppContainer;
   const Wrapper = ({ children }: PropsWithChildren): ReactElement => (

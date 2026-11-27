@@ -3,6 +3,7 @@ import React from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
 import { BackupPhraseScreen } from '../../../../src/containers/onboarding/backup-phrase-screen';
+import { ContainerProvider } from '../../../../src/di/container-provider';
 import { useOnboardingStore } from '../../../../src/stores/onboarding.store';
 import { TEST_MNEMONIC } from '../../../helpers/test-container';
 import { wrapPage } from '../../components/pages/render-page';
@@ -28,7 +29,8 @@ describe('BackupPhraseScreen', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it.each<AppStateStatus>(['inactive', 'background'])('hides the phrase when the app turns %s and shows it again on request', async (state) => {
-    await render(wrapPage(<BackupPhraseScreen {...props} />));
+    await render(wrapPage(<ContainerProvider container={{} as never}><BackupPhraseScreen {...props} /></ContainerProvider>));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
     expect(screen.getAllByText(firstWord).length).toBeGreaterThan(0);
 
     await act(async () => listener(state));
@@ -41,16 +43,17 @@ describe('BackupPhraseScreen', () => {
   });
 
   it('keeps the onboarding flow working while the phrase is hidden', async () => {
-    await render(wrapPage(<BackupPhraseScreen {...props} />));
+    await render(wrapPage(<ContainerProvider container={{} as never}><BackupPhraseScreen {...props} /></ContainerProvider>));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
     await act(async () => listener('background'));
 
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'I saved my recovery phrase' }));
+    expect(screen.getByTestId('backup-phrase-masked')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('backup-continue'));
-    expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword');
+    expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet');
   });
 
   it('stops listening once the screen is gone', async () => {
-    const { unmount } = await render(wrapPage(<BackupPhraseScreen {...props} />));
+    const { unmount } = await render(wrapPage(<ContainerProvider container={{} as never}><BackupPhraseScreen {...props} /></ContainerProvider>));
 
     await unmount();
     expect(remove).toHaveBeenCalledTimes(1);

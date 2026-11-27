@@ -1,7 +1,7 @@
 import { makeStyles, radius, sizes, spacing } from '../../../theme';
 
 export const useStyles = makeStyles(colors => ({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.space12, rowGap: spacing.space8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.space12, rowGap: spacing.space12 },
   // Two columns: each cell takes half the row minus half the column gap.
   cell: {
     flexBasis: '45%',
@@ -17,5 +17,6 @@ export const useStyles = makeStyles(colors => ({
     borderColor: colors.border.subtle,
     backgroundColor: colors.background.subtle,
   },
+  surfaceCell: { backgroundColor: colors.background.canvas },
   index: { minWidth: 20 },
 }));

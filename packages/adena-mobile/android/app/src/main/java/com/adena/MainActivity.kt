@@ -31,7 +31,7 @@ class MainActivity : ReactActivity() {
     WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = !night
   }
 
-  override fun getMainComponentName(): String = "AdenaMobile"
+  override fun getMainComponentName(): String = "Adena"
 
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)

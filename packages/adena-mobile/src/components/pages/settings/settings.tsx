@@ -104,17 +104,17 @@ export const SettingsPage = (props: SettingsPageProps): ReactElement => {
           onPress={props.onOpenAccount}
         />
       )}
-      <Section label='Manage'>
-        <ListRow label='Networks' value={props.networkName} onPress={props.onOpenNetworks} />
-        <ListRow label='Connected apps' value={String(props.connectedAppCount)} onPress={props.onOpenConnectedApps} />
-        <ListRow label='Address book' onPress={props.onOpenAddressBook} />
-      </Section>
       <Section label='General'>
-        <ListRow label='Theme' value={titleOf(props.themeOptions, props.theme)} onPress={open(SettingsSheet.THEME)} />
         <ListRow label='Local currency' value={codeOf(props.currencyOptions, props.currency)} onPress={open(SettingsSheet.CURRENCY)} />
         <ListRow label='Language' value={titleOf(props.languageOptions, props.language)} onPress={open(SettingsSheet.LANGUAGE)} />
         <ListRow label='Balances and activity' onPress={open(SettingsSheet.BALANCES)} />
         <SwitchRow label='Haptic touch' value={props.hapticsEnabled} onChange={props.onToggleHaptics} />
+        <ListRow label='Theme' value={titleOf(props.themeOptions, props.theme)} onPress={open(SettingsSheet.THEME)} />
+      </Section>
+      <Section label='Manage'>
+        <ListRow label='Networks' value={props.networkName} onPress={props.onOpenNetworks} />
+        <ListRow label='Connected apps' value={String(props.connectedAppCount)} onPress={props.onOpenConnectedApps} />
+        <ListRow label='Address book' onPress={props.onOpenAddressBook} />
       </Section>
       <Section label='Privacy and security'>
         <ListRow label='Change password' onPress={props.onOpenChangePassword} />

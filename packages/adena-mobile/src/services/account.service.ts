@@ -15,12 +15,35 @@ export interface AccountWithAddress extends Account {
   address: string;
 }
 
-// Manages account metadata across keyrings; addresses are resolved per network.
 export interface AppendAccountOptions {
   hdIndex?: number;
   avatarColor?: AvatarColor | null;
 }
 
+const lowestUnusedIndex = (accounts: Account[]): number => {
+  const used = new Set(accounts.map(account => account.hdIndex));
+  let index = 0;
+
+  while (used.has(index)) {
+    index++;
+  }
+
+  return index;
+};
+
+// "Account N" with the first N not already taken, so gaps never produce a duplicate name.
+const defaultAccountName = (accounts: Account[]): string => {
+  const names = new Set(accounts.map(account => account.name));
+  let number = accounts.length + 1;
+
+  while (names.has(`Account ${number}`)) {
+    number++;
+  }
+
+  return `Account ${number}`;
+};
+
+// Manages account metadata across keyrings; addresses are resolved per network.
 export class AccountService {
   // Account and keyring mutations share `mutations` (WalletService runs on it too), so index
   // allocation and keyring removal always see each other's result.
@@ -68,7 +91,8 @@ export class AccountService {
     return { ...account, address: this.getAddress(account, network) };
   }
 
-  // Derives the account at the next free index of an HD keyring (requires an unlocked session).
+  // Derives the account at the lowest free index of an HD keyring (requires an unlocked session), so indexes
+  // skipped on a sparse import stay reachable.
   createAccount(keyringId: string, keyringType: KeyringType, name?: string): Promise<Account> {
     return this.mutations.run(() => this.appendAccount(keyringId, keyringType, name));
   }
@@ -78,7 +102,7 @@ export class AccountService {
   }
 
   // createAccount for callers already inside runExclusive (queuing again would deadlock).
-  // `hdIndex` rebuilds a known layout (backup restore); otherwise the next free index is used.
+  // `hdIndex` rebuilds a known layout (backup restore); otherwise the lowest free index is used.
   // A given avatarColor is kept and `null` keeps the default; otherwise the wallet's first account
   // uses the default color and later ones get a random preset.
   async appendAccount(keyringId: string, keyringType: KeyringType, name?: string, options: AppendAccountOptions = {}): Promise<Account> {
@@ -94,7 +118,7 @@ export class AccountService {
       throw new AppError(AppErrorCode.INVALID_REQUEST, 'This account index is not available');
     }
 
-    const hdIndex = requestedIndex ?? keyringAccounts.reduce((max, account) => Math.max(max, account.hdIndex + 1), 0);
+    const hdIndex = requestedIndex ?? lowestUnusedIndex(keyringAccounts);
     const publicKey = toBase64(await this.keyringSession.withKeyPair(keyringId, hdIndex, async keyPair => keyPair.publicKey));
 
     // A lock or reset while deriving must not write the account into the next session's storage.
@@ -113,7 +137,7 @@ export class AccountService {
       id: createId(),
       keyringId,
       keyringType,
-      name: name?.trim() || `Account ${accounts.length + 1}`,
+      name: name?.trim() || defaultAccountName(accounts),
       hdIndex,
       publicKey,
       createdAt: Date.now(),
@@ -127,6 +151,58 @@ export class AccountService {
     }
 
     return account;
+  }
+
+  // Adds several HD accounts of one keyring in a single write, so an interruption leaves none or all of them.
+  // Keys already in the wallet (the same phrase in another keyring) are skipped. Caller runs inside runExclusive.
+  async appendHdAccounts(keyringId: string, entries: { hdIndex: number; name: string }[]): Promise<Account[]> {
+    const epoch = this.keyringSession.epoch;
+    const derived: { hdIndex: number; name: string; publicKey: string }[] = [];
+
+    for (const { hdIndex, name } of entries) {
+      if (!isHdIndex(hdIndex)) {
+        throw new AppError(AppErrorCode.INVALID_REQUEST, 'This account index is not available');
+      }
+
+      derived.push({ hdIndex, name, publicKey: toBase64(await this.keyringSession.withKeyPair(keyringId, hdIndex, async keyPair => keyPair.publicKey)) });
+    }
+
+    if (this.keyringSession.epoch !== epoch) {
+      throw new AppError(AppErrorCode.WALLET_LOCKED, 'Wallet is locked');
+    }
+
+    const accounts = [...this.getAccounts()];
+    const added: Account[] = [];
+
+    for (const entry of derived) {
+      if (accounts.some(account => account.publicKey === entry.publicKey || (account.keyringId === keyringId && account.hdIndex === entry.hdIndex))) {
+        continue;
+      }
+
+      const account: Account = {
+        id: createId(),
+        keyringId,
+        keyringType: KeyringType.HD_WALLET,
+        name: entry.name,
+        hdIndex: entry.hdIndex,
+        publicKey: entry.publicKey,
+        createdAt: Date.now(),
+        ...this.resolveAvatarColor(accounts),
+      };
+
+      accounts.push(account);
+      added.push(account);
+    }
+
+    if (added.length > 0) {
+      this.accountRepository.saveAccounts(accounts);
+
+      if (!this.accountRepository.getCurrentAccountId()) {
+        this.accountRepository.setCurrentAccountId(added[0].id);
+      }
+    }
+
+    return added;
   }
 
   private resolveAvatarColor(existing: Account[], avatarColor?: AvatarColor | null): Pick<Account, 'avatarColor'> {

@@ -5,22 +5,35 @@ import { CreatePasswordPage, PasswordStrengthView } from '../../../components/pa
 import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { OnboardingStackParamList } from '../../../navigation/types';
+import { cloudProviderName } from '../../../presenters/cloud-backup.presenter';
+import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
 import { evaluatePassword, findPasswordIssue, PASSWORD_ISSUE_MESSAGE, PasswordIssue, PasswordStrength } from '../../../security/password-policy';
 import { ENABLE_BIOMETRICS_PROMPT } from '../../../services/wallet.service';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { SessionStatus, useSessionStore } from '../../../stores/session.store';
 import { useToastStore } from '../../../stores/toast.store';
+import { getBiometryLabel } from '../../../utils/biometry';
+import { useFinishOnboarding } from '../use-finish-onboarding';
+
+// The backup keeps running afterwards; only onboarding stops waiting for it.
+const CLOUD_BACKUP_TIMEOUT_MS = 60_000;
 
 export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'CreatePassword'>): ReactElement => {
-  const { walletService, cloudBackupService } = useContainer();
+  const { walletService, cloudBackupService, backupReminder } = useContainer();
   const mnemonic = useOnboardingStore(state => state.mnemonic);
   const restoreBackup = useOnboardingStore(state => state.restoreBackup);
+  const hdIndexes = useOnboardingStore(state => state.hdIndexes);
+  const backupPassword = useOnboardingStore(state => state.backupPassword);
+  const enableBiometrics = useOnboardingStore(state => state.enableBiometrics);
+  const phraseSaved = useOnboardingStore(state => state.phraseSaved);
+  const biometric = useBiometricStatusQuery();
   // Fixed at mount: the flow this screen was opened for. The store is cleared on success while the button
   // still shows its progress label, and a later change there (e.g. a stale restore) must not swap the flow.
   const [source] = useState(() => (restoreBackup ? { restoreBackup, mnemonic: null } : { restoreBackup: null, mnemonic }));
   const restoring = source.restoreBackup !== null;
   const clearOnboarding = useOnboardingStore(state => state.clear);
-  const { setStatus, bumpRevision } = useSessionStore();
+  const finishOnboarding = useFinishOnboarding();
+  const setStatus = useSessionStore(state => state.setStatus);
   const showToast = useToastStore(state => state.show);
 
   const [password, setPassword] = useState('');
@@ -54,15 +67,46 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
     }
   };
 
-  // Like MetaMask, biometrics turn on by default when supported; a failure or cancel never blocks onboarding.
-  const enableBiometricsIfSupported = async (): Promise<void> => {
+  // Chosen on the protect step; a failure or cancel never blocks onboarding.
+  const enableBiometricsIfChosen = async (): Promise<void> => {
     try {
-      if (await walletService.getBiometryKind()) {
+      if (enableBiometrics && await walletService.getBiometryKind()) {
         await walletService.enableBiometricUnlock(password, ENABLE_BIOMETRICS_PROMPT);
       }
     }
     catch {
       showToast('Biometric unlock could not be enabled', 'warning');
+    }
+  };
+
+  // Chosen on the backup step. Only an upload the provider confirmed counts; a slow provider
+  // (e.g. an interactive sign-in) must not hold the new wallet on this screen.
+  const createCloudBackupIfChosen = async (): Promise<'none' | 'confirmed' | 'pending' | 'failed'> => {
+    if (!backupPassword) {
+      return 'none';
+    }
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    try {
+      const status = await Promise.race([
+        cloudBackupService.createBackup({ walletPassword: password, backupPassword, confirmPassword: backupPassword }),
+        new Promise<null>((resolve) => {
+          timer = setTimeout(() => resolve(null), CLOUD_BACKUP_TIMEOUT_MS);
+        }),
+      ]);
+
+      if (status?.kind !== 'backedUp' || status.uploading?.error) {
+        return 'failed';
+      }
+
+      return status.uploading ? 'pending' : 'confirmed';
+    }
+    catch {
+      return 'failed';
+    }
+    finally {
+      clearTimeout(timer);
     }
   };
 
@@ -83,6 +127,11 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       return;
     }
 
+    if (backupPassword && password === backupPassword) {
+      setPasswordError('Use a different password from your backup password');
+      return;
+    }
+
     // The phrase or backup the user chose is gone or was replaced: start over instead of using another one.
     if ((!source.mnemonic && !source.restoreBackup) || mnemonic !== source.mnemonic || restoreBackup !== source.restoreBackup) {
       clearOnboarding();
@@ -92,6 +141,7 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
 
     submittingRef.current = true;
     setSubmitting(true);
+    let keyringToBackUp: string | null = null;
 
     try {
       // A decrypted cloud backup is rebuilt with every keyring; otherwise one phrase becomes the wallet.
@@ -99,33 +149,32 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
         await cloudBackupService.restoreWallet(source.restoreBackup, password);
       }
       else if (source.mnemonic) {
-        await walletService.createWallet({ mnemonic: source.mnemonic, password });
+        // The reminder is stored with the new wallet, so Home asks for a backup even after a restart.
+        const account = await walletService.createWallet({ mnemonic: source.mnemonic, password, hdIndexes: hdIndexes ?? undefined, requireBackup: !phraseSaved });
+
+        if (!phraseSaved) {
+          keyringToBackUp = account.keyringId;
+        }
       }
 
-      await enableBiometricsIfSupported();
+      await enableBiometricsIfChosen();
+      const backup = await createCloudBackupIfChosen();
+      const provider = cloudProviderName(cloudBackupService.provider);
 
-      // The biometric prompt can outlive a lock (e.g. the error boundary); never reopen a closed session.
-      const status = await walletService.getStatus().catch(() => SessionStatus.LOCKED);
+      if (backup === 'confirmed' && keyringToBackUp) {
+        backupReminder.clear(keyringToBackUp);
+      }
+      else if (backup === 'failed') {
+        showToast(`${provider} backup did not finish. Back up your recovery phrase from Home.`, 'warning');
+      }
+      else if (backup === 'pending') {
+        showToast(`${provider} is still uploading your backup.`, 'info');
+      }
 
-      clearOnboarding();
-      bumpRevision();
-
-      if (status === SessionStatus.EMPTY) {
-        // A reset removed the new wallet meanwhile; start onboarding over.
+      if (!(await finishOnboarding(navigation))) {
         submittingRef.current = false;
         setSubmitting(false);
-        navigation.popToTop();
-        return;
       }
-
-      if (status !== SessionStatus.UNLOCKED) {
-        walletService.lock();
-        showToast('Your wallet was saved. Unlock it to continue.', 'warning');
-        setStatus(SessionStatus.LOCKED);
-        return;
-      }
-
-      setStatus(SessionStatus.UNLOCKED);
     }
     catch (error) {
       // A failure after the vault was written must not leave onboarding over an existing wallet.
@@ -174,6 +223,8 @@ export const CreatePasswordScreen = ({ navigation }: NativeStackScreenProps<Onbo
       submitting={submitting}
       onSubmit={submit}
       onBack={handleBack}
+      // Same support rule as the protect step, which is shown only with a biometry label.
+      eyebrow={getBiometryLabel(biometric.data?.kind ?? null) ? 'Setup / 2 of 2' : 'Setup / Password'}
       submitLabel={restoring ? 'Restore wallet' : undefined}
       submittingLabel={restoring ? 'Restoring wallet…' : undefined}
     />

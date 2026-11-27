@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>Adena</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -50,7 +50,7 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>Adena uses Face ID to unlock your wallet and to show your recovery phrase.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Adena lets you choose a photo for your account profile. The photo stays on this device.</string>
+	<string>Adena lets you choose a photo to scan a QR code or to set your account profile picture. Photos stay on this device.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

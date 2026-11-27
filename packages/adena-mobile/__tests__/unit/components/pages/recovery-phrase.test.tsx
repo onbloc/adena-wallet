@@ -29,7 +29,8 @@ describe('RecoveryPhrasePage', () => {
     await renderPage(<RecoveryPhrasePage {...page} />);
 
     expect(screen.getByLabelText('Recovery phrase hidden')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
+    expect(screen.getByText('Hidden phrase')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy' })).toBeDisabled();
     expect(screen.getAllByText('••••••')).toHaveLength(12);
     expect(screen.queryByLabelText('Password')).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));

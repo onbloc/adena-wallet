@@ -36,6 +36,23 @@ describe('RecoveryPhraseScreen', () => {
     expect(navigation.goBack).toHaveBeenCalled();
   });
 
+  it('clears the backup reminder of this keyring once the phrase was shown', async () => {
+    const { env, account } = await setupWallet();
+
+    env.container.backupReminder.require(account.keyringId);
+    await renderScreen(RecoveryPhraseScreen, { env, params: { keyringId: account.keyringId } });
+    await fireEvent.press(screen.getByRole('button', { name: 'Show recovery phrase' }));
+    await fireEvent.changeText(screen.getByLabelText('Password'), 'wrong password');
+    await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
+    await screen.findByText('Incorrect password.');
+    expect(env.container.backupReminder.getKeyringId()).toBe(account.keyringId);
+
+    await fireEvent.changeText(screen.getByLabelText('Password'), TEST_PASSWORD);
+    await fireEvent.press(screen.getByRole('button', { name: 'Reveal phrase' }));
+    await screen.findByText('about');
+    expect(env.container.backupReminder.getKeyringId()).toBeNull();
+  });
+
   it('shows other failures as they are', async () => {
     const { env } = await setupWallet();
 

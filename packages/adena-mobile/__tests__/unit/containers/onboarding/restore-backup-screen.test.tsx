@@ -76,7 +76,7 @@ describe('RestoreBackupScreen', () => {
     expect(screen.getByTestId('restore-backup-version').props.accessibilityLabel).toMatch(/^Revision 1 · /);
 
     await fireEvent.press(screen.getByTestId('restore-backup-submit'));
-    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword'));
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet'));
     expect(useOnboardingStore.getState().restoreBackup?.revision).toBe(1);
   });
 
@@ -84,7 +84,7 @@ describe('RestoreBackupScreen', () => {
     await renderScreen(await backedUpTwice());
     await screen.findByTestId('restore-backup-version');
     await submit(SECOND_PASSWORD);
-    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword'));
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet'));
     expect(useOnboardingStore.getState().restoreBackup?.revision).toBe(2);
   });
 
@@ -97,7 +97,7 @@ describe('RestoreBackupScreen', () => {
     await screen.findByTestId('restore-backup-password');
     expect(screen.queryByTestId('restore-backup-version')).toBeNull();
     await submit(FIRST_PASSWORD);
-    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('CreatePassword'));
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet'));
   });
 
   it('drops an older version opened after the user left the screen', async () => {

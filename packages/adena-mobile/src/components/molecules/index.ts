@@ -17,6 +17,8 @@ export * from './mnemonic-grid';
 export * from './nft-card';
 export * from './nft-image';
 export * from './numeric-keypad';
+export * from './option-card';
+export * from './page-heading';
 export * from './password-sheet';
 export * from './price-chart';
 export * from './qr-code';

@@ -108,15 +108,28 @@ describe('AccountService', () => {
       expect(service.getAccounts()).toHaveLength(3);
     });
 
-    it('continues after the highest index when accounts were removed', async () => {
+    it('fills the lowest free index, so indexes skipped on a sparse import stay reachable', async () => {
       const { service } = setup();
       const first = await service.createAccount('hd', KeyringType.HD_WALLET);
 
-      await service.createAccount('hd', KeyringType.HD_WALLET);
-      const third = await service.createAccount('hd', KeyringType.HD_WALLET);
+      await service.appendAccount('hd', KeyringType.HD_WALLET, 'Account 3', { hdIndex: 2 });
+      const gap = await service.createAccount('hd', KeyringType.HD_WALLET);
+      const next = await service.createAccount('hd', KeyringType.HD_WALLET);
 
-      service.removeAccount(first.id);
-      expect((await service.createAccount('hd', KeyringType.HD_WALLET)).hdIndex).toBe(third.hdIndex + 1);
+      expect(first.hdIndex).toBe(0);
+      expect(gap.hdIndex).toBe(1);
+      expect(next.hdIndex).toBe(3);
+    });
+
+    it('never repeats a default name when indexes have gaps', async () => {
+      const { service } = setup();
+
+      await service.appendAccount('hd', KeyringType.HD_WALLET, 'Account 1', { hdIndex: 0 });
+      await service.appendAccount('hd', KeyringType.HD_WALLET, 'Account 3', { hdIndex: 2 });
+      const added = await service.createAccount('hd', KeyringType.HD_WALLET);
+
+      expect(added.name).toBe('Account 4');
+      expect(new Set(service.getAccounts().map(account => account.name)).size).toBe(3);
     });
 
     it('allows exactly one account for single-key keyrings', async () => {
@@ -310,7 +323,7 @@ describe('AccountService', () => {
       const next = await service.appendAccount('hd', KeyringType.HD_WALLET);
 
       expect(second.hdIndex).toBe(2);
-      expect(next.hdIndex).toBe(3);
+      expect(next.hdIndex).toBe(0);
 
       for (const index of [2, -1, 1.5]) {
         const error = await catchError(() => service.appendAccount('hd', KeyringType.HD_WALLET, undefined, { hdIndex: index }));

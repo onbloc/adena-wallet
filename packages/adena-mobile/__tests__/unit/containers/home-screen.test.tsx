@@ -86,6 +86,33 @@ describe('HomeScreen', () => {
     await waitFor(() => expect(env.container.tokenService.getTokenList).toHaveBeenCalledTimes(2));
   });
 
+  it('asks for a backup of a new wallet until it is done, and drops a reminder confirmed by the cloud', async () => {
+    const { env, account } = await setupWallet();
+
+    stubAssets(env);
+    env.container.backupReminder.require(account.keyringId);
+    jest.spyOn(env.container.cloudBackupService, 'getStatus').mockResolvedValue({ kind: 'none' });
+    const { navigation } = await renderScreen(HomeScreen, { env });
+
+    await fireEvent.press(await screen.findByTestId('home-backup-reminder'));
+    expect(navigation.navigate).toHaveBeenCalledWith('RecoveryPhrase', { keyringId: account.keyringId });
+    expect(env.container.backupReminder.getKeyringId()).toBe(account.keyringId);
+  });
+
+  it('clears the reminder once the cloud confirms the upload', async () => {
+    const { env, account } = await setupWallet();
+
+    stubAssets(env);
+    env.container.backupReminder.require(account.keyringId);
+    jest.spyOn(env.container.cloudBackupService, 'getStatus').mockResolvedValue({
+      kind: 'backedUp', fileName: 'f', backedUpAt: 1, outdated: false, mnemonicCount: 1, privateKeyCount: 0,
+    });
+    await renderScreen(HomeScreen, { env });
+
+    await waitFor(() => expect(env.container.backupReminder.getKeyringId()).toBeNull());
+    expect(screen.queryByTestId('home-backup-reminder')).toBeNull();
+  });
+
   it('colors a negative change and a zero-value portfolio', async () => {
     const { env } = await setupWallet();
 

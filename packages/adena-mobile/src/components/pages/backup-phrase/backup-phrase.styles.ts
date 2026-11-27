@@ -1,11 +1,11 @@
 import { makeStyles, radius, spacing } from '../../../theme';
 
 export const useStyles = makeStyles(colors => ({
-  masked: {
-    alignItems: 'center',
-    gap: spacing.space12,
+  card: {
+    gap: spacing.space16,
     padding: spacing.space16,
-    borderRadius: radius.smallControl,
+    borderRadius: radius.surface,
     backgroundColor: colors.background.subtle,
   },
+  cardLabel: { fontSize: 14 },
 }));

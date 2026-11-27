@@ -1,9 +1,9 @@
+import Clipboard from '@react-native-clipboard/clipboard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { ReactElement, useState } from 'react';
 
-import { ImportWalletPage } from '../../../components/pages';
+import { ImportPhrasePage } from '../../../components/pages';
 import { isValidMnemonic, normalizeMnemonic } from '../../../crypto/mnemonic';
-import { SecretImportMode } from '../../../domain/account';
 import { useHideWhenInactive } from '../../../hooks/use-hide-when-inactive';
 import { OnboardingStackParamList } from '../../../navigation/types';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
@@ -14,9 +14,18 @@ export const ImportWalletScreen = ({ navigation }: NativeStackScreenProps<Onboar
   const [error, setError] = useState<string>();
   const { hidden, reveal } = useHideWhenInactive();
 
-  const handleChangeSecret = (value: string): void => {
+  const handleChangePhrase = (value: string): void => {
     setPhrase(value);
     setError(undefined);
+  };
+
+  const handlePaste = async (): Promise<void> => {
+    const text = await Clipboard.getString().catch(() => '');
+
+    if (text.trim()) {
+      reveal();
+      handleChangePhrase(text.trim().split(/\s+/).join(' '));
+    }
   };
 
   const handleSubmit = (): void => {
@@ -26,14 +35,14 @@ export const ImportWalletScreen = ({ navigation }: NativeStackScreenProps<Onboar
     }
 
     setMnemonic(normalizeMnemonic(phrase));
-    navigation.navigate('CreatePassword');
+    navigation.navigate('SelectAccounts');
   };
 
   return (
-    <ImportWalletPage
-      mode={SecretImportMode.MNEMONIC}
-      secret={phrase}
-      onChangeSecret={handleChangeSecret}
+    <ImportPhrasePage
+      phrase={phrase}
+      onChangePhrase={handleChangePhrase}
+      onPaste={handlePaste}
       hidden={hidden}
       onReveal={reveal}
       error={error}

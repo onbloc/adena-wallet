@@ -1,5 +1,7 @@
 #import <AdenaMobileSpecs/AdenaMobileSpecs.h>
 #import <Foundation/Foundation.h>
+// The generated Swift header also declares SceneDelegate, whose superclass it does not import.
+#import <React-RCTAppDelegate/RCTDefaultReactNativeFactoryDelegate.h>
 
 #import "AdenaMobile-Swift.h"
 

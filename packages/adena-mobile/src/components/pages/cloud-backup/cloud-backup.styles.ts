@@ -1,6 +1,6 @@
 import { makeStyles, radius, spacing } from '../../../theme';
 
-const BADGE_SIZE = 64;
+const BADGE_SIZE = 56;
 
 export const useStyles = makeStyles(colors => ({
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.space16 },
@@ -18,8 +18,8 @@ export const useStyles = makeStyles(colors => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.space12,
-    minHeight: 60,
-    paddingHorizontal: spacing.space20,
+    minHeight: 56,
+    paddingHorizontal: spacing.space16,
     borderRadius: radius.input,
     borderWidth: 1,
     borderColor: colors.border.subtle,

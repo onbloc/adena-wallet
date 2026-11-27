@@ -39,7 +39,7 @@ const setup = async ({ tokens = [GNOT], tokensLoading = false, market = query({ 
 
   const tree = (): React.ReactElement => (
     <SafeAreaProvider initialMetrics={metrics}>
-      <ContainerProvider container={{ marketDataService: { isSupported: () => true } }}>
+      <ContainerProvider container={{ marketDataService: { isSupported: () => true }, onrampService: { isSupported: () => false } }}>
         <Screen navigation={navigation} route={{ key: 'TokenDetails', name: 'TokenDetails', params: { tokenId: 'ugnot' } }} />
       </ContainerProvider>
     </SafeAreaProvider>

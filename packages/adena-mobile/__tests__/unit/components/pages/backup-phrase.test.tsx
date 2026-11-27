@@ -8,49 +8,47 @@ const words = Array.from({ length: 24 }, (_, index) => `word${index + 1}`);
 
 const props = (overrides: Partial<BackupPhrasePageProps> = {}): BackupPhrasePageProps => ({
   words,
-  acknowledged: true,
-  onToggleAcknowledged: jest.fn(),
+  masked: false,
+  onReveal: jest.fn(),
+  canContinue: true,
   onContinue: jest.fn(),
   onBack: jest.fn(),
   ...overrides,
 });
 
 describe('BackupPhrasePage', () => {
-  it('renders every word and reports every action', async () => {
+  it('titles the page with the word count and renders every word', async () => {
     const page = props();
 
     await renderPage(<BackupPhrasePage {...page} />);
 
+    expect(screen.getByText('24 words.\nOne wallet.')).toBeTruthy();
     expect(screen.getByText('word1')).toBeTruthy();
     expect(screen.getByText('word24')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('checkbox', { name: 'I saved my recovery phrase' }));
+    expect(screen.queryByRole('button', { name: 'Show phrase' })).toBeNull();
     await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
 
-    expect(page.onToggleAcknowledged).toHaveBeenCalledWith(false);
     expect(page.onContinue).toHaveBeenCalledTimes(1);
     expect(page.onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('blocks continuing until acknowledged', async () => {
-    const page = props({ acknowledged: false });
+  it('blocks continuing until allowed', async () => {
+    const page = props({ canContinue: false });
 
     await renderPage(<BackupPhrasePage {...page} />);
     await fireEvent.press(screen.getByTestId('backup-continue'));
-    await fireEvent.press(screen.getByRole('checkbox'));
 
     expect(page.onContinue).not.toHaveBeenCalled();
-    expect(page.onToggleAcknowledged).toHaveBeenCalledWith(true);
   });
-});
 
-describe('BackupPhrasePage masked state', () => {
-  it('renders no words while hidden and reveals on request', async () => {
+  it('renders no words while masked and reveals on request', async () => {
     const onReveal = jest.fn();
 
-    await renderPage(<BackupPhrasePage {...props({ hidden: true, onReveal })} />);
+    await renderPage(<BackupPhrasePage {...props({ masked: true, onReveal })} />);
 
     expect(screen.queryByText('word1')).toBeNull();
+    expect(screen.getByTestId('backup-phrase-masked')).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Show phrase' }));
     expect(onReveal).toHaveBeenCalledTimes(1);
   });

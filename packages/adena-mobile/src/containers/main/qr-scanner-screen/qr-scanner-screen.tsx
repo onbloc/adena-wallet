@@ -6,8 +6,10 @@ import { Camera, CameraDevice, useCameraDevice, useCameraPermission } from 'reac
 import { Barcode, TargetBarcodeFormat, useBarcodeScannerOutput } from 'react-native-vision-camera-barcode-scanner';
 
 import { QrScannerPage, QrScannerStatus } from '../../../components/pages';
+import { toErrorMessage } from '../../../core/error-message';
 import { useContainer } from '../../../di/container-provider';
 import { useWalletSnapshot } from '../../../hooks/use-wallet-snapshot';
+import { scanQrFromPhotos } from '../../../infrastructure/media/qr-image-scanner';
 import { MainStackParamList } from '../../../navigation/types';
 import { useToastStore } from '../../../stores/toast.store';
 import { parseRecipientQr } from '../../../utils/recipient-qr';
@@ -41,6 +43,12 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
   const doneRef = useRef(false);
+  // The live camera pauses while a photo is picked and decoded, so it cannot replace the photo's result.
+  const [photoPending, setPhotoPending] = useState(false);
+  const photoPendingRef = useRef(false);
+  // Bumped when the user leaves, so a photo result that settles afterwards is dropped.
+  const photoRequestRef = useRef(0);
+  const latestPhotoRef = useRef(0);
   const { canRequestPermission, requestPermission } = permission;
 
   useEffect(() => {
@@ -53,17 +61,22 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       .catch(() => setDeclined(true));
   }, [canRequestPermission, requestPermission]);
 
+  // Leaving the screen (blur or unmount) invalidates a photo request still being decoded.
+  useEffect(() => {
+    if (!focused) {
+      photoRequestRef.current += 1;
+    }
+  }, [focused]);
+
+  useEffect(() => (): void => {
+    photoRequestRef.current += 1;
+  }, []);
+
   const normalizeAddress = (address: string): string | null => chainRegistry.forNetwork(network).normalizeAddress(address, network);
 
   // Codes keep arriving every frame; only the first valid one is used.
-  const handleScan = (barcodes: Barcode[]): void => {
-    if (doneRef.current) {
-      return;
-    }
-
-    const payloads = barcodes.map(barcode => barcode.rawValue ?? barcode.displayValue).filter((value): value is string => Boolean(value));
-
-    if (payloads.length === 0) {
+  const handlePayloads = (payloads: string[]): void => {
+    if (doneRef.current || payloads.length === 0) {
       return;
     }
 
@@ -92,6 +105,55 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
     navigation.goBack();
   };
 
+  const handleScan = (barcodes: Barcode[]): void => {
+    if (photoPendingRef.current) {
+      return;
+    }
+
+    handlePayloads(barcodes.map(barcode => barcode.rawValue ?? barcode.displayValue).filter((value): value is string => Boolean(value)));
+  };
+
+  const handleFromPhotos = async (): Promise<void> => {
+    if (photoPendingRef.current || doneRef.current) {
+      return;
+    }
+
+    const request = ++photoRequestRef.current;
+    const isCurrent = (): boolean => request === photoRequestRef.current;
+
+    latestPhotoRef.current = request;
+    photoPendingRef.current = true;
+    setPhotoPending(true);
+    setError(undefined);
+
+    try {
+      const payloads = await scanQrFromPhotos();
+
+      if (!isCurrent() || payloads === null) {
+        return;
+      }
+
+      if (payloads.length === 0) {
+        setError('No QR code found in this photo');
+        return;
+      }
+
+      handlePayloads(payloads);
+    }
+    catch (photoError) {
+      if (isCurrent()) {
+        setError(toErrorMessage(photoError));
+      }
+    }
+    finally {
+      // Cleared even when the result was dropped, unless a newer photo request is running.
+      if (latestPhotoRef.current === request) {
+        photoPendingRef.current = false;
+        setPhotoPending(false);
+      }
+    }
+  };
+
   const handleShowMyQr = (): void => navigation.replace('Receive');
 
   const handleCameraError = (): void => setError('The camera stopped unexpectedly.');
@@ -107,11 +169,12 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
     <QrScannerPage
       status={status}
       camera={device && permission.hasPermission
-        ? <ScannerCamera device={device} isActive={focused && !done} onScan={handleScan} onError={handleCameraError} />
+        ? <ScannerCamera device={device} isActive={focused && !done && !photoPending} onScan={handleScan} onError={handleCameraError} />
         : undefined}
       hint={`${network.chainName} wallet address`}
       error={error}
       onOpenSettings={handleOpenSettings}
+      onFromPhotos={handleFromPhotos}
       onShowMyQr={handleShowMyQr}
       onClose={navigation.goBack}
     />

@@ -4,7 +4,7 @@ import { View } from 'react-native';
 import { AvatarColor } from '../../../domain/account';
 import { LocalTokenIcon } from '../../../domain/token';
 import { formatAddress } from '../../../utils/address';
-import { Avatar, Chip, Text } from '../../atoms';
+import { Avatar, Button, Text } from '../../atoms';
 import { Dialog, EmptyState, ListRow, NftImage, Screen, SearchField, TokenImage, TopBar } from '../../molecules';
 import { styles } from './search.styles';
 
@@ -80,8 +80,8 @@ export const SearchPage = (props: SearchPageProps): ReactElement => {
         testID='search-input'
       />
       <View style={styles.resultsHeader}>
-        <Text variant='row' accessibilityRole='header'>Search results</Text>
-        <Chip label={props.scopeLabel} onPress={props.onToggleScope} />
+        <Text variant='section' accessibilityRole='header' style={styles.resultsTitle}>Search results</Text>
+        <Button label={props.scopeLabel} tone='secondary' size='compact' fullWidth={false} style={styles.scope} onPress={props.onToggleScope} />
       </View>
       {!props.searching && (
         <EmptyState title='Search your wallet' description='Find tokens, saved wallets and NFT collections by name, symbol or address.' />

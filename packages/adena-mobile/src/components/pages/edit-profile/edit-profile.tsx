@@ -5,7 +5,7 @@ import { ACCOUNT_NAME_MAX_LENGTH, AvatarColor } from '../../../domain/account';
 import { formatAddress } from '../../../utils/address';
 import { Avatar, Button, IconButton, Text } from '../../atoms';
 import { BottomSheet, Screen, TextField, TopBar } from '../../molecules';
-import { AVATAR_SIZE, useStyles } from './edit-profile.styles';
+import { AVATAR_SIZE, BADGE_SIZE, useStyles } from './edit-profile.styles';
 
 export interface EditProfilePageProps {
   name: string;
@@ -43,10 +43,10 @@ export const EditProfilePage = (props: EditProfilePageProps): ReactElement => {
             <Avatar name={props.name} size={AVATAR_SIZE} color={props.avatarColor} imageUri={props.avatarPhoto} />
           </View>
           <View style={styles.badge}>
-            <IconButton icon='camera' variant='primary' size={36} accessibilityLabel='Change profile photo' onPress={props.onChangePhoto} />
+            <IconButton icon='camera' variant='primary' size={BADGE_SIZE} accessibilityLabel='Change profile photo' onPress={props.onChangePhoto} />
           </View>
         </View>
-        <Text variant='meta' color='secondary' tabular>{formatAddress(props.address)}</Text>
+        <Text variant='meta' color='secondary' tabular style={styles.address}>{formatAddress(props.address)}</Text>
       </View>
       <TextField
         label='Account name'

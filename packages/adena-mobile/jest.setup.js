@@ -17,3 +17,4 @@ jest.mock('@react-native-clipboard/clipboard', () => ({ setString: jest.fn(), ge
 jest.mock('lucide-react-native', () => new Proxy({}, { get: () => () => null }));
 jest.mock('react-native-haptic-feedback', () => ({ trigger: jest.fn() }));
 jest.mock('react-native-image-picker', () => ({ launchImageLibrary: jest.fn(), launchCamera: jest.fn() }));
+jest.mock('react-native-nitro-image', () => ({ loadImage: jest.fn() }));

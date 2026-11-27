@@ -6,10 +6,18 @@ import { Activity } from '../domain/activity';
 import { AddressBookEntry } from '../domain/address-book';
 import { NftCollection, NftItem } from '../domain/nft';
 
+// Create: Welcome > BackupMethod > (BackupPhrase | BackupPassword)? > ProtectWallet > CreatePassword.
+// Import: Welcome > ImportMethod? > ImportWallet > SelectAccounts > ProtectWallet > CreatePassword,
+// or ImportMethod > RestoreBackup > ProtectWallet > CreatePassword.
 export type OnboardingStackParamList = {
   Welcome: undefined;
+  BackupMethod: undefined;
   BackupPhrase: undefined;
+  BackupPassword: undefined;
+  ImportMethod: undefined;
   ImportWallet: undefined;
+  SelectAccounts: undefined;
+  ProtectWallet: undefined;
   CreatePassword: undefined;
   RestoreBackup: undefined;
   Sheet: SheetRouteParams;

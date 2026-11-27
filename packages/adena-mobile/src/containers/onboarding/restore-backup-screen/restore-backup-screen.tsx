@@ -102,7 +102,7 @@ export const RestoreBackupScreen = ({ navigation }: NativeStackScreenProps<Onboa
 
       setRestoreBackup(content);
       setPassword('');
-      navigation.navigate('CreatePassword');
+      navigation.navigate('ProtectWallet');
     }
     catch (openError) {
       if (operation !== operationRef.current) {

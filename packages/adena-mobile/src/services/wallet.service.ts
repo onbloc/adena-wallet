@@ -15,6 +15,7 @@ import { findPasswordIssue, PASSWORD_ISSUE_MESSAGE } from '../security/password-
 import { BiometryKind, SecurePrompt } from '../security/secure-store';
 import { createId } from '../utils/id';
 import { AccountService } from './account.service';
+import { BackupReminder } from './backup-reminder';
 import { KeyringSession } from './keyring-session';
 import { ResetMarker } from './reset-marker';
 import { RestoreMarker } from './restore-marker';
@@ -52,6 +53,10 @@ export interface CreateWalletInput {
   mnemonic: string;
   password: string;
   accountName?: string;
+  // HD indexes to add, in order (e.g. picked on the import account list); defaults to index 0.
+  hdIndexes?: number[];
+  // The user has not saved this phrase yet; Home asks for a backup until they do.
+  requireBackup?: boolean;
 }
 
 export interface RestoreWalletInput {
@@ -89,6 +94,7 @@ export class WalletService {
     private readonly resetMarker?: ResetMarker,
     private readonly restoreMarker?: RestoreMarker,
     private readonly restoreScopedData?: RestoreScopedData,
+    private readonly backupReminder?: BackupReminder,
   ) {}
 
   async getStatus(): Promise<WalletStatus> {
@@ -121,9 +127,15 @@ export class WalletService {
     }
   }
 
-  async createWallet({ mnemonic, password, accountName }: CreateWalletInput): Promise<Account> {
+  async createWallet({ mnemonic, password, accountName, hdIndexes, requireBackup = false }: CreateWalletInput): Promise<Account> {
     if (!isValidMnemonic(mnemonic)) {
       throw new AppError(AppErrorCode.INVALID_MNEMONIC, 'Invalid recovery phrase');
+    }
+
+    const indexes = hdIndexes?.length ? hdIndexes : [0];
+
+    if (indexes.some(index => !isHdIndex(index)) || new Set(indexes).size !== indexes.length) {
+      throw new AppError(AppErrorCode.INVALID_REQUEST, 'Invalid account index');
     }
 
     this.validatePassword(password);
@@ -132,20 +144,68 @@ export class WalletService {
       type: KeyringType.HD_WALLET,
       mnemonic: normalizeMnemonic(mnemonic),
       createdAt: Date.now(),
+      // Kept in the vault so a lost account list (e.g. an iOS reinstall) rebuilds these indexes, not just 0.
+      ...(hdIndexes?.length && { hdIndexes: indexes }),
     };
     const epoch = this.keyringSession.epoch;
 
     return this.accountService.runExclusive(async () => {
       // Checked before writing too: a create queued before a reset must not recreate the vault.
       this.assertCurrent(epoch);
-      const content = await this.vaultService.create([record], password);
 
-      this.assertCurrentOrForget(epoch);
-      this.accountService.clear();
-      this.keyringSession.open(content.keyrings);
-      this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
-      return this.accountService.appendAccount(record.id, record.type, accountName ?? 'Account 1');
+      // Written before the vault, so no restart can leave a saved wallet without it. A marker whose
+      // keyring never got saved matches no account and is dropped by Home.
+      if (requireBackup) {
+        this.backupReminder?.require(record.id);
+      }
+
+      let content: VaultContent;
+
+      try {
+        content = await this.vaultService.create([record], password);
+      }
+      catch (error) {
+        await this.clearReminderIfVaultGone(record.id);
+        throw error;
+      }
+
+      // All or nothing, like restoreWallet: a wallet missing some of the picked accounts is removed again.
+      try {
+        this.assertCurrentOrForget(epoch);
+        this.accountService.clear();
+        this.keyringSession.open(content.keyrings);
+        this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
+        const [first, ...rest] = indexes;
+        // Named by index, so a name matches the account picked on the import list.
+        const account = await this.accountService.appendAccount(record.id, record.type, accountName ?? `Account ${first + 1}`, { hdIndex: first });
+
+        for (const hdIndex of rest) {
+          await this.accountService.appendAccount(record.id, record.type, `Account ${hdIndex + 1}`, { hdIndex });
+        }
+
+        return account;
+      }
+      catch (error) {
+        await this.undoCreate().catch(() => undefined);
+        await this.clearReminderIfVaultGone(record.id);
+        throw error;
+      }
     });
+  }
+
+  // A write that failed part way or a rollback that failed can still leave a readable vault; the reminder
+  // goes only once the vault is known to be gone.
+  private async clearReminderIfVaultGone(keyringId: string): Promise<void> {
+    if (await this.vaultService.exists().then(exists => !exists, () => false)) {
+      this.backupReminder?.clear(keyringId);
+    }
+  }
+
+  private async undoCreate(): Promise<void> {
+    this.createdWith = null;
+    this.keyringSession.close();
+    this.accountService.clear();
+    await this.vaultService.destroy();
   }
 
   // Rebuilds a wallet from a decrypted backup: one new vault holding every keyring, then each account at its index.
@@ -505,6 +565,12 @@ export class WalletService {
 
     for (const keyring of keyrings) {
       if (!accounts.some(account => account.keyringId === keyring.id)) {
+        // An imported phrase records the indexes the user picked, rebuilt in one write so a retry never finds half of them.
+        if (keyring.type === KeyringType.HD_WALLET && keyring.hdIndexes?.length && keyring.hdIndexes.every(isHdIndex)) {
+          await this.accountService.appendHdAccounts(keyring.id, keyring.hdIndexes.map(hdIndex => ({ hdIndex, name: `Account ${hdIndex + 1}` })));
+          continue;
+        }
+
         // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
         await this.accountService.appendAccount(keyring.id, keyring.type).catch((error: unknown) => {
           if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {

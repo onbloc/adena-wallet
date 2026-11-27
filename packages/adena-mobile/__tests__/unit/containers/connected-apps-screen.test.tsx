@@ -19,7 +19,7 @@ describe('ConnectedAppsScreen', () => {
 
     await fireEvent.press(screen.getAllByRole('button', { name: 'Disconnect' })[0]);
 
-    expect(screen.getByText('1 connected apps')).toBeTruthy();
+    expect(screen.getByText('1 connected app')).toBeTruthy();
     expect(env.container.connectedAppService.getConnectedApps()).toHaveLength(1);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back' }));

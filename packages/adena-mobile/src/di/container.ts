@@ -34,6 +34,7 @@ import { AccountPhotoService } from '../services/account-photo.service';
 import { ActivityService } from '../services/activity.service';
 import { AddressBookService } from '../services/address-book.service';
 import { AppResetService } from '../services/app-reset.service';
+import { BackupReminder } from '../services/backup-reminder';
 import { BalanceService } from '../services/balance.service';
 import { CloudBackupService } from '../services/cloud-backup.service';
 import { ConnectedAppService } from '../services/connected-app.service';
@@ -111,6 +112,7 @@ export interface Services {
   preferenceService: PreferenceService;
   migrationService: MigrationService;
   cloudBackupService: CloudBackupService;
+  backupReminder: BackupReminder;
 }
 
 export type AppContainer = Services & {
@@ -132,6 +134,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const priceRepository = infra.priceRepository ?? new ApiPriceRepository(new OnblocApiClient(http));
   const vaultRepository = new SecureVaultRepository(secureStore);
   const biometricRepository = infra.biometricRepository ?? new SecureBiometricCredentialRepository(secureStore);
+  const backupReminder = overrides.backupReminder ?? new BackupReminder(keyValueStore);
   const accountRepository = new StorageAccountRepository(keyValueStore);
   const networkRepository = new StorageNetworkRepository(keyValueStore);
   const connectedAppRepository = new StorageConnectedAppRepository(keyValueStore);
@@ -157,7 +160,7 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
   const migrationService = overrides.migrationService ?? new MigrationService(keyValueStore, secureStore);
   const cloudBackupStateRepository = new StorageCloudBackupStateRepository(keyValueStore);
   const walletService = overrides.walletService
-    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository);
+    ?? new WalletService(vaultService, keyringSession, accountService, [tokenService, nftService, connectedAppService, accountPhotoService, pendingBroadcastRepository], biometricRepository, preferenceRepository, resetMarker, new RestoreMarker(keyValueStore), cloudBackupStateRepository, backupReminder);
   const cloudBackupService = overrides.cloudBackupService ?? new CloudBackupService(
     infra.cloudBackupStore ?? new NativeCloudBackupStore(null, CloudBackupProvider.ICLOUD),
     infra.backupCodec ?? new BackupCodec(new ScryptXChaChaVaultCipher(BACKUP_KDF_SETTINGS)),
@@ -197,5 +200,6 @@ export const createContainer = (infra: Infrastructure, overrides: Partial<Servic
     preferenceService: overrides.preferenceService ?? new PreferenceService(preferenceRepository),
     migrationService,
     cloudBackupService,
+    backupReminder,
   };
 };

@@ -1,5 +1,5 @@
-import { useQueryClient } from '@tanstack/react-query';
-import React, { ReactElement, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React, { ReactElement, useEffect, useState } from 'react';
 
 import { HomeTab, WalletHomePage } from '../../../components/pages';
 import { FEATURES } from '../../../config/features';
@@ -26,9 +26,29 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
   const wallet = useWalletAssets();
   const hideSmallBalances = usePreference('hideSmallBalances');
   const hideUnknownTokens = usePreference('hideUnknownTokens');
-  const { nftService, accountPhotoService } = useContainer();
+  const { nftService, accountPhotoService, backupReminder, cloudBackupService, accountService } = useContainer();
 
   useSessionStore(state => state.revision);
+  const bumpRevision = useSessionStore(state => state.bumpRevision);
+  const reminderKeyringId = backupReminder.getKeyringId();
+  // A keyring removed since then no longer needs the reminder.
+  const reminderActive = reminderKeyringId !== null && accountService.getAccounts().some(item => item.keyringId === reminderKeyringId);
+  // A cloud upload still pending at onboarding clears the reminder once the provider confirms it.
+  const cloudStatus = useQuery({
+    queryKey: ['backup-reminder', 'cloud-status', reminderKeyringId],
+    queryFn: () => cloudBackupService.getStatus(),
+    enabled: reminderActive,
+    retry: false,
+  });
+
+  useEffect(() => {
+    const status = cloudStatus.data;
+
+    if (reminderKeyringId && (!reminderActive || (status?.kind === 'backedUp' && !status.uploading && !status.outdated))) {
+      backupReminder.clear(reminderKeyringId);
+      bumpRevision();
+    }
+  }, [backupReminder, bumpRevision, cloudStatus.data, reminderActive, reminderKeyringId]);
   const collectionsQuery = useNftCollectionsQuery(account, network);
   const collections = {
     ...collectionsQuery,
@@ -73,6 +93,12 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
   const handleCopyAddress = (): void => copy(address);
 
   const handleOpenAccounts = (): void => navigation.navigate('Accounts');
+
+  const handleBackUpPhrase = (): void => {
+    if (reminderKeyringId) {
+      navigation.navigate('RecoveryPhrase', { keyringId: reminderKeyringId });
+    }
+  };
 
   const handleOpenSettings = (): void => navigation.navigate('Settings');
 
@@ -148,6 +174,7 @@ export const HomeScreen = ({ navigation }: MainTabScreenProps<'Wallet'>): ReactE
       onBuy={FEATURES.buy ? handleBuy : undefined}
       onSend={handleSend}
       onReceive={handleReceive}
+      onBackUpPhrase={reminderActive ? handleBackUpPhrase : undefined}
     />
   );
 };

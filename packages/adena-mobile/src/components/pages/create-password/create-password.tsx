@@ -2,7 +2,7 @@ import React, { ReactElement, useRef } from 'react';
 import { TextInputInstance } from 'react-native';
 
 import { Button, Text, TextColor } from '../../atoms';
-import { Screen, TextField, TopBar } from '../../molecules';
+import { PageHeading, Screen, TextField, TopBar } from '../../molecules';
 import { styles } from './create-password.styles';
 
 // Shown once the password passes the strength rule, like the extension's Medium / Strong label.
@@ -25,6 +25,8 @@ export interface CreatePasswordPageProps {
   // The restore flow reuses this page with its own wording.
   submitLabel?: string;
   submittingLabel?: string;
+  // Step label above the title, e.g. "Setup / 2 of 2".
+  eyebrow?: string;
 }
 
 export const CreatePasswordPage = ({
@@ -40,6 +42,7 @@ export const CreatePasswordPage = ({
   onBack,
   submitLabel = 'Create wallet',
   submittingLabel = 'Creating wallet…',
+  eyebrow = 'Setup / Password',
 }: CreatePasswordPageProps): ReactElement => {
   const confirmRef = useRef<TextInputInstance>(null);
 
@@ -51,7 +54,7 @@ export const CreatePasswordPage = ({
 
   return (
     <Screen
-      header={<TopBar title='Set a password' onBack={onBack} />}
+      header={<TopBar onBack={onBack} />}
       footer={(
         <Button
           label={submitLabel}
@@ -63,7 +66,7 @@ export const CreatePasswordPage = ({
         />
       )}
     >
-      <Text variant='body' color='secondary'>This password unlocks Adena on this device. It cannot recover your wallet.</Text>
+      <PageHeading eyebrow={eyebrow} title={'Create a\npassword.'} description='This password unlocks Adena on this device. It cannot recover your wallet.' />
       <TextField
         label='Password'
         value={password}

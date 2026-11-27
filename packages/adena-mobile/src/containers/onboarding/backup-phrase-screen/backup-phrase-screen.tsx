@@ -8,18 +8,26 @@ import { useOnboardingStore } from '../../../stores/onboarding.store';
 
 export const BackupPhraseScreen = ({ navigation }: NativeStackScreenProps<OnboardingStackParamList, 'BackupPhrase'>): ReactElement => {
   const mnemonic = useOnboardingStore(state => state.mnemonic);
-  const [acknowledged, setAcknowledged] = useState(false);
+  const setPhraseSaved = useOnboardingStore(state => state.setPhraseSaved);
+  const [revealed, setRevealed] = useState(false);
   const { hidden, reveal } = useHideWhenInactive();
 
-  const handleContinue = (): void => navigation.navigate('CreatePassword');
+  const handleReveal = (): void => {
+    setRevealed(true);
+    reveal();
+  };
+
+  const handleContinue = (): void => {
+    setPhraseSaved(true);
+    navigation.navigate('ProtectWallet');
+  };
 
   return (
     <BackupPhrasePage
       words={mnemonic?.split(' ') ?? []}
-      hidden={hidden}
-      onReveal={reveal}
-      acknowledged={acknowledged}
-      onToggleAcknowledged={setAcknowledged}
+      masked={!revealed || hidden}
+      onReveal={handleReveal}
+      canContinue={revealed}
       onContinue={handleContinue}
       onBack={navigation.goBack}
     />

@@ -6,7 +6,8 @@ require Pod::Executable.execute_command('node', ['-p',
   )', __dir__]).strip
 
 # GoogleMLKit/BarcodeScanning (QR scanner) requires iOS 15.5.
-platform :ios, '15.5'
+MIN_IOS_VERSION = '15.5'
+platform :ios, MIN_IOS_VERSION
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
@@ -31,5 +32,16 @@ target 'AdenaMobile' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Some pods (e.g. their privacy resource bundles) still target iOS 9-12, which Xcode 27 rejects.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        current = build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+
+        if current.nil? || Gem::Version.new(current) < Gem::Version.new(MIN_IOS_VERSION)
+          build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = MIN_IOS_VERSION
+        end
+      end
+    end
   end
 end
