@@ -1,0 +1,165 @@
+name: Mobile Beta
+
+# Uploads adena-mobile to TestFlight and the Play internal testing track.
+# Setup and secrets: packages/adena-mobile/README.md, "Beta uploads".
+on:
+  push:
+    tags:
+      - mobile-v*
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Which store to upload to
+        type: choice
+        default: both
+        options:
+          - both
+          - ios
+          - android
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-beta-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  authorize:
+    runs-on: ubuntu-latest
+    outputs:
+      build-number: ${{ steps.build-number.outputs.value }}
+    steps:
+      # triggering_actor, not actor, so a re-run is checked against whoever re-ran it.
+      - name: Check actor is allowed to upload
+        env:
+          ACTOR: ${{ github.triggering_actor }}
+          ORG: ${{ github.repository_owner }}
+          SUBMITTERS: ${{ vars.STORE_SUBMITTERS }}
+          TEAM: ${{ vars.STORE_SUBMITTER_TEAM }}
+          GH_TOKEN: ${{ secrets.TEAM_READ_TOKEN }}
+        run: |
+          if [ -n "$ACTOR" ] && echo ",${SUBMITTERS// /}," | grep -qiF ",${ACTOR},"; then
+            echo "$ACTOR is listed in STORE_SUBMITTERS"
+            exit 0
+          fi
+          if [ -n "$TEAM" ] && [ -n "$GH_TOKEN" ]; then
+            state=$(gh api "orgs/$ORG/teams/$TEAM/memberships/$ACTOR" --jq .state 2>/dev/null || true)
+            if [ "$state" = "active" ]; then
+              echo "$ACTOR is a member of $ORG/$TEAM"
+              exit 0
+            fi
+          fi
+          echo "::error::$ACTOR is not allowed to upload mobile builds"
+          exit 1
+
+      # One number for both stores; run_attempt keeps a re-run from reusing a number the store already has.
+      - name: Compute build number
+        id: build-number
+        env:
+          OFFSET: ${{ vars.MOBILE_BUILD_NUMBER_OFFSET || '100' }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          value=$(( OFFSET + RUN_NUMBER * 10 + RUN_ATTEMPT ))
+          echo "build number $value"
+          echo "value=$value" >> "$GITHUB_OUTPUT"
+
+  ios:
+    needs: authorize
+    if: inputs.platform == 'both' || inputs.platform == 'ios' || github.event_name == 'push'
+    runs-on: macos-latest
+    timeout-minutes: 90
+    environment: mobile-release
+    defaults:
+      run:
+        working-directory: packages/adena-mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
+          bundler-cache: true
+          working-directory: packages/adena-mobile
+
+      - name: Install pods
+        working-directory: packages/adena-mobile/ios
+        run: bundle exec pod install
+
+      - name: Write App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          key="$RUNNER_TEMP/asc-api-key.p8"
+          printf '%s\n' "$ASC_KEY_P8" > "$key"
+          chmod 600 "$key"
+          echo "ASC_KEY_PATH=$key" >> "$GITHUB_ENV"
+
+      - name: Build and upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_NUMBER: ${{ needs.authorize.outputs.build-number }}
+        run: |
+          xcodebuild -version
+          bundle exec fastlane ios beta
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/asc-api-key.p8"
+
+  android:
+    needs: authorize
+    if: inputs.platform == 'both' || inputs.platform == 'android' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: mobile-release
+    defaults:
+      run:
+        working-directory: packages/adena-mobile
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: zulu
+          java-version: '17'
+          cache: gradle
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0'
+          bundler-cache: true
+          working-directory: packages/adena-mobile
+
+      - name: Write upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          keystore="$RUNNER_TEMP/upload.keystore"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          echo "ORG_GRADLE_PROJECT_ADENA_UPLOAD_STORE_FILE=$keystore" >> "$GITHUB_ENV"
+
+      - name: Build and upload to the internal track
+        env:
+          ORG_GRADLE_PROJECT_ADENA_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_ADENA_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_ADENA_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PLAY_RELEASE_STATUS: ${{ vars.PLAY_RELEASE_STATUS || 'completed' }}
+          BUILD_NUMBER: ${{ needs.authorize.outputs.build-number }}
+        run: bundle exec fastlane android internal
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.keystore"

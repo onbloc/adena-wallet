@@ -15,3 +15,6 @@ gem 'logger'
 gem 'benchmark'
 gem 'mutex_m'
 gem 'nkf'
+
+# Store uploads (fastlane/Fastfile).
+gem 'fastlane', '>= 2.230'
