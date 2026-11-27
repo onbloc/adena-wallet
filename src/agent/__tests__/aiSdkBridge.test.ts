@@ -105,18 +105,22 @@ describe('createAiSdkRun', () => {
     run.close();
   });
 
-  it('keeps an interruption on the application side: the model only learns its kind', async () => {
+  it('keeps a trusted operation interruption on the application side', async () => {
     const interruptions: unknown[] = [];
-    const run = await startRun(async () => ({ kind: 'clarify', reason: 'AMBIGUOUS_ASSET', choices: [] }));
+    const run = await startRun();
     const { tools } = createAiSdkRun({
       run,
       maxOutputTokens: 512,
       budget: { kind: 'local' },
+      operations: [{
+        definition: { name: 'choose_asset', description: 'Select an asset', jsonSchema: { type: 'object', properties: {} } },
+        execute: async () => ({ kind: 'clarify', reason: 'AMBIGUOUS_ASSET', choices: [] }),
+      }],
       onInterrupt: (interruption) => interruptions.push(interruption),
       estimateInputTokens: () => 1,
     });
 
-    expect(await (tools.ping.execute as Execute)({}, {})).toEqual({ kind: 'clarify' });
+    expect(await (tools.choose_asset.execute as Execute)({}, {})).toEqual({ kind: 'clarify' });
     expect(interruptions).toEqual([{ kind: 'clarify', reason: 'AMBIGUOUS_ASSET', choices: [] }]);
     run.close();
   });

@@ -1,5 +1,5 @@
 import { fakeOnblocMcp } from '../../../harness/mcp/testing/fakeOnblocMcp';
-import { TransactionType } from '../../../agent';
+import { TransactionType, WalletErrorCode } from '../../../agent';
 import { balancesFromOnbloc, createOnblocMockWallet, fetchOnblocBalances } from '../onblocWallet';
 import { FIXTURE } from '../fixture';
 import { TokenSymbol } from '../tokens';
@@ -89,5 +89,48 @@ describe('Onbloc-funded mock wallet', () => {
     expect(await sdk.getBalance(to)).toEqual({ GNOT: '0', GNS: '0' });
     // The chain is only read, never written, and not read again after the transfer.
     expect(calls).toHaveLength(2);
+  });
+});
+
+describe('Onbloc token identity', () => {
+  const lookalike = { ...gnsItem, packagePath: 'gno.land/r/other/gns', amount: '1234', decimals: 2 };
+
+  it.each([
+    [gnsItem, lookalike],
+    [lookalike, gnsItem],
+  ])('requires a path for duplicate symbols regardless of order', async (first, second) => {
+    const { fetcher, calls } = fakeOnblocMcp([
+      { name: 'get_native_balance', output: native },
+      { name: 'get_token_balances', output: tokens(first, second) },
+    ]);
+    const sdk = await createOnblocMockWallet({ onbloc: { endpoint: 'https://example.test/mcp', account, fetcher } });
+    const transfer = { from: account, to: FIXTURE.recipient, token: 'GNS', amount: '0.01' };
+    const approval = { from: account, spender: FIXTURE.recipient, token: 'GNS', amount: '0.01' };
+    const candidates = expect.arrayContaining([gnsItem.packagePath, lookalike.packagePath]);
+    await expect(sdk.transfer(transfer)).rejects.toMatchObject({ code: WalletErrorCode.AmbiguousToken, candidateIds: candidates });
+    await expect(sdk.approve(approval)).rejects.toMatchObject({ code: WalletErrorCode.AmbiguousToken, candidateIds: candidates });
+    expect((await sdk.transfer({ ...transfer, token: lookalike.packagePath })).summary).toMatchObject({
+      token: 'GNS', packagePath: lookalike.packagePath, amount: '0.01',
+    });
+    expect((await sdk.approve({ ...approval, token: gnsItem.packagePath })).summary).toMatchObject({
+      token: 'GNS', packagePath: gnsItem.packagePath, amount: '0.01',
+    });
+    await expect(sdk.transfer({ ...transfer, token: lookalike.packagePath, amount: '12.35' }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InsufficientBalance });
+    await expect(sdk.approve({ ...approval, token: lookalike.packagePath, amount: '0.001' }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InvalidAmount });
+    await expect(sdk.transfer({ ...transfer, from: FIXTURE.recipient, token: lookalike.packagePath }))
+      .rejects.toMatchObject({ code: WalletErrorCode.UnknownToken });
+    expect(await sdk.getBalance(account)).toEqual({ GNOT: '44290.358689', GNS: '0.063607' });
+    expect(calls).toHaveLength(2);
+  });
+
+  it('rejects an incomplete identifiable token rather than dropping an ambiguity', async () => {
+    const { fetcher } = fakeOnblocMcp([
+      { name: 'get_native_balance', output: native },
+      { name: 'get_token_balances', output: tokens(gnsItem, { ...lookalike, amount: undefined }) },
+    ]);
+    await expect(createOnblocMockWallet({ onbloc: { endpoint: 'https://example.test/mcp', account, fetcher } }))
+      .rejects.toMatchObject({ code: WalletErrorCode.WalletFailed });
   });
 });

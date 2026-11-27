@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import Storage from 'expo-sqlite/kv-store';
 import type { AIAgent, AgentSettings } from '../../agent';
 import { chatSessionKey, createChatSession, type ChatScope, type ChatSession, type ChatTurn, type GenerateEvent } from '../../llm/core';
@@ -30,6 +31,16 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
   const writes = useRef(Promise.resolve());
   const activeRun = useRef<ActiveRun | null>(null);
   const activeScope = useRef<string | null>(key);
+  const lastAgent = useRef<AIAgent | null>(null);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'background') return;
+      lastAgent.current?.clearPending();
+      activeRun.current?.controller.abort();
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     activeScope.current = key;
@@ -67,6 +78,8 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
     return () => {
       disposed = true;
       activeScope.current = null;
+      lastAgent.current?.clearPending();
+      lastAgent.current = null;
       if (activeRun.current?.entry.key === key) activeRun.current.controller.abort();
     };
   }, [key, persistent, attempt]);
@@ -106,6 +119,9 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
       if (activeRun.current) throw new Error('A conversation is already running.');
       const entry = current;
       const controller = new AbortController();
+      if (lastAgent.current !== agent) lastAgent.current?.clearPending();
+      if (!options.allowTransactionPreparation) agent.clearPending();
+      lastAgent.current = agent;
       const active = { entry, agent, controller };
       const abort = () => controller.abort();
       activeRun.current = active;
@@ -128,6 +144,7 @@ export function useChatSession(scope: ChatScope): ChatSessionState {
     },
     reset() {
       if (!current) return;
+      lastAgent.current?.clearPending();
       if (activeRun.current?.entry.session === current.session) {
         const active = activeRun.current;
         activeRun.current = null;

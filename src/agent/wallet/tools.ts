@@ -33,7 +33,11 @@ async function refusalsAsResults(run: () => Promise<ToolResult | undefined>): Pr
     return await run();
   } catch (error) {
     if (!(error instanceof WalletError)) throw error;
-    return { status: WalletStatus.Error, code: error.code, message: error.message };
+    const ids = error.candidateIds;
+    const validIds = error.code === 'ambiguous_token' && Array.isArray(ids) && ids.length >= 2 && ids.length <= 20 &&
+      ids.every(id => typeof id === 'string' && id.length <= 256 && id.includes('/') && /^[\p{L}\p{N}._:/-]+$/u.test(id)) &&
+      new Set(ids).size === ids.length;
+    return { status: WalletStatus.Error, code: error.code, message: error.message, ...(validIds ? { candidateIds: [...ids] } : {}) };
   }
 }
 
@@ -62,10 +66,19 @@ function walletTool<Schema extends z.ZodType>({ name, effect, description, schem
   };
 }
 
-/** A contact's name (any case) becomes its address; anything else is left for the SDK to check. */
+/** Resolve known aliases; leave g1-prefixed addresses to the wallet for validation. */
 const resolveContact = (contacts: readonly Contact[], recipient: string) =>
-  contacts.find((contact) => contact.alias.toLowerCase() === recipient.trim().toLowerCase())?.address ??
+  contacts.find((contact) => contact.alias.trim().toLowerCase() === recipient.trim().toLowerCase())?.address ??
   recipient;
+
+function resolveTarget(contacts: readonly Contact[], target: string): string {
+  const resolved = resolveContact(contacts, target);
+  if (resolved === target && !target.trim().toLowerCase().startsWith('g1') &&
+    !contacts.some(contact => contact.alias.trim().toLowerCase() === target.trim().toLowerCase())) {
+    throw new WalletError(WalletErrorCode.InvalidAddress, `No contact matches "${target.trim()}". Which saved contact or g1 address should receive this request?`);
+  }
+  return resolved;
+}
 /** The native bank denomination is already in base units, unlike token display amounts. */
 function resolveAmountUnit(amount: string, token: string): { amount: string; token: string } {
   if (token !== 'ugnot') return { amount, token };
@@ -152,7 +165,7 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
         const requested = resolveAmountUnit(amount, token);
         const prepared = await handoff(() => sdk.transfer({
           from: account,
-          to: resolveContact(contacts, to),
+          to: resolveTarget(contacts, to),
           ...requested,
         }, { signal }), signal, cancelled);
         if (!prepared) return undefined;
@@ -163,6 +176,7 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
           to: summary.to,
           amount: summary.amount,
           token: summary.token,
+          ...(summary.packagePath === undefined ? {} : { packagePath: summary.packagePath }),
           message: PREPARED_MESSAGE,
         };
       },
@@ -183,7 +197,7 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
           const requested = resolveAmountUnit(amount, token);
           const prepared = await handoff(() => approve({
             from: account,
-            spender: resolveContact(contacts, spender),
+            spender: resolveTarget(contacts, spender),
             ...requested,
           }, { signal }), signal, cancelled);
           if (!prepared) return undefined;
@@ -194,6 +208,7 @@ export function createWalletTools({ sdk, account, contacts, userText, authorized
             spender: summary.spender,
             amount: summary.amount,
             token: summary.token,
+            ...(summary.packagePath === undefined ? {} : { packagePath: summary.packagePath }),
             message: PREPARED_MESSAGE,
           };
         },

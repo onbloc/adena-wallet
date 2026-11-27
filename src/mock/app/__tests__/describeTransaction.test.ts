@@ -30,6 +30,7 @@ describe('describeTransaction', () => {
       spender: 'g1spender',
       amount: '10',
       token: TokenSymbol.Gns,
+      packagePath: 'gno.land/r/alternate/gns',
     });
 
     expect(description.title).toBe('Approval prepared');
@@ -37,6 +38,7 @@ describe('describeTransaction', () => {
       Owner: 'g1owner',
       Spender: 'g1spender',
       Amount: '10 GNS',
+      'Token realm': 'gno.land/r/alternate/gns',
       Chain: 'gnoland-1',
     });
   });

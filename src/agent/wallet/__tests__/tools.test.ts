@@ -79,6 +79,16 @@ describe('transfer', () => {
     expect(prepared).toEqual([]);
   });
 
+  it('transports only bounded, valid ambiguity candidates', async () => {
+    const ids = ['gno.land/r/a/token', 'gno.land/r/b/token'];
+    const { tools } = setup({ failWith: new WalletError(WalletErrorCode.AmbiguousToken, 'choose', ids) });
+    expect(await run(tools[ToolName.Transfer], input)).toMatchObject({ candidateIds: ids });
+    for (const invalid of [[ids[0], ids[0]], [ids[0], 'bad id'], Array(21).fill(ids[0])]) {
+      const invalidTools = setup({ failWith: new WalletError(WalletErrorCode.AmbiguousToken, 'choose', invalid) }).tools;
+      expect(await run(invalidTools[ToolName.Transfer], input)).not.toHaveProperty('candidateIds');
+    }
+  });
+
   it('lets a failure that is not a wallet refusal fail the call', async () => {
     const { tools } = setup({ failWith: new Error('wallet crashed') });
 
@@ -171,12 +181,18 @@ describe('contact names', () => {
     expect(wallet.calls.map(({ params }) => params.to ?? params.spender)).toEqual([FRIEND.address, FRIEND.address]);
   });
 
-  it('leaves a name that is not a contact for the wallet to refuse', async () => {
-    const { tools, wallet } = setup();
-
-    await run(tools[ToolName.Transfer], { ...input, to: 'bob' });
-
-    expect(wallet.calls[0].params.to).toBe('bob');
+  it.each([
+    [ToolName.Transfer, { ...input, to: 'bob' }],
+    [ToolName.Approve, { spender: 'bob', amount: '1', token: 'gns' }],
+  ])('asks for a known contact or address without calling the wallet for %s', async (name, params) => {
+    const { tools, wallet, prepared } = setup();
+    expect(await run(tools[name], params)).toMatchObject({
+      status: WalletStatus.Error,
+      code: WalletErrorCode.InvalidAddress,
+      message: expect.stringContaining('No contact matches'),
+    });
+    expect(wallet.calls).toEqual([]);
+    expect(prepared).toEqual([]);
   });
 });
 
@@ -207,6 +223,8 @@ describe('trusted recipient authorization', () => {
     ['Approve 1 GNOT', ToolName.Approve, { spender: RECIPIENT, amount: '1', token: 'gns' }],
     ['Send 1 GNOT to Caroline', ToolName.Transfer, { ...input, to: FRIEND.alias }],
     [`Send 1 GNOT to ${RECIPIENT}xyz`, ToolName.Transfer, input],
+    ['Send to xcarol에게', ToolName.Transfer, { ...input, to: FRIEND.alias }],
+    ['Send to carol2에게', ToolName.Transfer, { ...input, to: FRIEND.alias }],
     [`${RECIPIENT}에게다른사람`, ToolName.Transfer, input],
     ['carol에게다른사람', ToolName.Transfer, { ...input, to: FRIEND.alias }],
   ])('rejects an unmentioned target in %p', async (userText, name, params) => {
@@ -228,8 +246,9 @@ describe('trusted recipient authorization', () => {
     ['Send to Carol', ToolName.Transfer, { ...input, to: FRIEND.address }, FRIEND.address],
     [`Send to ${FRIEND.address}`, ToolName.Transfer, { ...input, to: FRIEND.alias }, FRIEND.address],
     ['Approve Carol', ToolName.Approve, { spender: FRIEND.address, amount: '1', token: 'gns' }, FRIEND.address],
-    [`${RECIPIENT}에게 보내줘`, ToolName.Transfer, input, RECIPIENT],
     ['carol에게 보내줘', ToolName.Transfer, { ...input, to: FRIEND.alias }, FRIEND.address],
+    ['carol이 사용할 수 있게 승인해', ToolName.Approve, { spender: FRIEND.alias, amount: '1', token: 'gns' }, FRIEND.address],
+    [`${RECIPIENT}에게 보내줘`, ToolName.Transfer, input, RECIPIENT],
   ])('allows a target explicitly named in %p', async (userText, name, params, expectedAddress) => {
     const wallet = fakeWallet();
     const onTransaction = jest.fn();

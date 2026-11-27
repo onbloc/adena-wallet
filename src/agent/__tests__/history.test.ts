@@ -245,6 +245,8 @@ describe('agent history', () => {
   });
 
   it('persists additional history eviction when a tool result fills the next model step', async () => {
+    const contextTokens = 12_288;
+    const data = 'data'.repeat(5000);
     const model = new MockLanguageModelV4({ doGenerate: [
       reply(intentReplyText({ kind: 'lookup', requests: [{ target: 'other', query: 'Look up current data and its status.' }] })),
       reply(JSON.stringify({ toolNames: ['lookup', 'status'] })),
@@ -258,12 +260,12 @@ describe('agent history', () => {
         finishReason: { unified: 'tool-calls', raw: 'tool-calls' }, usage, warnings: [],
       },
     ] });
-    const llm = llmOf(model);
+    const llm = new LLMFromModel(wrapLanguageModel({ model, middleware: simulateStreamingMiddleware() }), { contextTokens });
     const harness = new Harness({ toolSources: [async () => new Map<string, RemoteTool>([[
       'lookup',
       {
         definition: { name: 'lookup', description: 'Look up data', jsonSchema: { type: 'object', properties: {} } },
-        execute: async () => ({ kind: 'result', value: { data: 'data'.repeat(3000) } }),
+        execute: async () => ({ kind: 'result', value: { data } }),
       },
     ], [
       'status',
@@ -273,11 +275,11 @@ describe('agent history', () => {
       },
     ]])] });
     const session = createChatSession();
-    session.complete('obsolete topic', 'x'.repeat(12000));
-    session.complete('recent topic', 'r'.repeat(2500));
+    session.complete('obsolete topic', 'x'.repeat(contextTokens * 2));
+    session.complete('recent topic', 'r'.repeat(4000));
     const agent = agentOver(llm, session, harness);
 
-    await collect(agent.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens: 8192 }));
+    await collect(agent.run({ prompt: 'Look up current data.', system: 'Be concise.', maxOutputTokens: 128 }, { account: ACCOUNT, contextTokens }));
 
     const firstLookup = model.doGenerateCalls.find(call => call.tools?.some(tool => tool.type === 'function' && tool.name === 'lookup'));
     const statusLookup = model.doGenerateCalls.find(call => call.tools?.some(tool => tool.type === 'function' && tool.name === 'status'));
@@ -287,7 +289,7 @@ describe('agent history', () => {
     const continuation = JSON.stringify(statusLookup?.prompt);
     expect(continuation).not.toContain('recent topic');
     expect(continuation).toContain('lookup-now');
-    expect(continuation).toContain('data'.repeat(3000));
+    expect(continuation).toContain(data);
     expect(agent.turns.map((turn) => turn.prompt)).toEqual(['Look up current data.']);
     expect(agent.serialize()).not.toContain('recent topic');
   });

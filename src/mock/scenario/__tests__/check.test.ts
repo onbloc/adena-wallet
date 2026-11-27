@@ -1,5 +1,5 @@
 import { TransactionType } from '../../../agent';
-import { checkRun, checkSummaries, describeSummaries, explainNothing, judgeToolCalling, type JudgedRun, type PreparedSummary } from '../check';
+import { checkRun, checkScenarioRun, checkSummaries, describeSummaries, explainNothing, judgeToolCalling, type JudgedRun, type PreparedSummary } from '../check';
 import { ACCOUNT, CAROL, RECIPIENT } from '../fixture';
 
 const transfer = (overrides: Partial<Extract<PreparedSummary, { type: typeof TransactionType.Transfer }>> = {}): PreparedSummary => ({
@@ -11,24 +11,6 @@ const approval = (overrides: Partial<Extract<PreparedSummary, { type: typeof Tra
 
 const expectTransfer = { kind: 'transfer', to: CAROL, amount: '1', token: 'GNOT' } as const;
 const expectApproval = { kind: 'allowance', spender: CAROL, amount: '10', token: 'GNS' } as const;
-
-it('requires both zero drafts and meaningful clarification evidence', () => {
-  const expected = { kind: 'none', response: 'clarification', evidence: [/token/i] } as const;
-  const run = { prepared: [], calls: [], text: 'Which token do you mean?' };
-  expect(checkRun(run, expected)).toEqual({ ok: true });
-  expect(checkRun({ ...run, text: 'Please clarify?' }, expected).ok).toBe(false);
-  expect(checkRun({ ...run, text: 'token' }, expected).ok).toBe(false);
-  expect(checkRun({ ...run, prepared: [transfer()] }, expected).ok).toBe(false);
-});
-
-it('accepts an exact draft or a field-specific question for an unambiguous typo', () => {
-  const expected = { ...expectTransfer, orClarification: [/action/i] };
-  const run = { prepared: [], calls: [], text: 'Which action?' };
-  expect(checkRun(run, expected).ok).toBe(true);
-  expect(checkRun({ ...run, text: 'Please clarify?' }, expected).ok).toBe(false);
-  expect(checkRun({ ...run, prepared: [transfer()] }, expected).ok).toBe(true);
-  expect(checkRun({ ...run, prepared: [transfer({ to: RECIPIENT })] }, expected).ok).toBe(false);
-});
 
 describe('checkSummaries', () => {
   it('accepts exactly the expected transfer and approval', () => {
@@ -63,8 +45,75 @@ describe('checkSummaries', () => {
   });
 
   it('accepts no transaction only when none is expected', () => {
-    expect(checkSummaries([], { kind: 'none' })).toEqual({ ok: true });
-    expect(checkSummaries([transfer()], { kind: 'none' })).toMatchObject({ ok: false });
+    const expected = { kind: 'none', response: 'clarification', evidence: [/recipient/i] } as const;
+    expect(checkSummaries([], expected)).toEqual({ ok: true });
+    expect(checkSummaries([transfer()], expected)).toMatchObject({ ok: false });
+  });
+});
+
+describe('checkScenarioRun', () => {
+  const turn = (text: string) => ({ prepared: [], calls: [], results: [], text });
+  it('accepts an exact draft or a field-specific question for an unambiguous typo', () => {
+    const expected = { ...expectTransfer, orClarification: [/action/i] };
+    expect(checkScenarioRun(turn('Which action?'), expected).ok).toBe(true);
+    expect(checkScenarioRun(turn('Please clarify?'), expected).ok).toBe(false);
+    expect(checkScenarioRun({ ...turn(''), prepared: [{ summary: transfer(), tx: {} }] }, expected).ok).toBe(true);
+    expect(checkScenarioRun({ ...turn(''), prepared: [{ summary: transfer({ to: RECIPIENT }), tx: {} }] }, expected).ok).toBe(false);
+  });
+  it.each([
+    [{ kind: 'none', response: 'clarification', evidence: [/recipient/i] } as const, 'Which recipient?', 'I sent it to the recipient.'],
+    [{ kind: 'none', response: 'refusal', evidence: [/balance/i] } as const, 'Insufficient balance.', 'Your balance is 10 GNOT.'],
+    [{ kind: 'none', response: 'explanation', evidence: [/allowance/i, /spend/i] } as const, 'An allowance permits spending.', 'The allowance is ready.'],
+    [{ kind: 'none', response: 'read-only', evidence: [/250/, /GNS/] } as const, 'You have 250 GNS.', 'You have 10 GNOT.'],
+  ])('requires the expected response and its evidence', (expected, good, wrong) => {
+    expect(checkScenarioRun(turn(good), expected)).toEqual({ ok: true });
+    expect(checkScenarioRun(turn(''), expected).ok).toBe(false);
+    expect(checkScenarioRun(turn(wrong), expected).ok).toBe(false);
+  });
+  it('preserves bare none and answer oracle verdicts', () => {
+    expect(checkScenarioRun(turn(''), { kind: 'none' })).toEqual({ ok: true });
+    const expected = { kind: 'answer', reads: [{ name: 'get_balance', input: { kind: 'all' } }], says: ['10 GNOT'] } as const;
+    expect(checkScenarioRun({ ...turn('10 GNOT'), calls: [{ name: 'get_balance', input: { kind: 'all' }, invalid: false }] }, expected)).toEqual({ ok: true });
+    expect(checkScenarioRun(turn('10 GNOT'), expected)).toEqual({ ok: false, reason: 'did not call get_balance' });
+  });
+  it('does not allow absent evidence requirements to pass', () => {
+    expect(checkScenarioRun(turn('An answer.'), { kind: 'none', response: 'explanation', evidence: [] }).ok).toBe(false);
+  });
+  it('rejects a transaction even when the response supplies the expected clarification', () => {
+    expect(checkScenarioRun(
+      { ...turn('Which recipient?'), prepared: [{ summary: transfer(), tx: {} }] },
+      { kind: 'none', response: 'clarification', evidence: [/recipient/i] },
+    ).ok).toBe(false);
+  });
+  it('requires the expected wallet error code when a preparation was rejected', () => {
+    const expected = { kind: 'none', response: 'refusal', evidence: [/balance/i], errorCodes: ['insufficient_balance'] } as const;
+    const result = (code: string) => ({ name: 'transfer', output: { kind: 'result', value: { status: 'error', code } } });
+    expect(checkScenarioRun({ ...turn('Balance is too low.'), results: [result('insufficient_balance')] }, expected).ok).toBe(true);
+    expect(checkScenarioRun({ ...turn('Balance is too low.'), results: [result('invalid_address')] }, expected).ok).toBe(false);
+    expect(checkScenarioRun({ ...turn('Balance is too low.'), results: [result('insufficient_balance'), result('invalid_address')] }, expected).ok).toBe(false);
+  });
+  it('rejects tool activity for explanations and preparation attempts for reads', () => {
+    const call = { name: 'transfer', input: {}, invalid: false };
+    expect(checkScenarioRun({ ...turn('An allowance permits spending.'), calls: [call] },
+      { kind: 'none', response: 'explanation', evidence: [/allowance/, /spend/] }).ok).toBe(false);
+    expect(checkScenarioRun({ ...turn('You have 250 GNS.'), calls: [call] },
+      { kind: 'none', response: 'read-only', evidence: [/250/, /GNS/] }).ok).toBe(false);
+  });
+  it('checks the expected token realm when supplied', () => {
+    const expected = { ...expectApproval, packagePath: 'gno.land/r/gnoswap/gns' };
+    expect(checkSummaries([approval({ packagePath: 'gno.land/r/gnoswap/gns' })], expected).ok).toBe(true);
+    expect(checkSummaries([approval({ packagePath: 'gno.land/r/other/gns' })], expected).ok).toBe(false);
+    expect(checkSummaries([approval()], expected).ok).toBe(false);
+    const transferExpected = { ...expectTransfer, token: 'GNS' as const, packagePath: 'gno.land/r/gnoswap/gns' };
+    expect(checkSummaries([transfer({ token: 'GNS', packagePath: 'gno.land/r/gnoswap/gns' })], transferExpected).ok).toBe(true);
+    expect(checkSummaries([transfer({ token: 'GNS', packagePath: 'gno.land/r/other/gns' })], transferExpected).ok).toBe(false);
+  });
+  it('accepts the observed bilingual clarifications and rejects generic non-answers', () => {
+    const recipient = { kind: 'none', response: 'clarification', evidence: [/recipient|address|who|where|받|주소|누구|어디/i] } as const;
+    const amount = { kind: 'none', response: 'clarification', evidence: [/amount|how much|quantity|얼마|수량|금액|몇/i] } as const;
+    expect(checkScenarioRun(turn('Who should receive the GNOT?'), recipient).ok).toBe(true);
+    expect(checkScenarioRun(turn('금액을 알려주세요.'), amount).ok).toBe(true);
+    expect(checkScenarioRun(turn('Please try again.'), amount).ok).toBe(false);
   });
 });
 

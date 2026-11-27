@@ -4,7 +4,7 @@ import { AIAgent, type PreparedTransaction, type WalletSdk } from '../../agent';
 import { DEFAULT_BUDGET, Harness } from '../../harness/core';
 import { createOnblocToolSource, type OnblocMcpConfig } from '../../harness/mcp';
 import { GenerateEventType, type LLM } from '../../llm/core';
-import { ACCOUNT, FAKE_ENDPOINT, TOKEN_SYMBOLS, fakeReads } from './fixture';
+import { ACCOUNT, FAKE_ENDPOINT, TOKEN_SYMBOLS, fakeReads, type ScenarioReadsFactory } from './fixture';
 import { TimingLLM, type Stage } from './timing';
 
 export type ScenarioRun = {
@@ -68,17 +68,19 @@ export function createScenarioRunner({
   createWallet,
   allowTransactionPreparation = true,
   settings = { temperature: 0 },
+  readsFactory = fakeReads,
 }: {
   llm: LLM;
   createWallet: ScenarioWalletFactory;
   allowTransactionPreparation?: boolean;
   settings?: ScenarioSettings;
+  readsFactory?: ScenarioReadsFactory;
 }): ScenarioRunner {
   const timing = new TimingLLM(llm);
 
   /** A fresh agent, so a request starts a conversation of its own. */
   function startConversation() {
-    const mcp = fakeReads();
+    const mcp = readsFactory();
     const onbloc = { endpoint: FAKE_ENDPOINT, fetcher: mcp.fetcher };
     const prepared: PreparedTransaction[] = [];
     const agent = new AIAgent({

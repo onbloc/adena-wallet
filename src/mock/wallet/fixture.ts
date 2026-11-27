@@ -1,9 +1,18 @@
 import { TokenSymbol, type Balances } from './tokens';
 
+export type MockHolding = {
+  symbol: string;
+  packagePath: string;
+  amount: string;
+  decimals: number;
+};
+
 export type MockAccount = {
   name: string;
   address: string;
   balances: Balances;
+  /** Optional owner-scoped token snapshot; omitted for the original fixture behavior. */
+  holdings?: readonly MockHolding[];
 };
 
 // Example data for tests and the prompt's contacts; the values are assumptions, not real Gno.land data.

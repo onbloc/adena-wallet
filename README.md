@@ -164,6 +164,11 @@ the retained turns, `serialize()` saves a snapshot, `reset()` aborts the active 
 the history, and `new AIAgent({ ..., session: createChatSession(saved) })` continues a saved
 conversation. Concurrent turns on one agent are rejected.
 
+Reuse the same agent while its model, wallet and scope are unchanged. `clearPending()` aborts an
+active turn and forgets volatile clarification, token-choice and balance-reference state without
+erasing visible history. Use it when backgrounding or invalidating a pending choice; `reset()`
+also clears the stored conversation. Serialized text never restores permission to select or prepare.
+
 The conversation defaults to the model's context window (8192 for the default model).
 `contextTokens` can be set lower, never above that window. Each model step reserves room for
 system instructions, tool schemas, the current question and live tool results, plus the output
@@ -207,9 +212,9 @@ reads succeed in the same run; those extra reads must not cause a raw base-unit 
 replace the formatted balances.
 
 The app restores chats separately for each endpoint, chain and account; switching scopes
-aborts the old turn. Keep the same separation when using `saved` outside the app. The app keeps
-one `ChatSession` per scope and builds each run's agent with `session: history`, so loading and
-saving do not create a second copy of the conversation.
+aborts the old turn and clears pending choices. Keep the same separation when using `saved`
+outside the app. It keeps one `ChatSession` per scope and reuses its agent while the model and
+wallet match. Each transaction callback stays bound to its originating turn and scope.
 
 ## Intent-first wallet execution
 
@@ -302,6 +307,15 @@ the arguments it is given. Each run binds the account selected by the app, and t
 it as `from`; the model never chooses it. Chat, questions and explanations work without an
 account; a lookup or a preparation without one fails with `AGENT_ACCOUNT_REQUIRED` (link a wallet).
 Use a separate agent (or `reset()`) when switching accounts.
+
+When a symbol resolves to several tokens, the host may throw
+`new WalletError(WalletErrorCode.AmbiguousToken, message, candidateIds)` with their exact realm IDs.
+The agent shows those choices without preparing a draft. Only the next exact candidate-ID reply
+can continue the unresolved operation; it keeps the original amount and resolved recipient.
+Bare confirmations, unrelated or read-only turns, cancellation, scope changes, `clearPending()`
+and restoration from a snapshot do not grant that authority. Fractional selections read the chosen
+asset's balance afresh. A successful GRC20 summary should include `packagePath`; the host must use
+that same identity and its own verified decimals when building the opaque `tx`.
 
 ```ts
 const agent = new AIAgent({

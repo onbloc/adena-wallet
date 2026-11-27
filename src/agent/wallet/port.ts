@@ -24,12 +24,16 @@ export type AllowanceParams = {
 export type TransferSummary = TransferParams & {
   type: typeof TransactionType.Transfer;
   chainId: string;
+  /** Resolved GRC20 realm, absent for native assets. */
+  packagePath?: string;
 };
 
 /** An allowance as the wallet resolved it. */
 export type AllowanceSummary = AllowanceParams & {
   type: typeof TransactionType.Allowance;
   chainId: string;
+  /** Resolved GRC20 realm, absent for native assets. */
+  packagePath?: string;
 };
 
 /**
@@ -67,7 +71,8 @@ export type Contact = { alias: string; address: string };
 export class WalletError extends Error {
   constructor(
     readonly code: WalletErrorCode,
-    message: string
+    message: string,
+    readonly candidateIds?: readonly string[]
   ) {
     super(message);
     this.name = 'WalletError';

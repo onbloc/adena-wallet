@@ -213,6 +213,10 @@ export function createHarness({ wallet = {}, budget = DEFAULT_BUDGET, audit, too
             if (signal.aborted || Date.now() >= deadline) return { kind: 'denied', code: 'CANCELLED' };
             if (paused) return { kind: 'denied', code: 'RUN_PAUSED' };
           }
+          // Remote sources are read-only: they cannot produce wallet approvals or clarifications.
+          if (tool && decision.kind !== 'result' && decision.kind !== 'denied') {
+            return { kind: 'denied', code: 'INVALID_OUTPUT' };
+          }
           if (decision.kind === 'clarify' || decision.kind === 'approval-required') paused = true;
           return decision;
         } catch {

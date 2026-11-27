@@ -362,6 +362,173 @@ describe('Harness', () => {
     release.resolve(new Map());
   });
 
+  it.each(['result', 'error'] as const)('discards a delayed MCP %s after cancellation', async outcome => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const controller = new AbortController();
+    const external: RemoteTool = {
+      ...tool('external'),
+      async execute() {
+        entered.resolve();
+        await release.promise;
+        if (outcome === 'error') throw new Error('private remote detail');
+        return { kind: 'result', value: 'late remote data' };
+      },
+    };
+    const started = await new Harness({
+      toolSources: [async () => new Map([['external', external]])],
+    }).startRun({ ...run, signal: controller.signal });
+    const pending = started.dispatch({ name: 'external', input: {} });
+    await entered.promise;
+    controller.abort();
+    expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+    release.resolve();
+    expect(await started.dispatch({ name: 'external', input: {} })).toEqual({ kind: 'denied', code: 'CANCELLED' });
+    started.close();
+  });
+
+  it('sanitizes a delayed MCP failure before cancellation', async () => {
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const external: RemoteTool = {
+      ...tool('external'),
+      async execute() {
+        entered.resolve();
+        await release.promise;
+        throw new Error('private remote detail');
+      },
+    };
+    const started = await new Harness({
+      toolSources: [async () => new Map([['external', external]])],
+    }).startRun(run);
+    const pending = started.dispatch({ name: 'external', input: {} });
+    await entered.promise;
+    release.resolve();
+    expect(await pending).toEqual({ kind: 'denied', code: 'MCP_UNAVAILABLE' });
+    started.close();
+  });
+
+  it.each([
+    { kind: 'approval-required' as const, action: { kind: 'revoke-session' as const, sessionId: 's1', account: run.account, chainId: run.chainId } },
+    { kind: 'clarify' as const, reason: 'CONFIRM_TRANSFER' as const },
+  ])('rejects external decisions that attempt to initiate a wallet handoff: $kind', async decision => {
+    const external: RemoteTool = { ...tool('external'), execute: async () => decision };
+    const started = await new Harness({
+      toolSources: [async () => new Map([['external', external]])],
+    }).startRun(run);
+    expect(await started.dispatch({ name: 'external', input: {} })).toEqual({ kind: 'denied', code: 'INVALID_OUTPUT' });
+    started.close();
+  });
+
+  it.each(['account', 'chainId'] as const)('isolates session results when the %s changes', async field => {
+    const listSessions = jest.fn(async (context: { account: string; chainId: string }) => ({
+      ...context, sessions: [{ sessionId: `${context.account}:${context.chainId}`, expiresAt: 10 }],
+    }));
+    const harness = new Harness({ wallet: { listSessions } });
+    const first = await harness.startRun({ ...run, purpose: undefined, scope: 'manage-session' });
+    const nextContext = { ...run, [field]: `other-${field}`, purpose: undefined, scope: 'manage-session' as const };
+    const second = await harness.startRun(nextContext);
+    expect(await first.dispatch({ name: 'list_sessions', input: {} })).toEqual({
+      kind: 'result', value: { account: run.account, chainId: run.chainId,
+        sessions: [{ sessionId: `${run.account}:${run.chainId}`, expiresAt: 10 }] },
+    });
+    expect(await second.dispatch({ name: 'list_sessions', input: {} })).toEqual({
+      kind: 'result', value: { account: nextContext.account, chainId: nextContext.chainId,
+        sessions: [{ sessionId: `${nextContext.account}:${nextContext.chainId}`, expiresAt: 10 }] },
+    });
+    first.close();
+    second.close();
+  });
+
+  it.each(['account', 'chainId'] as const)('rejects session data for a different %s', async field => {
+    const started = await new Harness({ wallet: {
+      listSessions: async context => ({ ...context, [field]: 'different', sessions: [] }),
+    } }).startRun({ ...run, purpose: undefined, scope: 'manage-session' });
+    expect(await started.dispatch({ name: 'list_sessions', input: {} })).toEqual({ kind: 'denied', code: 'INVALID_OUTPUT' });
+    started.close();
+  });
+
+  it.each(['account', 'chainId'] as const)('does not reuse ambiguous token candidates after changing %s', async field => {
+    const findTokens = jest.fn(async (context: { account: string; chainId: string }) => ({
+      chainId: context.chainId,
+      candidates: context[field] === run[field]
+        ? [{ assetId: 'old/a', symbol: 'GNS', decimals: 6 }, { assetId: 'old/b', symbol: 'GNS', decimals: 6 }]
+        : [{ assetId: 'new/token', symbol: 'GNS', decimals: 6 }],
+    }));
+    const harness = new Harness({ wallet: { findTokens } });
+    const first = await harness.startRun({ ...run, purpose: undefined });
+    expect(await first.dispatch({ name: 'find_tokens', input: { symbol: 'GNS' } })).toMatchObject({
+      kind: 'clarify', reason: 'AMBIGUOUS_ASSET', choices: [{ assetId: 'old/a' }, { assetId: 'old/b' }],
+    });
+    const second = await harness.startRun({ ...run, [field]: `other-${field}`, purpose: undefined });
+    expect(await second.dispatch({ name: 'find_tokens', input: { symbol: 'GNS' } })).toMatchObject({
+      kind: 'result', value: { candidates: [{ assetId: 'new/token' }] },
+    });
+    expect(findTokens).toHaveBeenCalledTimes(2);
+    first.close();
+    second.close();
+  });
+
+  it('requires the selected session and stops a queued revoke after cancellation', async () => {
+    const controller = new AbortController();
+    const started = await new Harness().startRun({
+      ...run, purpose: undefined, scope: 'manage-session', signal: controller.signal,
+      selection: { kind: 'revoke-session', sessionId: 'selected' },
+    });
+    expect(await started.dispatch({ name: 'revoke_session', input: { sessionId: 'other' } }))
+      .toEqual({ kind: 'denied', code: 'TARGET_CHANGED' });
+    controller.abort();
+    expect(await started.dispatch({ name: 'revoke_session', input: { sessionId: 'selected' } }))
+      .toEqual({ kind: 'denied', code: 'CANCELLED' });
+    started.close();
+  });
+
+  it('emits at most one session approval per run for repeated identical proposals', async () => {
+    const started = await new Harness().startRun({
+      ...run, purpose: undefined, scope: 'manage-session',
+      selection: { kind: 'revoke-session', sessionId: 'selected' },
+    });
+    const proposal = { name: 'revoke_session', input: { sessionId: 'selected' } };
+    const [first, duplicate] = await Promise.all([started.dispatch(proposal), started.dispatch(proposal)]);
+    expect(first).toEqual({ kind: 'approval-required', action: {
+      kind: 'revoke-session', sessionId: 'selected', account: run.account, chainId: run.chainId,
+    } });
+    expect(duplicate).toEqual({ kind: 'denied', code: 'RUN_PAUSED' });
+    started.close();
+  });
+
+  it('returns a sanitized failure when a session read throws', async () => {
+    const started = await new Harness({ wallet: {
+      listSessions: async () => { throw new Error('private wallet detail'); },
+    } }).startRun({ ...run, purpose: undefined, scope: 'manage-session' });
+    expect(await started.dispatch({ name: 'list_sessions', input: {} })).toEqual({ kind: 'denied', code: 'WALLET_UNAVAILABLE' });
+    started.close();
+  });
+
+  it('times out a session read that ignores cancellation and discards its late result', async () => {
+    jest.useFakeTimers();
+    try {
+      const entered = Promise.withResolvers<void>();
+      const release = Promise.withResolvers<void>();
+      const started = await new Harness({ wallet: {
+        listSessions: async context => {
+          entered.resolve();
+          await release.promise;
+          return { ...context, sessions: [] };
+        },
+      } }).startRun({ ...run, purpose: undefined, scope: 'manage-session', budget: { timeoutMs: 100 } });
+      const pending = started.dispatch({ name: 'list_sessions', input: {} });
+      await entered.promise;
+      jest.advanceTimersByTime(100);
+      expect(await pending).toEqual({ kind: 'denied', code: 'CANCELLED' });
+      release.resolve();
+      expect(await started.dispatch({ name: 'list_sessions', input: {} })).toEqual({ kind: 'denied', code: 'CANCELLED' });
+      started.close();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it('denies a tool the model invents', async () => {
     const harness = new Harness({ toolSources: [source('ping').toolSource] });
     const started = await harness.startRun(run);

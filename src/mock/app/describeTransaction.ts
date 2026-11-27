@@ -8,25 +8,13 @@ export type TransactionDescription = {
 
 /** What the app shows for a prepared transaction. */
 export function describeTransaction(summary: TransferSummary | AllowanceSummary): TransactionDescription {
-  const amount = `${summary.amount} ${summary.token}`;
-  if (summary.type === TransactionType.Transfer) {
-    return {
-      title: 'Transfer prepared',
-      rows: [
-        ['From', summary.from],
-        ['To', summary.to],
-        ['Amount', amount],
-        ['Chain', summary.chainId],
-      ],
-    };
-  }
-  return {
-    title: 'Approval prepared',
-    rows: [
-      ['Owner', summary.from],
-      ['Spender', summary.spender],
-      ['Amount', amount],
-      ['Chain', summary.chainId],
-    ],
-  };
+  const isTransfer = summary.type === TransactionType.Transfer;
+  const rows: TransactionDescription['rows'] = [
+    [isTransfer ? 'From' : 'Owner', summary.from],
+    isTransfer ? ['To', summary.to] : ['Spender', summary.spender],
+    ['Amount', `${summary.amount} ${summary.token}`],
+  ];
+  if (summary.packagePath) rows.push(['Token realm', summary.packagePath]);
+  rows.push(['Chain', summary.chainId]);
+  return { title: isTransfer ? 'Transfer prepared' : 'Approval prepared', rows };
 }

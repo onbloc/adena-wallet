@@ -133,6 +133,36 @@ describe('Onbloc discovered read policy', () => {
     } finally { run.close(); }
   });
 
+  it.each(['list_account_transactions', 'list_native_transfers', 'list_token_transfers'])(
+    'limits over-returned items for reviewed pagination: %s', async name => {
+      const items = [{ hash: 'one' }, { hash: 'two' }, { hash: 'three' }, { hash: 'four' }];
+      const { run } = await open([{ name, output: { address: account, items } }]);
+      try {
+        expect(await run.dispatch({ name, input: { limit: 3 } })).toMatchObject({
+          kind: 'result', value: { untrustedData: { address: account, items: items.slice(0, 3) } },
+        });
+      } finally { run.close(); }
+    },
+  );
+
+  it('does not project unknown result shapes or unrelated reads', async () => {
+    const entries = [1, 2, 3, 4];
+    const { run } = await open([
+      { name: 'list_account_transactions', output: { address: account, transactions: entries } },
+      { name: 'custom_read', output: { items: entries }, inputSchema: {
+        type: 'object', properties: { limit: { type: 'integer' } }, additionalProperties: false,
+      } },
+    ], true);
+    try {
+      expect(await run.dispatch({ name: 'list_account_transactions', input: { limit: 3 } })).toMatchObject({
+        kind: 'result', value: { untrustedData: { transactions: entries } },
+      });
+      expect(await run.dispatch({ name: 'custom_read', input: { limit: 3 } })).toMatchObject({
+        kind: 'result', value: { untrustedData: { items: entries } },
+      });
+    } finally { run.close(); }
+  });
+
   it('accepts bounded standard text as untrusted data only for public reads', async () => {
     const { run } = await open([
       { name: 'get_realm_source', content: [...text('package gns'), ...text('func BalanceOf() {}')] },

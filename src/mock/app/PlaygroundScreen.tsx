@@ -123,6 +123,11 @@ export default function PlaygroundScreen() {
   const [keyboardShown, setKeyboardShown] = useState(false);
   // Wallet kept across runs, so later runs reuse the loaded balances. One per address.
   const walletRef = useRef<{ key: string; sdk: MockWalletSdk } | null>(null);
+  const agentRef = useRef<{
+    scope: string;
+    agent: AIAgent;
+    handoff: { current: (transaction: PreparedTransaction) => Promise<void> };
+  } | null>(null);
   const visibleScope = useRef(scopeKey);
   const displayedRun = useRef<{ scope: string } | null>(null);
   const chat = tab === 'chat';
@@ -233,10 +238,6 @@ export default function PlaygroundScreen() {
     };
     const previousTurn = session.turns.at(-1);
     await start((signal) => {
-      const harness = new Harness({
-        toolSources: onbloc && useTools ? [createOnblocToolSource(onbloc)] : [],
-        budget: { ...DEFAULT_BUDGET, maxTokens: 2 * llm.contextTokens, timeoutMs: 5 * 60_000 },
-      });
       const onTransaction = async ({ summary }: PreparedTransaction) => {
         // The persisted record is bound to this run's original scope, even after a switch.
         await preparation.record(summary.type);
@@ -244,10 +245,23 @@ export default function PlaygroundScreen() {
           displayedRun.current === view && visibleScope.current === view.scope ? [...list, summary] : list
         );
       };
-      const agent = onblocWallet
-        ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction, session: history, tokenSymbols: TOKEN_SYMBOLS })
-        : new AIAgent({ llm, harness, session: history });
-      return session.run(agent, settings, {
+      let entry = agentRef.current;
+      if (!entry || entry.scope !== scopeKey || entry.agent.llm !== llm ||
+        entry.agent.session !== history || entry.agent.wallet !== (onblocWallet ?? undefined)) {
+        const harness = new Harness({
+          toolSources: onbloc && useTools ? [createOnblocToolSource(onbloc)] : [],
+          budget: { ...DEFAULT_BUDGET, maxTokens: 2 * llm.contextTokens, timeoutMs: 5 * 60_000 },
+        });
+        const handoff = { current: onTransaction };
+        const agent = onblocWallet
+          ? new AIAgent({ llm, harness, wallet: onblocWallet, onTransaction: tx => handoff.current(tx), session: history, tokenSymbols: TOKEN_SYMBOLS })
+          : new AIAgent({ llm, harness, session: history });
+        entry = { scope: scopeKey, agent, handoff };
+        agentRef.current = entry;
+      } else {
+        entry.handoff.current = onTransaction;
+      }
+      return session.run(entry.agent, settings, {
         account: useTools ? onbloc?.account : undefined, signal, allowTransactionPreparation: !!onblocWallet,
       });
     });

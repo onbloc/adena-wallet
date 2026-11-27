@@ -142,11 +142,15 @@ export async function* guardAnswer(events: AsyncIterable<GenerateEvent>, isRead:
           || previous.symbol.toLowerCase() !== asset.symbol.toLowerCase())) balanceConflict = true;
         else if (!previous) seenAssets.set(key, asset);
       }
+      let idMentioned = true;
+      if (balance.request.kind === 'one' && balance.request.asset.kind === 'id') {
+        const id = balance.request.asset.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        idMentioned = new RegExp(`(?:^|[^\\p{L}\\p{M}\\p{N}_/:.-])${id}(?=$|[^\\p{L}\\p{M}\\p{N}_/:.-]|\\.+(?=$|\\s))`, 'u').test(userText);
+      }
       if (balance.request.kind === 'one' &&
         (balance.request.asset.kind === 'symbol' && (contradictsSymbolMention(userText, balance.request.asset.value)
           || balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol)))
-        || balance.request.asset.kind === 'id' && !userText.toLowerCase().includes(balance.request.asset.value.toLowerCase())
-          && balance.assets.some(asset => contradictsSymbolMention(userText, asset.symbol)))) {
+        || balance.request.asset.kind === 'id' && !idMentioned)) {
         selectionConflict = true;
         conflictedSelections.add(event.id);
       }

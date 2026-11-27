@@ -9,7 +9,7 @@ import { describeToolRecord } from './toolRecord';
 import { buildWalletPrompt } from './prompts';
 import { realmEvidence } from './realmEvidence';
 import type { RealmEvidence } from './realmEvidence';
-import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, type LookupToolSelection, type PreparationProposal, type RequestIntent } from './requestIntent';
+import { askWhichRecipient, classifyRequest, proposePreparation, selectLookupTools, verifyLookupTools, type LookupToolSelection, type PreparationPlanning, type PreparationProposal, type RequestIntent } from './requestIntent';
 import type { Contact, TransactionHandler, WalletSdk } from './wallet/port';
 import { fromBaseUnits } from './wallet/amount';
 import { createWalletTools } from './wallet/tools';
@@ -65,9 +65,9 @@ export type AIAgentOptions = {
   /** The token symbols the wallet can prepare; unknown symbols require clarification. */
   tokenSymbols?: readonly string[];
   /**
-   * Limits harness execution: 5 model steps, 4 underlying read calls, twice the context in
-   * tokens, and 300000 ms by default. Routing, planning and tool-free answers are separate;
-   * timeoutMs bounds the entire turn. Wallet preparations do not consume maxToolCalls.
+   * Limits harness execution: 5 model steps, 4 tool dispatches, twice the context in tokens,
+   * and 300000 ms by default. Dispatches include wallet preparations. Routing, planning and
+   * tool-free answers are separate; timeoutMs bounds the entire turn.
    */
   budget?: Partial<Budget>;
 } & (
@@ -84,6 +84,12 @@ function clarificationSlot(question: string): ClarificationSlot | undefined {
   if (/\b(?:amount|quantity|how much|how many)\b|수량|금액|얼마/iu.test(question)) slots.push('amount');
   return slots.length === 1 ? slots[0] : undefined;
 }
+type PendingPreparation = {
+  proposal: Exclude<PreparationProposal, { operation: 'clarification' }>;
+  candidateIds: string[];
+  account: string;
+  chainId: string;
+};
 export type AgentRunOptions = {
   account?: string;
   signal?: AbortSignal;
@@ -102,14 +108,17 @@ type RunOptions = AgentRunOptions & {
   onPreparationClarification?: (userText: string, slot?: ClarificationSlot) => void;
   balanceReferent?: BalanceReferent;
   onBalanceReferent?: (asset: BalanceReferent) => void;
+  /** Host-owned, one-turn state from a prior SDK ambiguity; never derived from model text. */
+  pendingPreparation?: PendingPreparation;
+  onAmbiguousPreparation?: (pending: PendingPreparation) => void;
 };
 type AccountRunOptions = RunOptions & { account: string };
 type AnswerSettings = Omit<GenerateSettings, 'prompt' | 'messages'> & { messages: ModelMessage[] };
 type DoneEvent = Extract<GenerateEvent, { type: 'done' }>;
 const REQUEST_TIMEOUT_MS = 5 * 60_000;
 const ANSWER_INSTRUCTIONS = {
-  explanation: 'Explain only concepts, not current wallet or chain facts. Use no tools.',
-  clarification: 'Ask a concise clarification about missing details, ambiguous tasks, or which independent action to perform first. Prepare nothing.',
+  explanation: 'Explain briefly in the user’s language using Gno.land conventions and examples. GNOT is native; contract-issued GRC20 tokens are not native coins. Do not infer holdings or take a wallet action. Use no tools.',
+  clarification: 'Ask a concise question in the user’s language. For multiple actions, name each and ask which to perform first. Invent no missing details or prerequisite lookups. Prepare nothing.',
   chat: 'Reply naturally to the conversation. You can only explain concepts, read the wallet\'s data and prepare transfers and approvals; if asked for anything else (swap, stake, buy, bridge, send an NFT), say plainly that you cannot. This reply has no wallet data and prepares nothing: never claim to have read the wallet or done a wallet action. Use no tools.',
 } as const;
 
@@ -127,16 +136,20 @@ function missingPreparationSlot(text: string, proposal: Exclude<PreparationPropo
   if (asset && recipient && !amount && !/\d|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|half|quarter|third|all)\b|(?:절반|전부|모두|전체|한\s*개|두\s*개|세\s*개)/iu.test(remainder)) return 'amount';
   return undefined;
 }
+
+// Match complete user-supplied identifiers, not a symbol embedded in another symbol
+// or a package path embedded in a longer path.
 function mentionsIdentifier(text: string, value: string, exact = false, minimum = 1): boolean {
   const source = exact ? text : text.toLowerCase();
   const needle = exact ? value : value.toLowerCase();
-  const identifier = /[\p{L}\p{M}\p{N}_/-]/u;
+  const identifier = /[\p{L}\p{M}\p{N}_/:.-]/u;
   let matches = 0;
   for (let index = source.indexOf(needle); needle && index !== -1; index = source.indexOf(needle, index + 1)) {
     const before = Array.from(source.slice(0, index)).at(-1) ?? '';
     const after = Array.from(source.slice(index + needle.length))[0] ?? '';
     const koreanParticle = !exact && /^[a-z0-9.]+$/i.test(needle) && /^\p{Script=Hangul}$/u.test(after);
-    if (!identifier.test(before) && (!identifier.test(after) || koreanParticle) && ++matches >= minimum) return true;
+    const punctuation = /^\.+(?:$|[^\p{L}\p{M}\p{N}_/:.-])/u.test(source.slice(index + needle.length));
+    if (!identifier.test(before) && (!identifier.test(after) || koreanParticle || punctuation) && ++matches >= minimum) return true;
   }
   return false;
 }
@@ -178,6 +191,13 @@ function lookupAccount(intent: Extract<RequestIntent, { kind: 'lookup' }>, messa
   const earlier = reference ? users.slice(0, -1).reverse().find(text => addressCandidates(text).length > 0) : undefined;
   const relevant = candidates.length ? candidates : earlier ? addressCandidates(earlier) : [];
   if (new Set(relevant.map(value => value.toLowerCase())).size > 1) return null;
+  if (candidates.length === 1 && intent.requests.length === 1 && intent.requests[0].target === 'other') {
+    const ownPermissions = /\bmy\b[^.!?;]*\b(?:approvals?|allowances?|permissions?)\b[^.!?;]*\b(?:for|to)\s+g1[a-z0-9]+/i.test(latest)
+      || /g1[a-z0-9]+(?:에게|한테|께)/i.test(latest)
+        && /(?:내가|제가)[^.!?;]*(?:승인|허용)\s*(?:해\s*)?(?:준|한|했던)|(?:내|나의|제)\s*(?:토큰\s*)?(?:승인|허용)\s*(?:목록|내역|권한)/u.test(latest);
+    // An explicitly self-owned allowance names the spender, not another lookup owner.
+    if (ownPermissions) return undefined;
+  }
   const recipientOnly = candidates.length === 1
     && (/\b(?:to|recipient|spender)\s*[:=]?\s*g1/i.test(latest) || /g1[a-z0-9]+(?:에게|한테|으로)/i.test(latest))
     && (/\b(?:send|pay|transfer|spend)\b|보내|송금|지급/i.test(latest));
@@ -208,7 +228,7 @@ export class AIAgent {
   private readonly tokenSymbols: readonly string[];
   private readonly budget: Partial<Budget>;
   private active?: AbortController;
-  private continuation?: { account?: string; clarification?: PendingClarification; balance?: BalanceReferent };
+  private continuation?: { account?: string; clarification?: PendingClarification; balance?: BalanceReferent; preparation?: PendingPreparation };
   private revision = 0;
   private runs = 0;
 
@@ -234,10 +254,16 @@ export class AIAgent {
 
   /** Forgets the conversation and stops the turn in progress; whatever it still produces is not remembered. */
   reset(): void {
+    this.clearPending();
+    this.session.reset();
+  }
+
+  /** Revokes volatile authority and stops the active turn without forgetting the conversation. */
+  clearPending(): void {
     this.revision++;
     this.continuation = undefined;
     this.active?.abort();
-    this.session.reset();
+    this.active = undefined;
   }
 
   private executionBudget(contextTokens: number): Budget {
@@ -267,8 +293,8 @@ export class AIAgent {
   }
 
   /**
-   * One turn of the conversation. The prompt joins the history; once the turn completes it is
-   * remembered with what the agent called and what came of it, so later turns know.
+   * One turn of the conversation. Completed answers and tool records are remembered;
+   * volatile preparation authority is never restored from that history.
    */
   async *run(settings: AgentSettings, options: AgentRunOptions = {}): AsyncGenerator<GenerateEvent> {
     const { signal, contextTokens = this.llm.contextTokens, onContextCompacted } = options;
@@ -303,12 +329,15 @@ export class AIAgent {
     this.continuation = undefined;
     let nextClarification: PendingClarification | undefined;
     let nextBalanceReferent: BalanceReferent | undefined;
+    let nextPreparation: PendingPreparation | undefined;
     try {
       const events = this.execute({ ...generation, messages: this.session.messages(prompt) }, {
         ...options,
         signal: controller.signal,
         contextTokens,
         budget,
+        pendingPreparation: options.allowTransactionPreparation ? continuation?.preparation : undefined,
+        onAmbiguousPreparation: (pending) => { nextPreparation = pending; },
         pendingClarification: options.allowTransactionPreparation ? continuation?.clarification : undefined,
         onPreparationClarification: (text, slot) => { nextClarification = { text, slot }; },
         balanceReferent: continuation?.balance,
@@ -317,6 +346,7 @@ export class AIAgent {
           if (revision !== this.revision || controller.signal.aborted) return;
           nextClarification = undefined;
           nextBalanceReferent = undefined;
+          nextPreparation = undefined;
           this.session.trimOldest(count);
           onContextCompacted?.(count);
         },
@@ -331,7 +361,8 @@ export class AIAgent {
           if (revision === this.revision && !controller.signal.aborted && !event.aborted) {
             if (event.finishReason === 'stop') {
               this.continuation = { account: options.account,
-                clarification: options.allowTransactionPreparation ? nextClarification : undefined, balance: nextBalanceReferent };
+                clarification: options.allowTransactionPreparation ? nextClarification : undefined, balance: nextBalanceReferent,
+                preparation: options.allowTransactionPreparation ? nextPreparation : undefined };
             }
             if (canRememberTurn(event) && !this.session.complete(prompt, answer, describeToolRecord(calls))) {
               yield { ...event, warnings: [...event.warnings, 'This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.'] };
@@ -353,6 +384,7 @@ export class AIAgent {
   private async *execute(settings: GenerateSettings, {
     account, signal, contextTokens, budget, onContextCompacted, allowTransactionPreparation = false,
     pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent,
+    pendingPreparation, onAmbiguousPreparation,
   }: RunOptions): AsyncGenerator<GenerateEvent> {
     const started = Date.now();
     const controller = new AbortController();
@@ -365,34 +397,41 @@ export class AIAgent {
     const compact = (count: number) => {
       pendingClarification = undefined;
       balanceReferent = undefined;
+      pendingPreparation = undefined;
       if (activeOptions) {
         activeOptions.pendingClarification = undefined;
         activeOptions.balanceReferent = undefined;
+        activeOptions.pendingPreparation = undefined;
       }
       onContextCompacted?.(count);
     };
     try {
       if (controller.signal.aborted) { yield this.done(controller.signal); return; }
       const messages: ModelMessage[] = settings.messages ?? [{ role: 'user', content: settings.prompt }];
-      const last = messages.at(-1);
-      const reply = last?.role === 'user' && typeof last.content === 'string' ? last.content.trim() : '';
-      if (pendingClarification && bareConfirmation.test(reply)) {
+      const latest = messages.at(-1);
+      const choice = latest?.role === 'user' && typeof latest.content === 'string' ? latest.content.trim() : '';
+      if (pendingClarification && bareConfirmation.test(choice)) {
         const question = restatementQuestion(pendingClarification.text);
         onPreparationClarification?.(pendingClarification.text, pendingClarification.slot);
         yield { type: 'text', delta: question };
         yield { ...this.done(controller.signal), messages: [{ role: 'assistant', content: question }] };
         return;
       }
-      const classified = await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted: compact });
+      const selected = pendingPreparation && pendingPreparation.account === account && pendingPreparation.chainId === this.chainId
+        && pendingPreparation.candidateIds.includes(choice) ? choice : undefined;
+      const classified = selected
+        ? { aborted: false as const, intent: { kind: 'prepare' as const }, messages,
+          metrics: { totalMs: 0, ttftMs: null, outputTokens: 0 }, warnings: [] as string[] }
+        : await classifyRequest(this.llm, settings, { signal: controller.signal, contextTokens, onContextCompacted: compact });
       if (classified.aborted || controller.signal.aborted) {
         yield { ...this.done(controller.signal), warnings: classified.warnings, metrics: { ...classified.metrics, totalMs: Date.now() - started, ttftMs: null } };
         return;
       }
       const options: RunOptions = activeOptions = { account, signal: controller.signal, contextTokens, budget, onContextCompacted: compact, allowTransactionPreparation,
+        onAmbiguousPreparation, pendingPreparation: selected ? pendingPreparation : undefined,
         pendingClarification, onPreparationClarification, balanceReferent, onBalanceReferent };
       const { prompt: _prompt, ...answerSettings } = settings;
-      const intent = pendingClarification?.slot && isClarificationReply(reply)
-        ? { kind: 'prepare' as const } : classified.intent;
+      const intent = pendingClarification?.slot && isClarificationReply(choice) ? { kind: 'prepare' as const } : classified.intent;
       const events = this.answerRequest(intent, { ...answerSettings, messages: classified.messages }, options);
       for await (const event of events) {
         if (firstVisibleAt === undefined && (event.type === 'text' || event.type === 'reasoning' || event.type === 'tool-call')) firstVisibleAt = Date.now();
@@ -428,7 +467,10 @@ export class AIAgent {
     if (intent.kind === 'explanation' || intent.kind === 'clarification' || intent.kind === 'chat') {
       yield* guardAnswer(this.llm.generate({
         ...settings, tools: undefined, outputSchema: undefined,
-        system: [settings.system ?? this.prompt(), ANSWER_INSTRUCTIONS[intent.kind]].join('\n\n'),
+        system: [settings.system ?? this.prompt(), ANSWER_INSTRUCTIONS[intent.kind],
+          options.allowTransactionPreparation
+            ? 'The host permits unsigned preparation for eligible requests, but this response uses no tools and prepares nothing. Do not claim preparation is globally disabled.'
+            : 'This run cannot prepare transactions.'].join('\n\n'),
       }, options), () => true, intent);
     } else if (intent.kind === 'lookup') {
       const target = lookupAccount(intent, settings.messages);
@@ -446,6 +488,7 @@ export class AIAgent {
         yield this.done(options.signal);
         return;
       }
+      const selected = options.pendingPreparation;
       const reply = this.userText(settings);
       const pending = options.pendingClarification;
       const hasPriorTurn = settings.messages.some(message => message.role === 'user' && message.content === pending?.text);
@@ -456,10 +499,26 @@ export class AIAgent {
       const messages: ModelMessage[] = pending?.slot && isClarificationReply(reply) && !hasPriorTurn
         ? [{ role: 'user', content: `${pending.text}\n${reply}` }]
         : planningReply !== reply ? [...settings.messages.slice(0, -1), { role: 'user', content: planningReply }] : settings.messages;
-      const planned = await proposePreparation(this.llm, messages, { ...options, tokenSymbols: this.tokenSymbols });
-      const completion = { ...this.done(options.signal), metrics: planned.metrics, warnings: planned.warnings };
-      if (planned.aborted || options.signal.aborted) { yield { ...completion, aborted: true }; return; }
-      let proposal = planned.proposal;
+      let proposal: PreparationProposal;
+      let completion = this.done(options.signal);
+      if (selected) {
+        proposal = { ...selected.proposal, asset: { kind: 'id', value: reply.trim() } };
+      } else {
+        let planned: PreparationPlanning;
+        try {
+          planned = await proposePreparation(this.llm, messages, { ...options, tokenSymbols: this.tokenSymbols });
+        } catch (error) {
+          if (!(error instanceof Error) || !error.message.startsWith('AGENT_PREPARATION_INVALID:')) throw error;
+          options.onPreparationClarification?.(reply);
+          const question = restatementQuestion(reply);
+          yield { type: 'text', delta: question };
+          yield { ...completion, messages: [{ role: 'assistant', content: question }] };
+          return;
+        }
+        completion = { ...completion, metrics: planned.metrics, warnings: planned.warnings };
+        if (planned.aborted || options.signal.aborted) { yield { ...completion, aborted: true }; return; }
+        proposal = planned.proposal;
+      }
       if (proposal.operation === 'clarification') {
         options.onPreparationClarification?.(this.userText(settings), clarificationSlot(proposal.question));
         yield { type: 'text', delta: proposal.question };
@@ -471,10 +530,11 @@ export class AIAgent {
       const candidate = proposal;
       const amountIn = (text: string) => candidate.amount.kind === 'fraction'
         ? fractionEvidence(text, candidate.amount) : exactAmountEvidence(text, candidate.amount.value, candidate.asset.value);
-      const continuation = !!prior && !!options.pendingClarification?.slot && isClarificationReply(current)
+      const continuation = !selected && !!prior && !!options.pendingClarification?.slot
+        && options.pendingClarification.slot !== 'asset' && isClarificationReply(current)
         && (options.pendingClarification!.slot !== 'recipient'
           || !/(?:\b(?:to|for)\s+[\p{L}\p{N}][\p{L}\p{N}._:/-]*|[\p{L}\p{N}._:/-]+(?:에게|한테|께))/iu.test(prior))
-        && (options.pendingClarification!.slot === 'asset' || mentionsIdentifier(prior, candidate.asset.value, candidate.asset.kind === 'id'))
+        && mentionsIdentifier(prior, candidate.asset.value, candidate.asset.kind === 'id')
         && (options.pendingClarification!.slot === 'recipient' || mentionsIdentifier(prior, candidate.recipient))
         && (options.pendingClarification!.slot === 'amount' || amountIn(prior))
         && (options.pendingClarification!.slot === 'amount'
@@ -491,7 +551,7 @@ export class AIAgent {
         : current;
       const referentShare = referencedAsset ? balanceShareEvidence(authorizedText) : undefined;
       if (referentShare) proposal = { ...proposal, amount: { kind: 'fraction', ...referentShare } };
-      if (!mentionsIdentifier(authorizedText, proposal.recipient)) {
+      if (!selected && !mentionsIdentifier(authorizedText, proposal.recipient)) {
         options.onPreparationClarification?.(current, missingPreparationSlot(current, proposal));
         const id = `prepare-${++this.runs}:target`;
         const input = { [proposal.operation === 'transfer' ? 'to' : 'spender']: proposal.recipient,
@@ -504,7 +564,7 @@ export class AIAgent {
         yield { ...completion, messages: [{ role: 'assistant', content: question }] };
         return;
       }
-      const evidence = preparationEvidence(authorizedText, proposal);
+      const evidence = selected ? undefined : preparationEvidence(authorizedText, proposal);
       if (evidence) {
         options.onPreparationClarification?.(current);
         yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(current)
@@ -515,7 +575,7 @@ export class AIAgent {
         yield completion;
         return;
       }
-      if (!mentionsIdentifier(authorizedText, proposal.asset.value, proposal.asset.kind === 'id')
+      if (!selected && !mentionsIdentifier(authorizedText, proposal.asset.value, proposal.asset.kind === 'id')
         && /(?:\b(?:half|quarter|third|all)\s+of\s+(?:it|that)\b|그\s*(?:절반|전부|일부|반))/iu.test(current)) {
         yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(current)
           ? '어떤 자산의 잔액인가요? 자산과 거래 내용을 명확히 다시 알려 주시겠어요? 거래는 준비되지 않았습니다.'
@@ -523,10 +583,11 @@ export class AIAgent {
         yield completion;
         return;
       }
-      if (proposal.amount.kind === 'fraction' && !fractionEvidence(authorizedText, proposal.amount)) {
+      if (!selected && proposal.amount.kind === 'fraction' && !fractionEvidence(authorizedText, proposal.amount)) {
         const value = pairedDecimalAmount(authorizedText, proposal.asset.value);
-        if (value) proposal = { ...proposal, amount: { kind: 'exact', value } };
-        else {
+        if (value) {
+          proposal = { ...proposal, amount: { kind: 'exact', value } };
+        } else {
           yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(current)
             ? '정확한 수량이나 잔액의 명확한 비율을 알려 주시겠어요? 거래는 준비되지 않았습니다.'
             : 'Please specify the exact amount or an unambiguous share of the balance. No transaction was prepared.' };
@@ -534,13 +595,20 @@ export class AIAgent {
           return;
         }
       }
-      if (proposal.recipient.toLowerCase() === proposal.asset.value.toLowerCase()
-        && !mentionsIdentifier(authorizedText, proposal.recipient, false, 2)
-        || !mentionsIdentifier(authorizedText, proposal.recipient)
-        || !mentionsIdentifier(authorizedText, proposal.asset.value, proposal.asset.kind === 'id')
-        || proposal.amount.kind === 'exact' && !exactAmountEvidence(authorizedText, proposal.amount.value, proposal.asset.value)) {
+      if (!selected && proposal.recipient.toLowerCase() === proposal.asset.value.toLowerCase()
+        && !mentionsIdentifier(authorizedText, proposal.recipient, false, 2)) {
         options.onPreparationClarification?.(current, missingPreparationSlot(current, proposal));
-        yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(current)
+        yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(authorizedText)
+          ? '받는 사람이 누구인가요? 자산과 받는 사람을 각각 확인해 주세요. 거래는 준비되지 않았습니다.'
+          : 'Who is the recipient? Please identify the recipient separately from the asset. No transaction was prepared.' };
+        yield completion;
+        return;
+      }
+      if (!selected && (!mentionsIdentifier(authorizedText, proposal.recipient)
+        || !mentionsIdentifier(authorizedText, proposal.asset.value, proposal.asset.kind === 'id')
+        || proposal.amount.kind === 'exact' && !exactAmountEvidence(authorizedText, proposal.amount.value, proposal.asset.value))) {
+        options.onPreparationClarification?.(current, missingPreparationSlot(current, proposal));
+        yield { type: 'text', delta: /[\uac00-\ud7a3]/u.test(authorizedText)
           ? '받는 사람, 수량과 정확한 자산을 모두 다시 알려 주시겠어요? 거래는 준비되지 않았습니다.'
           : 'Could you restate the recipient, amount, and exact asset for this transaction? No transaction was prepared.' };
         yield completion;
@@ -550,7 +618,7 @@ export class AIAgent {
       // Only now may the address book be read; the model never sees it.
       const contacts: Contact[] = [];
       const all = createWalletTools({ sdk: this.wallet, account, contacts, userText: current,
-        authorizedRecipient: continuation ? proposal.recipient : undefined, onTransaction: this.onTransaction });
+        authorizedRecipient: selected?.proposal.recipient ?? (continuation ? proposal.recipient : undefined), onTransaction: this.onTransaction });
       if (!Object.hasOwn(all, action)) {
         yield { type: 'text', delta: `The wallet does not support ${action}. No transaction was prepared.` };
         yield completion;
@@ -560,14 +628,18 @@ export class AIAgent {
         scope: 'prepare-wallet', purpose: 'mainnet-read', walletTools: { [action]: all[action] }, signal: options.signal, budget: options.budget });
       try {
         for (const contact of await loadContacts(this.wallet, run.signal)) contacts.push(contact);
-        const whom = askWhichRecipient(messages, contacts);
+        const whom = selected ? undefined : askWhichRecipient(messages, contacts);
         if (whom !== undefined) {
           options.onPreparationClarification?.(current);
           yield { type: 'text', delta: whom };
           yield { ...completion, messages: [{ role: 'assistant', content: whom }] };
           return;
         }
-        yield* this.prepareEvents(proposal, run, completion, current, options.onPreparationClarification);
+        yield* this.prepareEvents(proposal, run, completion, pending => {
+          const recipient = contacts.find(contact => contact.alias.trim().toLowerCase() === proposal.recipient.trim().toLowerCase())?.address
+            ?? proposal.recipient;
+          options.onAmbiguousPreparation?.({ ...pending, proposal: { ...pending.proposal, recipient } });
+        }, current, options.onPreparationClarification);
       } catch (error) {
         if (!run.signal.aborted) throw error;
         yield { ...completion, aborted: true };
@@ -576,7 +648,8 @@ export class AIAgent {
   }
 
   private async *prepareEvents(proposal: Exclude<PreparationProposal, { operation: 'clarification' }>,
-    run: HarnessRun, completion: DoneEvent, userText: string, onClarification?: (text: string) => void): AsyncGenerator<GenerateEvent> {
+    run: HarnessRun, completion: DoneEvent, onAmbiguousPreparation: ((pending: PendingPreparation) => void) | undefined,
+    userText: string, onClarification?: (text: string) => void): AsyncGenerator<GenerateEvent> {
     let amount: string;
     if (proposal.amount.kind === 'fraction') {
       const request: BalanceRequest = { kind: 'one', asset: proposal.asset };
@@ -615,7 +688,16 @@ export class AIAgent {
     const input = { [name === 'transfer' ? 'to' : 'spender']: proposal.recipient, amount: amount!, token: proposal.asset.value };
     const events = (async function* (): AsyncGenerator<GenerateEvent> {
       yield { type: 'tool-call', id, name, input, invalid: false };
-      yield { type: 'tool-result', id, name, output: await run.dispatch({ name, input }) };
+      const output = await run.dispatch({ name, input });
+      if (!run.signal.aborted && !run.auditFailed && proposal.asset.kind === 'symbol' && output.kind === 'result'
+        && typeof output.value === 'object' && output.value !== null && 'code' in output.value
+        && output.value.code === 'ambiguous_token' && 'candidateIds' in output.value
+        && Array.isArray(output.value.candidateIds) && output.value.candidateIds.length >= 2
+        && output.value.candidateIds.every((id: unknown) => typeof id === 'string' && id.length > 0)) {
+        onAmbiguousPreparation?.({ proposal, candidateIds: [...output.value.candidateIds],
+          account: run.context.account, chainId: run.context.chainId });
+      }
+      yield { type: 'tool-result', id, name, output };
       yield { ...completion, aborted: run.signal.aborted };
     })();
     let clarification: string | undefined;
@@ -625,7 +707,12 @@ export class AIAgent {
         && typeof event.output.value === 'object' && event.output.value !== null && 'code' in event.output.value) {
         const code = event.output.value.code;
         const korean = /[\uac00-\ud7a3]/u.test(userText);
-        if (code === 'unknown_token') {
+        const candidates = 'candidateIds' in event.output.value ? event.output.value.candidateIds : undefined;
+        if (code === 'ambiguous_token' && Array.isArray(candidates)) {
+          clarification = korean
+            ? `어떤 토큰을 사용하시겠어요? 다음 중 정확한 경로 하나를 알려 주세요:\n${candidates.join('\n')}\n거래는 준비되지 않았습니다.`
+            : `Which token should I use? Reply with one exact candidate ID:\n${candidates.join('\n')}\nNo transaction was prepared.`;
+        } else if (code === 'unknown_token') {
           const asset = mentionsIdentifier(userText, proposal.asset.value) ? ` "${proposal.asset.value}"` : '';
           clarification = korean
             ? `자산${asset}을(를) 지갑에서 찾지 못했습니다. 정확한 토큰 심볼 또는 경로를 포함해 요청을 다시 말씀해 주시겠어요? 거래는 준비되지 않았습니다.`
@@ -652,20 +739,36 @@ export class AIAgent {
       const hidden = new Set([...onblocBalanceAdapter.toolNames, ...this.balanceAdapter.toolNames]);
       const catalog = run.tools.filter(tool => !hidden.has(tool.name));
       const query = other?.query;
-      const selection = query ? await selectLookupTools(this.llm, query, catalog, { signal: run.signal, contextTokens: options.contextTokens }) : undefined;
+      let selection = query ? await selectLookupTools(this.llm, query, catalog, { signal: run.signal, contextTokens: options.contextTokens }) : undefined;
       if (selection?.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: selection?.warnings ?? [] }; return; }
-      const requiredReads = selection && !selection.aborted ? selection.toolNames : [];
-      const evidence = realmEvidence(this.userText(settings), run);
-      const definition = requiredReads.length === 1 ? catalog.find(tool => tool.name === requiredReads[0]) : undefined;
+      const evidence = realmEvidence(this.userText(settings), run, query);
+      let realmPath = query && catalog.some(tool => tool.name === 'get_realm_info') ? evidence.requestedPath() : undefined;
+      if (realmPath && query && !selection?.toolNames.includes('get_realm_info') && catalog.some(tool => tool.name === 'get_realm_source')) {
+        const names = new Set(['get_realm_info', 'get_realm_source', ...(selection?.toolNames ?? [])]);
+        const fit = await verifyLookupTools(this.llm, query, catalog.filter(tool => names.has(tool.name)),
+          { signal: run.signal, contextTokens: options.contextTokens });
+        if (fit.aborted || run.signal.aborted) { yield { ...this.done(run.signal), warnings: fit.warnings }; return; }
+        const prior = selection;
+        selection = { ...fit, metrics: { ...fit.metrics, totalMs: (prior?.metrics.totalMs ?? 0) + fit.metrics.totalMs,
+          outputTokens: prior?.metrics.outputTokens !== undefined && fit.metrics.outputTokens !== undefined
+            ? prior.metrics.outputTokens + fit.metrics.outputTokens : undefined },
+          warnings: [...(prior?.warnings ?? []), ...fit.warnings] };
+        if (!fit.toolNames.length) realmPath = undefined;
+      }
+      const requiredReads = realmPath
+        ? ['get_realm_info', ...(selection?.toolNames ?? []).filter(name => name !== 'get_realm_info' && name !== 'get_realm_source')]
+        : selection && !selection.aborted ? selection.toolNames : [];
+      const definition = !realmPath && requiredReads.length === 1 ? catalog.find(tool => tool.name === requiredReads[0]) : undefined;
       const schema = definition && 'jsonSchema' in definition ? definition.jsonSchema : undefined;
       const directRead = schema?.type === 'object' && schema.additionalProperties === false
         && Object.keys(schema.properties ?? {}).length === 0 && !(schema.required?.length)
         && Object.keys(schema).every(key => ['type', 'properties', 'required', 'additionalProperties', 'title', 'description', '$schema'].includes(key))
         ? definition?.name : undefined;
       const completion = { explanation: 'pending' as 'pending' | 'complete' | 'incomplete' };
+      const remainingReads = requiredReads.filter(name => name !== directRead && !(realmPath && name === 'get_realm_info'));
       const remaining = this.lookupEvents(intent, settings,
         { ...options, onBalanceReferent: options.account === activeAccount ? options.onBalanceReferent : undefined },
-        run, directRead ? [] : requiredReads, hidden, evidence, selection, completion);
+        run, remainingReads, hidden, evidence, selection, completion, realmPath || undefined);
       const failed = { ...this.done(options.signal), metrics: selection?.metrics ?? this.done(options.signal).metrics, warnings: selection?.warnings ?? [] };
       const events = (async function* (): AsyncGenerator<GenerateEvent> {
         let rejectedCall = false;
@@ -696,7 +799,8 @@ export class AIAgent {
 
   private async *lookupEvents(intent: Extract<RequestIntent, { kind: 'lookup' }>, settings: AnswerSettings, options: RunOptions,
     run: HarnessRun, requiredReads: readonly string[], hidden: ReadonlySet<string>, evidence: RealmEvidence,
-    selection: LookupToolSelection | undefined, completion: { explanation: 'pending' | 'complete' | 'incomplete' }): AsyncGenerator<GenerateEvent> {
+    selection: LookupToolSelection | undefined, completion: { explanation: 'pending' | 'complete' | 'incomplete' },
+    realmPath?: string): AsyncGenerator<GenerateEvent> {
     let done = this.done(run.signal);
     let outputTokens = selection?.metrics.outputTokens ?? (selection ? undefined : 0);
     const warnings = [...(selection?.warnings ?? [])];
@@ -721,10 +825,20 @@ export class AIAgent {
         }
       }
     }
+    if (realmPath && run.canStartStep()) {
+      const name = 'get_realm_info';
+      const input = { path: realmPath };
+      const id = `${run.operationId}:realm-index`;
+      yield { type: 'tool-call', id, name, input, invalid: false };
+      const output = await run.dispatch({ name, input });
+      evidence.observe(name, input, output);
+      yield { type: 'tool-result', id, name, output };
+    }
     if (requiredReads.length && run.canStartStep()) {
       const completed = new Set<string>();
       const loop = this.createLoop(run, settings, options, {
-        hideTools: new Set(run.tools.filter(tool => hidden.has(tool.name) || !requiredReads.includes(tool.name)).map(tool => tool.name)), evidence,
+        hideTools: new Set(run.tools.filter(tool => hidden.has(tool.name) || !requiredReads.includes(tool.name)).map(tool => tool.name)),
+        evidence: realmPath ? { ...evidence, selected: () => false } : evidence,
         nextTool: () => requiredReads.find(name => !completed.has(name)),
         stopAfterResult: (name, decision) => {
           if (decision.kind === 'result' && !(typeof decision.value === 'object' && decision.value !== null && 'status' in decision.value && decision.value.status === 'error')) completed.add(name);

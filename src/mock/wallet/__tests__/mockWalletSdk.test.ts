@@ -195,6 +195,7 @@ describe('approve', () => {
       spender: other,
       amount: '5',
       token: gns,
+      packagePath: 'gno.land/r/gnoswap/gns',
     });
     expect(tx).toEqual({
       chainId: 'gnoland-1',
@@ -260,5 +261,57 @@ describe('inspect', () => {
     await sdk.transfer(send('0.5'));
     await sdk.approve(give('5'));
     expect(sdk.inspect()).toEqual(expected);
+  });
+});
+
+describe('owner-scoped holdings snapshots', () => {
+  it.each([false, true])('retains duplicate-symbol identity and builds actual eight-decimal drafts (reverse=%s)', async (reverse) => {
+    const a = 'gno.land/r/gnoswap/gns';
+    const b = 'gno.land/r/other/gns';
+    const holdings = [
+      { symbol: 'GNS', packagePath: a, amount: '12.5', decimals: 6 },
+      { symbol: 'GNS', packagePath: b, amount: '3', decimals: 8 },
+    ];
+    const sdk = new MockWalletSdk({ accounts: [{ ...acc1, holdings: reverse ? holdings.reverse() : holdings }] });
+    for (const prepare of [
+      () => sdk.transfer(send('1.25', 'GNS')),
+      () => sdk.approve(give('1.25', 'GNS', to)),
+    ]) {
+      await expect(prepare()).rejects.toMatchObject({ code: WalletErrorCode.AmbiguousToken, candidateIds: expect.arrayContaining([a, b]) });
+    }
+    for (const [prepared, func] of [
+      [await sdk.transfer(send('1.25', b)), 'Transfer'],
+      [await sdk.approve(give('1.25', b, to)), 'Approve'],
+    ] as const) {
+      expect(prepared.summary).toMatchObject({ token: 'GNS', packagePath: b, amount: '1.25' });
+      expect(prepared.tx).toEqual({
+        chainId: 'gnoland-1',
+        messages: [{ type: '/vm.m_call', value: { caller: acc1.address, pkg_path: b, func, args: [to, '125000000'], send: '' } }],
+        signatures: [],
+      });
+    }
+    await expect(sdk.transfer(send('4', b))).rejects.toMatchObject({ code: WalletErrorCode.InsufficientBalance });
+  });
+
+  it('resolves each owner independently and retains each token precision', async () => {
+    const a = 'gno.land/r/a/token';
+    const b = 'gno.land/r/b/token';
+    const sdk = new MockWalletSdk({
+      accounts: [
+        { ...acc1, holdings: [{ symbol: 'COIN', packagePath: a, amount: '2', decimals: 0 }] },
+        { name: 'second', address: other, balances: { GNOT: '0', GNS: '0' },
+          holdings: [{ symbol: 'COIN', packagePath: b, amount: '1.25', decimals: 2 }] },
+      ],
+    });
+    const params = { from: acc1.address, to, token: 'COIN', amount: '2' };
+    expect((await sdk.transfer(params)).summary).toMatchObject({ token: 'COIN', packagePath: a, amount: '2' });
+    expect((await sdk.transfer({ ...params, from: other, amount: '1.25' })).summary)
+      .toMatchObject({ token: 'COIN', packagePath: b, amount: '1.25' });
+    await expect(sdk.transfer({ ...params, from: other, token: a }))
+      .rejects.toMatchObject({ code: WalletErrorCode.UnknownToken });
+    await expect(sdk.transfer({ ...params, amount: '1.1' }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InvalidAmount });
+    await expect(sdk.transfer({ ...params, from: other, amount: '1.26' }))
+      .rejects.toMatchObject({ code: WalletErrorCode.InsufficientBalance });
   });
 });

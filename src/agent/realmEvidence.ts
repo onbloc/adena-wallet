@@ -10,6 +10,7 @@ const failure = 'The function implementation could not be verified from the inde
 
 export interface RealmEvidence {
   observe(name: string, input: unknown, decision: Decision): void;
+  requestedPath(): string | undefined;
   selected(): boolean;
   verified(): boolean;
   answer(): AsyncGenerator<GenerateEvent>;
@@ -52,15 +53,18 @@ function functionEnd(lines: string[], start: number, opening: number): number | 
 }
 
 /** Only a named function in an explicitly requested realm can terminate a read-only turn. */
-export function realmEvidence(question: string, run: HarnessRun): RealmEvidence {
+export function realmEvidence(question: string, run: HarnessRun, query = ''): RealmEvidence {
   const paths = new Set(question.match(/gno\.land\/r\/[a-zA-Z0-9_./-]+/g)?.map(path => path.replace(/\.+$/, '')));
-  const identifiers = new Set(question.match(/[A-Za-z_][A-Za-z_0-9]*/g));
+  const identifiers = new Set(question.replace(/gno\.land\/r\/[a-zA-Z0-9_./-]+/g, '').match(/[A-Za-z_][A-Za-z_0-9]*/g));
+  const explicitSource = /(?:\b(?:function|functions|implements?|implementation|source|defined)\b|함수|구현|소스|정의)/iu.test(`${question}\n${query}`);
   let target: { path: string; fn: z.infer<typeof location> } | undefined;
   let selected = false;
   let verified = false;
   return {
+    requestedPath: () => paths.size === 1 && explicitSource && identifiers.size > 0 ? [...paths][0] : undefined,
     observe(name: string, input: unknown, decision: Decision) {
       if (name !== 'get_realm_info' || paths.size !== 1) return;
+      if (explicitSource && identifiers.size > 0) selected = true;
       const result = data(index).safeParse(decision);
       if (!result.success) return;
       const info = result.data.value.untrustedData;
@@ -77,7 +81,7 @@ export function realmEvidence(question: string, run: HarnessRun): RealmEvidence 
     verified: () => verified,
     async *answer(): AsyncGenerator<GenerateEvent> {
       let answer = failure;
-      if (target && !run.signal.aborted) {
+      if (target && !run.signal.aborted && run.tools.some(tool => tool.name === 'get_realm_source')) {
         const { path, fn } = target;
         const name = 'get_realm_source';
         const input = { path, filename: fn.filename };

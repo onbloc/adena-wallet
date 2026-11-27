@@ -1,11 +1,12 @@
 import { act } from 'react';
+import { AppState } from 'react-native';
 import Storage from 'expo-sqlite/kv-store';
 import { createRoot, type Root } from 'test-renderer';
 import { simulateStreamingMiddleware, wrapLanguageModel } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
 
-import { AIAgent } from '../../../agent';
-import { ACCOUNT, RECIPIENT, fakeWallet } from '../../../agent/testing/fakeWallet';
+import { AIAgent, WalletError, WalletErrorCode } from '../../../agent';
+import { ACCOUNT, FRIEND, RECIPIENT, fakeWallet } from '../../../agent/testing/fakeWallet';
 import { intentReplyText } from '../../../agent/testing/intentReply';
 import { Harness } from '../../../harness/core';
 import {
@@ -34,6 +35,7 @@ jest.mock('expo-sqlite/kv-store', () => {
   };
 });
 
+const plain: ChatScope = { mode: 'plain' };
 const wallet: ChatScope = {
   mode: 'onbloc', endpoint: 'https://example.test/mcp', chainId: 'test-chain', account: ACCOUNT,
 };
@@ -101,25 +103,29 @@ describe('useChatSession', () => {
     await act(async () => { root.unmount(); });
   });
 
-  it('aborts a switched-away run and keeps its late persistence bound to the original scope', async () => {
-    const original = [{ prompt: 'Original question', answer: 'Original answer' }];
-    const destination = [{ prompt: 'Wallet question', answer: 'Wallet answer' }];
+  it.each([
+    ['mode', plain, wallet],
+    ['account', wallet, { ...wallet, account: RECIPIENT }],
+    ['network', wallet, { ...wallet, chainId: 'another-chain' }],
+  ] as const)('isolates late responses and saved candidates after changing %s', async (_, source, target) => {
+    const original = [{ prompt: 'Which GNS?', answer: 'GNS: gno.land/r/a/gns or gno.land/r/b/gns.' }];
+    const destination = [{ prompt: 'My GNOT balance?', answer: '2 GNOT' }];
     const originalSnapshot = JSON.stringify({ version: 1, turns: original });
     const destinationSnapshot = JSON.stringify({ version: 1, turns: destination });
-    await Storage.setItem(chatSessionKey(other), originalSnapshot);
-    await Storage.setItem(chatSessionKey(wallet), destinationSnapshot);
-    await act(async () => { root.render(<Probe scope={other} />); });
+    await Storage.setItem(chatSessionKey(source), originalSnapshot);
+    await Storage.setItem(chatSessionKey(target), destinationSnapshot);
+    await act(async () => { root.render(<Probe scope={source} />); });
     expect(current.ready).toBe(true);
     expect(current.turns).toEqual(original);
     jest.clearAllMocks();
     const blocked = blockedAgent(current.history);
     let pending!: Promise<void>;
     await act(async () => {
-      pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }, { account: RECIPIENT }), true);
+      pending = consume(current.run(blocked.agent, { prompt: 'Pending question' }, { account: source.mode === 'onbloc' ? source.account : undefined }), true);
       await blocked.ready;
     });
 
-    await act(async () => { root.render(<Probe scope={wallet} />); });
+    await act(async () => { root.render(<Probe scope={target} />); });
 
     expect(blocked.signal?.aborted).toBe(true);
     expect(current.turns).toEqual(destination);
@@ -128,10 +134,76 @@ describe('useChatSession', () => {
       await pending;
     });
     expect(current.turns).toEqual(destination);
-    expect(Storage.setItem).toHaveBeenCalledWith(chatSessionKey(other), originalSnapshot);
-    expect(Storage.setItem).not.toHaveBeenCalledWith(chatSessionKey(wallet), expect.anything());
-    expect(await Storage.getItem(chatSessionKey(wallet))).toBe(destinationSnapshot);
-    expect(await Storage.getItem(chatSessionKey(other))).toBe(originalSnapshot);
+    expect(Storage.setItem).toHaveBeenCalledWith(chatSessionKey(source), originalSnapshot);
+    expect(Storage.setItem).not.toHaveBeenCalledWith(chatSessionKey(target), expect.anything());
+    expect(await Storage.getItem(chatSessionKey(target))).toBe(destinationSnapshot);
+    expect(await Storage.getItem(chatSessionKey(source))).toBe(originalSnapshot);
+  });
+
+  it('cancels a pending answer on background without saving it after foregrounding', async () => {
+    await act(async () => { root.render(<Probe scope={wallet} />); });
+    const change = jest.mocked(AppState.addEventListener).mock.calls.find(([type]) => type === 'change')![1];
+    const blocked = blockedAgent(current.history);
+    let pending!: Promise<void>;
+    await act(async () => {
+      pending = consume(current.run(blocked.agent, { prompt: 'Show my holdings' }), true);
+      await blocked.ready;
+    });
+    await act(async () => {
+      change('background');
+      change('active');
+      blocked.release();
+      await pending;
+    });
+    expect(blocked.signal?.aborted).toBe(true);
+    expect(current.turns).toEqual([]);
+  });
+
+  it('preserves the visible candidates but invalidates their authority after backgrounding', async () => {
+    await act(async () => { root.render(<Probe scope={wallet} />); });
+    const candidates = ['gno.land/r/a/gns', 'gno.land/r/b/gns'];
+    const proposal = {
+      operation: 'transfer', recipient: FRIEND.alias, amount: { kind: 'exact', value: '1' },
+      asset: { kind: 'symbol', value: 'GNS' },
+    };
+    const replies = [
+      intentReplyText({ kind: 'prepare' }), JSON.stringify(proposal),
+      intentReplyText({ kind: 'prepare' }), JSON.stringify({ ...proposal, asset: { kind: 'id', value: candidates[1] } }),
+    ];
+    const llm: LLM = {
+      contextTokens: 8192,
+      async *generate() {
+        const text = replies.shift();
+        if (text === undefined) throw new Error('Unexpected model call.');
+        yield { type: GenerateEventType.Text, delta: text };
+        yield {
+          type: GenerateEventType.Done, aborted: false, finishReason: 'stop', warnings: [],
+          messages: [{ role: 'assistant', content: text }], metrics: { totalMs: 1, ttftMs: null },
+        };
+      },
+    };
+    const sdk = fakeWallet({
+      contacts: [FRIEND],
+      failWith: new WalletError(WalletErrorCode.AmbiguousToken, 'Choose a token.', candidates),
+    });
+    const handoff = jest.fn();
+    const agent = new AIAgent({ llm, harness: new Harness(), wallet: sdk, onTransaction: handoff, session: current.history });
+    const options = { account: ACCOUNT, allowTransactionPreparation: true };
+    await act(async () => { await consume(current.run(agent, { prompt: 'Send 1 GNS to carol.' }, options)); });
+    const visible = current.turns;
+    expect(visible).toHaveLength(1);
+    for (const candidate of candidates) expect(visible[0].answer).toContain(candidate);
+    expect(sdk.calls).toHaveLength(1);
+
+    const change = jest.mocked(AppState.addEventListener).mock.calls.find(([type]) => type === 'change')![1];
+    await act(async () => {
+      change('background');
+      change('active');
+    });
+    expect(current.turns).toEqual(visible);
+    await act(async () => { await consume(current.run(agent, { prompt: candidates[1] }, options)); });
+    expect(sdk.calls).toHaveLength(1);
+    expect(handoff).not.toHaveBeenCalled();
   });
 
   it('does not repopulate cleared memory or storage when an aborted run returns late', async () => {

@@ -1,7 +1,6 @@
-// Runs scenarios or one prompt many times and reports how often the agent prepares exactly the
-// expected transaction. Judged on the summaries alone (what the model chose). Portable: it needs
-// only a ScenarioRunner, so it runs in the app on a phone and in a CLI.
-import { checkRun, describeSummaries, explainNothing, judgeToolCalling, type ToolCalling, type Verdict } from './check';
+// Runs scenarios or one prompt many times. Scenario verdicts check prepared transactions, calls,
+// and responses. Portable across app and CLI runners.
+import { checkScenarioRun, describeSummaries, explainNothing, judgeToolCalling, type ToolCalling, type Verdict } from './check';
 import type { ScenarioRunner } from './runner';
 import type { Scenario } from './scenarios';
 import type { Stage, StageLabel } from './timing';
@@ -21,7 +20,7 @@ export type BenchmarkReport = {
   completed: number;
   aborted: boolean;
   totalMs: number;
-  /** Scenarios: runs that prepared the expected transaction. Prompt: runs of the most common outcome. */
+  /** Scenarios: runs meeting the expected outcome. Prompt: runs of the most common outcome. */
   passed: number;
   /** Runs that ended in an error. */
   errored: number;
@@ -151,7 +150,7 @@ export async function runBenchmark({
     target.kind === 'scenarios'
       ? target.scenarios.map((scenario) => ({ name: scenario.name, prompt: scenario.prompt, scenario }))
       : [{ name: 'prompt', prompt: target.prompt.trim() }];
-  if (items.length === 0 || items.some((item) => item.prompt === '')) throw new TypeError('Nothing to run: a prompt is empty.');
+  if (items.length === 0 || items.some((item) => item.prompt.trim() === '')) throw new TypeError('Nothing to run: a prompt is empty.');
 
   const planned = items.length * runs;
   const width = String(planned).length;
@@ -197,12 +196,10 @@ export async function runBenchmark({
         record.outcome = describeSummaries(summaries);
         record.stages = turns.flatMap((turn) => turn.stages);
         if (scenario) {
-          const judged = { prepared: summaries, calls: result.calls, text: result.text };
-          record.verdict = checkRun(judged, scenario.expected);
-          record.toolCalling = judgeToolCalling(judged, scenario.expected);
+          record.verdict = checkScenarioRun(result, scenario.expected);
+          record.toolCalling = judgeToolCalling({ prepared: summaries, calls: result.calls, text: result.text }, scenario.expected);
           for (const [index, expected] of (scenario.beforeExpected ?? []).entries()) {
-            const turn = turns[index];
-            const prior = checkRun({ prepared: turn.prepared.map(({ summary }) => summary), calls: turn.calls, text: turn.text }, expected);
+            const prior = checkScenarioRun(turns[index], expected);
             if (!prior.ok) {
               record.verdict = { ok: false, reason: `turn ${index + 1}: ${prior.reason}` };
               break;
