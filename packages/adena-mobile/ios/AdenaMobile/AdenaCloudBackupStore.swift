@@ -231,7 +231,7 @@ public final class AdenaCloudBackupStore: NSObject {
     }
   }
 
-  // nil = the first container in the entitlements (iCloud.com.adena). Blocks, so never on the main thread.
+  // nil = the first container in the entitlements (iCloud.app.adena.Adena). Blocks, so never on the main thread.
   private func documentsURL() throws -> URL {
     guard fileManager.ubiquityIdentityToken != nil,
           let container = fileManager.url(forUbiquityContainerIdentifier: nil) else {
