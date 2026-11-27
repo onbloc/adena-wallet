@@ -1,5 +1,6 @@
 // Package hostinstall registers the agent host with browsers by writing their
-// native messaging host manifests.
+// native messaging host manifests. On Windows each manifest is also
+// registered under the browser's HKCU NativeMessagingHosts registry key.
 package hostinstall
 
 import (
@@ -9,10 +10,16 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
+
+const goosWindows = "windows"
 
 // HostName is the native messaging host name Adena connects to.
 const HostName = "xyz.onbloc.adena_agent"
@@ -30,21 +37,40 @@ const (
 	dirPerm        = 0o755
 )
 
-// ErrUnsupportedOS is returned where manifests are registered another way,
-// such as the Windows registry.
-var ErrUnsupportedOS = errors.New("automatic installation is supported on macOS and Linux only")
+// ErrUnsupportedOS is returned for operating systems without a known
+// manifest location.
+var ErrUnsupportedOS = errors.New("automatic installation supports macOS, Linux and Windows")
 
-// Browser is one browser's per-user native messaging host directory.
+// ErrNoRegistry means a Windows installation was attempted without access to
+// the Windows registry, which only exists on Windows.
+var ErrNoRegistry = errors.New("the Windows registry is not available")
+
+// Registry stores the default value of HKCU registry keys.
+type Registry interface {
+	SetDefault(key, value string) error
+	Delete(key string) error
+	Exists(key string) bool
+}
+
+// Browser is one browser's per-user native messaging host location.
 type Browser struct {
 	Name string
 	// Root must exist for the browser to be considered installed.
-	Root    string
-	Dir     string
-	Firefox bool
+	Root string
+	// Dir receives the manifest file.
+	Dir string
+	// RegistryKey, on Windows, points the browser at the manifest.
+	RegistryKey string
+	// AgentHome, on Windows, is the agent home Dir lies in. It is secured
+	// before a manifest is written, since browsers launch what it names.
+	AgentHome string
+	Firefox   bool
 }
 
 // Options configures an installation.
 type Options struct {
+	// Registry overrides the system registry, for tests.
+	Registry Registry
 	HostPath string
 	// FirefoxExtensionIDs are the Firefox add-on ids to allow; empty allows
 	// the store build only.
@@ -99,9 +125,93 @@ func Browsers(goos, home string) ([]Browser, error) {
 				Firefox: true,
 			},
 		}, nil
+	case goosWindows:
+		return windowsBrowsers(home), nil
 	default:
 		return nil, ErrUnsupportedOS
 	}
+}
+
+// windowsBrowsers places manifests under the agent home, since Windows
+// browsers find them through the registry rather than a fixed directory.
+func windowsBrowsers(home string) []Browser {
+	local, roaming, agentHome := windowsDirs(home)
+	manifests := filepath.Join(agentHome, "native-messaging")
+
+	browser := func(name, root, slug, registryBase string, firefox bool) Browser {
+		return Browser{
+			Name:        name,
+			Root:        root,
+			Dir:         filepath.Join(manifests, slug),
+			RegistryKey: registryBase + `\NativeMessagingHosts\` + HostName,
+			AgentHome:   agentHome,
+			Firefox:     firefox,
+		}
+	}
+
+	return []Browser{
+		browser("Google Chrome", filepath.Join(local, "Google", "Chrome", "User Data"),
+			"chrome", `Software\Google\Chrome`, false),
+		browser("Chromium", filepath.Join(local, "Chromium", "User Data"),
+			"chromium", `Software\Chromium`, false),
+		browser("Brave", filepath.Join(local, "BraveSoftware", "Brave-Browser", "User Data"),
+			"brave", `Software\BraveSoftware\Brave-Browser`, false),
+		browser("Microsoft Edge", filepath.Join(local, "Microsoft", "Edge", "User Data"),
+			"edge", `Software\Microsoft\Edge`, false),
+		browser("Firefox", filepath.Join(roaming, "Mozilla", "Firefox"),
+			"firefox", `Software\Mozilla`, true),
+	}
+}
+
+// windowsDirs returns %LOCALAPPDATA%, %APPDATA% and the agent home. The
+// environment is used only for the real profile of a Windows user, so a
+// redirected profile and ADENA_AGENT_HOME are honored; any other home, such
+// as one in a test, uses the default layout under it.
+func windowsDirs(home string) (string, string, string) {
+	local := filepath.Join(home, "AppData", "Local")
+	roaming := filepath.Join(home, "AppData", "Roaming")
+	agentHome := filepath.Join(home, ".adena-agent")
+
+	if !isRealUserHome(home) {
+		return local, roaming, agentHome
+	}
+
+	if dir := os.Getenv("LOCALAPPDATA"); dir != "" {
+		local = dir
+	}
+
+	if dir := os.Getenv("APPDATA"); dir != "" {
+		roaming = dir
+	}
+
+	if dir, err := agentpath.Home(); err == nil {
+		agentHome = dir
+	}
+
+	return local, roaming, agentHome
+}
+
+func isRealUserHome(home string) bool {
+	if runtime.GOOS != goosWindows {
+		return false
+	}
+
+	userHome, err := os.UserHomeDir()
+
+	return err == nil && strings.EqualFold(filepath.Clean(userHome), filepath.Clean(home))
+}
+
+// windowsRegistry returns the registry Windows installs use.
+func windowsRegistry(override Registry) (Registry, error) {
+	if override != nil {
+		return override, nil
+	}
+
+	if systemRegistry == nil {
+		return nil, ErrNoRegistry
+	}
+
+	return systemRegistry, nil
 }
 
 func chromium(name, root string) Browser {
@@ -121,7 +231,15 @@ func Install(opts Options) ([]string, error) {
 	}
 
 	if opts.AgentHome != "" {
-		if err := agentpath.WriteHomeMarker(filepath.Dir(opts.HostPath), opts.AgentHome); err != nil {
+		if markerErr := agentpath.WriteHomeMarker(filepath.Dir(opts.HostPath), opts.AgentHome); markerErr != nil {
+			return nil, markerErr
+		}
+	}
+
+	var reg Registry
+
+	if opts.GOOS == goosWindows {
+		if reg, err = windowsRegistry(opts.Registry); err != nil {
 			return nil, err
 		}
 	}
@@ -129,13 +247,19 @@ func Install(opts Options) ([]string, error) {
 	written := make([]string, 0, len(browsers))
 
 	for _, browser := range browsers {
-		if _, err := os.Stat(browser.Root); err != nil {
+		if _, statErr := os.Stat(browser.Root); statErr != nil {
 			continue
 		}
 
-		path, err := writeManifest(browser, opts)
-		if err != nil {
-			return written, err
+		path, writeErr := writeManifest(browser, opts)
+		if writeErr != nil {
+			return written, writeErr
+		}
+
+		if reg != nil && browser.RegistryKey != "" {
+			if regErr := reg.SetDefault(browser.RegistryKey, path); regErr != nil {
+				return written, fmt.Errorf("register %s: %w", browser.Name, regErr)
+			}
 		}
 
 		written = append(written, path)
@@ -148,23 +272,41 @@ func Install(opts Options) ([]string, error) {
 	return written, nil
 }
 
-// Uninstall removes the host manifest from every supported browser and
-// returns the paths it removed.
+// Uninstall removes the host manifest, and on Windows its registry key, from
+// every supported browser and returns the manifest paths it removed.
 func Uninstall(goos, home string) ([]string, error) {
+	return uninstall(goos, home, nil)
+}
+
+func uninstall(goos, home string, override Registry) ([]string, error) {
 	browsers, err := Browsers(goos, home)
 	if err != nil {
 		return nil, err
 	}
 
+	var reg Registry
+
+	if goos == goosWindows {
+		if reg, err = windowsRegistry(override); err != nil {
+			return nil, err
+		}
+	}
+
 	var removed []string
 
 	for _, browser := range browsers {
+		if reg != nil && browser.RegistryKey != "" && reg.Exists(browser.RegistryKey) {
+			if regErr := reg.Delete(browser.RegistryKey); regErr != nil {
+				return removed, fmt.Errorf("unregister %s: %w", browser.Name, regErr)
+			}
+		}
+
 		path := manifestPath(browser)
 
-		if err := os.Remove(path); err == nil {
+		if removeErr := os.Remove(path); removeErr == nil {
 			removed = append(removed, path)
-		} else if !errors.Is(err, os.ErrNotExist) {
-			return removed, fmt.Errorf("remove %s: %w", path, err)
+		} else if !errors.Is(removeErr, os.ErrNotExist) {
+			return removed, fmt.Errorf("remove %s: %w", path, removeErr)
 		}
 	}
 
@@ -197,6 +339,16 @@ func writeManifest(browser Browser, opts Options) (string, error) {
 	data, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("encode manifest: %w", err)
+	}
+
+	if browser.AgentHome != "" {
+		// Removes anything another account owns below the home, such as a
+		// planted manifest directory, then protects the directories used here.
+		for _, dir := range []string{browser.AgentHome, filepath.Dir(browser.Dir), browser.Dir} {
+			if err := agentpath.EnsureDir(dir); err != nil {
+				return "", err
+			}
+		}
 	}
 
 	if err := os.MkdirAll(browser.Dir, dirPerm); err != nil {
@@ -295,18 +447,37 @@ func renameOver(src, dst string) error {
 }
 
 // Installed returns the host manifests present for the supported browsers.
+// On Windows a manifest only counts while its registry key exists.
 func Installed(goos, home string) []string {
+	return installed(goos, home, nil)
+}
+
+func installed(goos, home string, override Registry) []string {
 	browsers, err := Browsers(goos, home)
 	if err != nil {
 		return nil
 	}
 
-	var found []string
+	var reg Registry
+
+	if goos == goosWindows {
+		if reg, err = windowsRegistry(override); err != nil {
+			return nil
+		}
+	}
+
+	found := make([]string, 0, len(browsers))
 
 	for _, browser := range browsers {
-		if _, statErr := os.Stat(manifestPath(browser)); statErr == nil {
-			found = append(found, manifestPath(browser))
+		if _, statErr := os.Stat(manifestPath(browser)); statErr != nil {
+			continue
 		}
+
+		if reg != nil && browser.RegistryKey != "" && !reg.Exists(browser.RegistryKey) {
+			continue
+		}
+
+		found = append(found, manifestPath(browser))
 	}
 
 	return found
@@ -315,6 +486,10 @@ func Installed(goos, home string) []string {
 // CopyHost copies the host binary at src into binDir and returns the copy's
 // path. Browsers launch the host from the path in its manifest, so it must
 // not live somewhere transient such as the npx cache.
+//
+// Windows cannot replace a running executable but can rename one, so the
+// current host is moved to a unique ".old.<n>" name first. Retired copies
+// that are no longer running are removed on each install.
 func CopyHost(src, binDir string) (string, error) {
 	// The same protection as the agent home: browsers run what lands here.
 	if err := agentpath.EnsureDir(binDir); err != nil {
@@ -327,15 +502,156 @@ func CopyHost(src, binDir string) (string, error) {
 	}
 
 	target := filepath.Join(binDir, filepath.Base(src))
-	staging := target + ".tmp"
+	sweepRetired(target)
 
-	if err := os.WriteFile(staging, data, hostBinaryPerm); err != nil {
-		return "", fmt.Errorf("write host binary: %w", err)
+	staging, err := writeStaging(binDir, filepath.Base(src), data)
+	if err != nil {
+		return "", err
+	}
+
+	retired := ""
+
+	if _, statErr := os.Stat(target); statErr == nil {
+		retired = fmt.Sprintf("%s.old.%d.%d", target, os.Getpid(), time.Now().UnixNano())
+
+		if err := os.Rename(target, retired); err != nil {
+			_ = os.Remove(staging)
+
+			return "", fmt.Errorf("move previous host binary: %w", err)
+		}
 	}
 
 	if err := os.Rename(staging, target); err != nil {
+		_ = os.Remove(staging)
+
+		if retired != "" {
+			if restoreErr := os.Rename(retired, target); restoreErr != nil {
+				err = errors.Join(err, fmt.Errorf("restore previous host binary: %w", restoreErr))
+			}
+		}
+
 		return "", fmt.Errorf("install host binary: %w", err)
 	}
 
+	sweepRetired(target)
+
 	return target, nil
+}
+
+// RemoveHost deletes the host copy name in binDir and its agent home marker,
+// after checking binDir as CopyHost does, so nothing is deleted through a
+// directory another account controls. A copy the browser still runs on
+// Windows cannot be deleted; it is moved to a retired name a later install
+// sweeps. It returns the path removed or retired.
+func RemoveHost(binDir, name string) (string, error) {
+	if _, err := os.Lstat(binDir); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+
+	if err := agentpath.EnsureDir(binDir); err != nil {
+		return "", err
+	}
+
+	marker := filepath.Join(binDir, agentpath.HomeMarker)
+	if err := os.Remove(marker); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("remove %s: %w", marker, err)
+	}
+
+	target := filepath.Join(binDir, name)
+	sweepRetired(target)
+
+	err := os.Remove(target)
+
+	switch {
+	case err == nil:
+		return target, nil
+	case errors.Is(err, os.ErrNotExist):
+		return "", nil
+	}
+
+	retired := fmt.Sprintf("%s.old.%d.%d", target, os.Getpid(), time.Now().UnixNano())
+	if renameErr := os.Rename(target, retired); renameErr != nil {
+		return "", fmt.Errorf("remove %s: %w", target, errors.Join(err, renameErr))
+	}
+
+	return retired, nil
+}
+
+func writeStaging(dir, name string, data []byte) (string, error) {
+	f, err := os.CreateTemp(dir, name+"."+strconv.Itoa(os.Getpid())+".*.tmp")
+	if err != nil {
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	// Checked step by step, like replaceFile, so a failed write never reaches
+	// the rename in CopyHost.
+	_, writeErr := f.Write(data)
+	if err := errors.Join(writeErr, f.Close()); err != nil {
+		_ = os.Remove(f.Name())
+
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	if err := os.Chmod(f.Name(), hostBinaryPerm); err != nil {
+		_ = os.Remove(f.Name())
+
+		return "", fmt.Errorf("write host binary: %w", err)
+	}
+
+	return f.Name(), nil
+}
+
+// sweepRetired removes retired and leftover staging copies of target. Their
+// names carry the pid of the installer that made them (".old.<pid>.<time>",
+// ".<pid>.<random>.tmp", the npm launcher's ".<pid>.tmp"); copies of another
+// installer that is still running are left alone, since it may be about to
+// rename them. A copy a running host still holds fails to delete and is left
+// for the next install.
+func sweepRetired(target string) {
+	dir, base := filepath.Dir(target), filepath.Base(target)
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+
+	for _, entry := range entries {
+		pid, ok := leftoverOwner(base, entry.Name())
+		if !ok || (pid != os.Getpid() && pid > 0 && processAlive(pid)) {
+			continue
+		}
+
+		_ = os.Remove(filepath.Join(dir, entry.Name()))
+	}
+}
+
+// leftoverOwner reports whether name is a retired or staging copy of base and
+// the pid that made it; 0 means none is recorded, as in older names.
+func leftoverOwner(base, name string) (int, bool) {
+	rest, found := strings.CutPrefix(name, base+".")
+	if !found {
+		return 0, false
+	}
+
+	parts := strings.Split(rest, ".")
+
+	var pidPart string
+
+	switch {
+	case parts[0] == "old":
+		if len(parts) > 1 {
+			pidPart = parts[1]
+		}
+	case parts[len(parts)-1] == "tmp":
+		pidPart = parts[0]
+	default:
+		return 0, false
+	}
+
+	pid, err := strconv.Atoi(pidPart)
+	if err != nil {
+		return 0, true
+	}
+
+	return pid, true
 }

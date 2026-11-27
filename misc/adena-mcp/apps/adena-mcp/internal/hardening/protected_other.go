@@ -1,3 +1,5 @@
+//go:build !windows
+
 package hardening
 
 // RunProtected is only needed on Windows, where the key-holding server runs

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -19,6 +20,8 @@ const HomeEnv = "ADENA_AGENT_HOME"
 const HomeMarker = "agent-home"
 
 const markerPerm = 0o600
+
+const goosWindows = "windows"
 
 const (
 	defaultDirName = ".adena-agent"
@@ -65,7 +68,14 @@ func WriteHomeMarker(binDir, home string) error {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(binDir, HomeMarker), []byte(abs+"\n"), markerPerm); err != nil {
+	// Replaced rather than rewritten, so an existing file's owner does not
+	// carry over.
+	marker := filepath.Join(binDir, HomeMarker)
+	if err := os.Remove(marker); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("record agent home: %w", err)
+	}
+
+	if err := os.WriteFile(marker, []byte(abs+"\n"), markerPerm); err != nil {
 		return fmt.Errorf("record agent home: %w", err)
 	}
 
@@ -91,6 +101,12 @@ func EnsureDir(dir string) error {
 
 	if !info.IsDir() {
 		return errors.New(dir + " is not a directory")
+	}
+
+	// Windows has no permission bits; an owner-only ACL takes their place, so
+	// a home outside the user profile (ADENA_AGENT_HOME) is protected too.
+	if runtime.GOOS == goosWindows {
+		return restrictDir(dir)
 	}
 
 	// Checked directly: a chmod only fails for another owner when the mode is

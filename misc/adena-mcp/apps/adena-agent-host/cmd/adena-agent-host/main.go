@@ -63,7 +63,7 @@ func run(args []string) error {
 
 func printUsage() {
 	fmt.Fprint(os.Stderr, `usage:
-  adena-agent-host install [-detect=false] [-allow-detected] [-extension-path dir ...]
+  adena-agent-host install [-copy] [-detect=false] [-allow-detected] [-extension-path dir ...]
                            [-chrome-extension-id id ...] [-firefox-extension-id id ...]
   adena-agent-host extensions [list | add <id>... | add -path <dir> | remove <id>... | detect [-allow]]
   adena-agent-host uninstall
@@ -98,14 +98,41 @@ func runUninstall() error {
 		fmt.Println("removed", path)
 	}
 
-	if executable, exeErr := os.Executable(); exeErr == nil {
-		marker := filepath.Join(filepath.Dir(executable), agentpath.HomeMarker)
-		if removeErr := os.Remove(marker); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
-			err = errors.Join(err, fmt.Errorf("remove %s: %w", marker, removeErr))
-		}
+	executable, exeErr := os.Executable()
+	if exeErr != nil {
+		return errors.Join(err, fmt.Errorf("resolve executable: %w", exeErr))
 	}
 
-	return err
+	// A host registered from elsewhere (a development build) keeps its marker
+	// next to it.
+	marker := filepath.Join(filepath.Dir(executable), agentpath.HomeMarker)
+	if removeErr := os.Remove(marker); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
+		err = errors.Join(err, fmt.Errorf("remove %s: %w", marker, removeErr))
+	}
+
+	return errors.Join(err, removeHomeCopy(filepath.Base(executable)))
+}
+
+// removeHomeCopy deletes the host copy install -copy made in the agent home.
+func removeHomeCopy(name string) error {
+	agentHome, err := agentpath.Home()
+	if err != nil {
+		return err
+	}
+
+	path, err := hostinstall.RemoveHost(filepath.Join(agentHome, "bin"), name)
+	if err != nil || path == "" {
+		return err
+	}
+
+	if strings.Contains(filepath.Base(path), ".old.") {
+		fmt.Printf("the browser still runs the agent host; moved it to %s, which a later install removes, "+
+			"or delete it after closing the browser\n", path)
+	} else {
+		fmt.Println("removed", path)
+	}
+
+	return nil
 }
 
 // serve relays until the browser closes stdin. Stdout carries protocol frames

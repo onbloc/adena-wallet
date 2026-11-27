@@ -52,7 +52,7 @@ transaction in Adena instead.
 | `adena-mcp uninstall-host` | Removes the browser registrations and the copied host |
 | `adena-mcp version` | Prints the version |
 
-Supported platforms: macOS and Linux on arm64 and x64.
+Supported platforms: macOS, Linux and Windows 10 (1803) or later, on arm64 and x64.
 
 See [misc/adena-mcp](https://github.com/onbloc/adena-wallet/tree/main/misc/adena-mcp)
 for tools, the safety model and configuration.

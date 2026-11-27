@@ -150,12 +150,14 @@ sources, must stay under 1 MiB.
 | `install-host [<install flags>]` | Installs the host only |
 | `uninstall-host` | Removes the browser registrations and the host copy |
 | `extensions [list]` | Lists the allowed extension ids and unallowed Adena builds found |
-| `extensions add <id>... \| add -path <dir>` | Allows a Chromium id (32 letters a-p), a Firefox add-on id, or an unpacked build directory |
+| `extensions add <id>... \| add -path <dir>` | Allows a Chromium id (32 letters a-p), a Firefox add-on id, or an unpacked build directory (not on Windows) |
 | `extensions remove <id>...` | Removes an id; the store builds cannot be removed |
 | `extensions detect [-allow]` | Offers each unpacked Adena build found in Chromium profiles |
 | `help`, `version` | |
 
-Install flags (`adena-agent-host install`): `-chrome-extension-id <id>`,
+Install flags (`adena-agent-host install`): `-copy` (copy this host into the
+agent home and register the copy; the npm commands always pass it),
+`-chrome-extension-id <id>`,
 `-firefox-extension-id <id>`, `-extension-path <dir>` (repeatable, kept in
 the list), `-detect=false` (skip detection), `-allow-detected` (allow every
 detected build without asking).

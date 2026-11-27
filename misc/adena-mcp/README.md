@@ -31,7 +31,7 @@ described in [packages/adena-extension/AGENT-HOST.md](../../packages/adena-exten
 
 ## Setup
 
-With the published npm package (macOS and Linux, arm64 and x64), one
+With the published npm package (macOS, Linux and Windows, arm64 and x64), one
 command sets up the machine:
 
 ```sh
@@ -86,7 +86,7 @@ such as an unpacked development build, must be added to the list in
 ```sh
 npx -y @adena-wallet/mcp extensions                 # list allowed ids and unallowed Adena builds found
 npx -y @adena-wallet/mcp extensions add <id>         # Chromium id (32 letters a-p) or Firefox add-on id
-npx -y @adena-wallet/mcp extensions add -path <dir>  # unpacked build directory
+npx -y @adena-wallet/mcp extensions add -path <dir>  # unpacked build directory (not on Windows)
 npx -y @adena-wallet/mcp extensions remove <id>
 npx -y @adena-wallet/mcp extensions detect [-allow]  # offer each unpacked Adena build found in Chromium profiles
 ```
@@ -145,6 +145,7 @@ this for you:
 { "mcpServers": { "adena": { "command": "npx", "args": ["-y", "@adena-wallet/mcp@<version>"] } } }
 ```
 
+On Windows, start it through `cmd`: `"command": "cmd", "args": ["/c", "npx", "-y", "@adena-wallet/mcp@<version>"]`.
 
 Each client is connected to Adena separately. It shows up under Connected Apps
 as `agent://<client name>.agent`.
@@ -170,6 +171,40 @@ as `agent://<client name>.agent`.
 | `request_too_large` | A request, usually a package deployment, is over the 1 MiB protocol limit |
 | `policy_violation` | The session request breaks Adena's agent policy: a total spend (spend limit × periods) above the maximum set on the AI Agent Connection screen, a path broader than one realm, `vm/run` while script sessions are off, `bank/multisend` or `*` |
 | Adena says another browser serves agents | Only one browser at a time can serve the socket. Close the other one, or turn off AI Agent Connection there, then reload Adena |
+
+## Windows
+
+The host and MCP server run on Windows 10 (1803) or later, which provide the
+Unix domain sockets the two use.
+
+- `install` writes the manifests under `native-messaging` in the agent home
+  (`%USERPROFILE%\.adena-agent`, or `ADENA_AGENT_HOME`). It registers each one
+  under the browser's
+  `HKCU\Software\<browser>\NativeMessagingHosts\xyz.onbloc.adena_agent` key.
+- Unpacked builds are detected from the profiles under `%LOCALAPPDATA%` and
+  `%APPDATA%`, so redirected profiles are found. `-extension-path` is not
+  supported, because the extension id cannot be computed from the path there.
+- The agent home gets a protected ACL that grants access to the current user
+  and SYSTEM only, in place of permission bits. Its socket and `sessions.json`
+  inherit it, wherever `ADENA_AGENT_HOME` points. A directory owned by another
+  account is taken over first, because an owner can always rewrite the ACL;
+  if that is not possible, adena-mcp refuses to use it. The host's `bin`
+  directory gets the same treatment. Anything inside the home that another
+  account owns, such as a planted `native-messaging` manifest or a socket, is
+  removed (adena-mcp and the installer recreate all of it), because an owner
+  keeps control of its own files and can reach them by path through a
+  directory it can no longer list.
+- The host identifies each peer with `SIO_AF_UNIX_GETPEERPID` and refuses
+  processes of other users, as on macOS and Linux.
+- `adena-mcp.exe` runs the server in a protected child process, so two
+  processes appear per server; see
+  [Platform hardening](docs/security.md#platform-hardening).
+- A running host executable cannot be overwritten, so reinstalling moves it to
+  a unique `.old.<pid>.<time>` name first. Retired and staging copies are
+  removed by a later install once no host runs them, except those of another
+  installer that is still running. `uninstall-host` moves a host the browser
+  still runs aside the same way instead of failing; close the browser to let
+  a later install, or you, delete it.
 
 ## Safety model
 

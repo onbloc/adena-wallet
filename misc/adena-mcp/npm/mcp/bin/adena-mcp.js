@@ -8,9 +8,17 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const PLATFORMS = new Set(['darwin-arm64', 'darwin-x64', 'linux-arm64', 'linux-x64']);
-const HOST_BINARY = 'adena-agent-host';
-const MCP_BINARY = 'adena-mcp';
+const PLATFORMS = new Set([
+  'darwin-arm64',
+  'darwin-x64',
+  'linux-arm64',
+  'linux-x64',
+  'win32-arm64',
+  'win32-x64',
+]);
+const EXE = process.platform === 'win32' ? '.exe' : '';
+const HOST_BINARY = `adena-agent-host${EXE}`;
+const MCP_BINARY = `adena-mcp${EXE}`;
 
 function fail(message) {
   process.stderr.write(`@adena-wallet/mcp: ${message}\n`);
@@ -67,50 +75,16 @@ function run(binary, args) {
   });
 }
 
-// The browser runs whatever lands in the agent home's bin directory, so on
-// POSIX systems both directories must belong to this user and be closed to
-// others. Windows is checked by the host's own install, which takes over or
-// clears a directory another account owns.
-function secureDir(dir) {
-  if (process.platform === 'win32') {
-    return;
-  }
-  const info = fs.statSync(dir);
-  if (info.uid !== process.getuid()) {
-    fail(`${dir} belongs to another user; remove it or choose another ADENA_AGENT_HOME`);
-  }
-  if ((info.mode & 0o777) !== 0o700) {
-    fs.chmodSync(dir, 0o700);
-  }
-}
-
-// Browsers launch the host from the path in its manifest, and the npx cache
-// is not a stable path, so the host is copied under the agent home first.
-function copyHost() {
-  const source = path.join(binaryDir(), HOST_BINARY);
-  const targetDir = path.join(agentHome(), 'bin');
-  const target = path.join(targetDir, HOST_BINARY);
-
-  fs.mkdirSync(targetDir, { recursive: true, mode: 0o700 });
-  secureDir(agentHome());
-  secureDir(targetDir);
-  const staging = `${target}.${process.pid}.tmp`;
-  fs.copyFileSync(source, staging);
-  fs.chmodSync(staging, 0o755);
-  fs.renameSync(staging, target);
-
-  process.stdout.write(`copied ${HOST_BINARY} to ${target}\n`);
-  return target;
+// Install, uninstall and extension commands run only the host shipped in this
+// package. The host itself checks the agent home (owner, permissions or ACL,
+// links) before it copies itself there, registers or deletes anything, so no
+// file from a directory another account may control is ever run.
+function packagedHost() {
+  return path.join(binaryDir(), HOST_BINARY);
 }
 
 function installHost(args) {
-  run(copyHost(), ['install', ...args]);
-}
-
-// The installed copy when there is one, so its agent home marker applies.
-function hostBinary() {
-  const installed = path.join(agentHome(), 'bin', HOST_BINARY);
-  return fs.existsSync(installed) ? installed : path.join(binaryDir(), HOST_BINARY);
+  run(packagedHost(), ['install', '-copy', ...args]);
 }
 
 function packageVersion() {
@@ -153,7 +127,9 @@ function setup(args) {
   if (options.dryRun) {
     process.stdout.write(`would copy ${HOST_BINARY} to ${path.join(agentHome(), 'bin')} and register it\n`);
   } else {
-    const host = spawnSync(copyHost(), ['install', ...options.hostArgs], { stdio: 'inherit' });
+    const host = spawnSync(packagedHost(), ['install', '-copy', ...options.hostArgs], {
+      stdio: 'inherit',
+    });
     if (host.status !== 0) {
       fail('installing the agent host failed; see the messages above');
     }
@@ -196,18 +172,10 @@ function printHelp() {
 `);
 }
 
+// The packaged host removes the registrations and its copy in the agent home;
+// a copy the browser still runs on Windows is moved aside for a later install.
 function uninstallHost() {
-  const target = path.join(agentHome(), 'bin', HOST_BINARY);
-  const binary = fs.existsSync(target) ? target : path.join(binaryDir(), HOST_BINARY);
-
-  const child = spawn(binary, ['uninstall'], { stdio: 'inherit' });
-  child.on('error', (error) => fail(`cannot start ${binary}: ${error.message}`));
-  child.on('exit', (code) => {
-    if (code === 0) {
-      fs.rmSync(target, { force: true });
-    }
-    process.exit(code ?? 1);
-  });
+  run(packagedHost(), ['uninstall']);
 }
 
 const [command, ...rest] = process.argv.slice(2);
@@ -223,7 +191,7 @@ switch (command) {
     uninstallHost();
     break;
   case 'extensions':
-    run(hostBinary(), ['extensions', ...rest]);
+    run(packagedHost(), ['extensions', ...rest]);
     break;
   case 'help':
   case '--help':

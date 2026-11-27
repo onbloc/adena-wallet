@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 )
@@ -88,9 +89,11 @@ func TestStoreRoundTrip(t *testing.T) {
 		t.Fatalf("got %+v %v", got, err)
 	}
 
-	info, err := os.Stat(path)
-	if err != nil || info.Mode().Perm() != filePerm {
-		t.Fatalf("store file mode %v %v", info.Mode().Perm(), err)
+	if runtime.GOOS != "windows" {
+		info, statErr := os.Stat(path)
+		if statErr != nil || info.Mode().Perm() != filePerm {
+			t.Fatalf("store file mode %v %v", info.Mode().Perm(), statErr)
+		}
 	}
 
 	if err := store.Delete("g1old"); err != nil {
