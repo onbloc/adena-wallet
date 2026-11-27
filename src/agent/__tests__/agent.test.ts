@@ -604,6 +604,64 @@ describe('integrated request execution', () => {
     await collect(agent.run({ prompt }, permission));
     expect(prepared).toHaveLength(mode === 'next turn' ? 1 : 0);
   });
+  it.each(['next turn', 'shared reset', 'intervening turn', 'change during run'] as const)(
+    'binds clarification to the shared session history: %s', async mode => {
+      const next = proposal({ ...transferProposal, amount: { kind: 'exact', value: '2' } });
+      const { agent, prepared, wallet, llm, harness } = setup([
+        proposal({ operation: 'clarification', question: 'What amount?' }),
+        answer(intentReplyText(prepare)), next,
+      ], { intent: prepare });
+      const shared = new AIAgent({ llm, harness, session: agent.session });
+      const events = agent.run({ prompt: `Send GNOT to ${RECIPIENT}` }, permission);
+      if (mode === 'change during run') {
+        for await (const event of events) {
+          if (event.type === 'text') agent.session.complete('Other request', 'Other answer');
+        }
+      } else {
+        await collect(events);
+      }
+      if (mode === 'shared reset') shared.reset();
+      if (mode === 'intervening turn') shared.session.complete('Other request', 'Other answer');
+      await collect(agent.run({ prompt: '2' }, permission));
+      expect(prepared).toHaveLength(mode === 'next turn' ? 1 : 0);
+      expect(wallet.calls).toHaveLength(mode === 'next turn' ? 1 : 0);
+    });
+  it.each(['next turn', 'shared reset'] as const)(
+    'does not repeat a stale clarification for a Korean confirmation: %s', async mode => {
+      const { agent, llm, harness, model } = setup([
+        proposal({ operation: 'clarification', question: 'What amount?' }),
+        answer(intentReplyText({ kind: 'chat' })), answer('Please tell me what you need.'),
+      ], { intent: prepare });
+      await collect(agent.run({ prompt: `Send GNOT to ${RECIPIENT}` }, permission));
+      if (mode === 'shared reset') new AIAgent({ llm, harness, session: agent.session }).reset();
+      const followup = await collect(agent.run({ prompt: '네' }, permission));
+      if (mode === 'next turn') {
+        expect(textOf(followup)).toContain('?');
+        expect(model.doGenerateCalls).toHaveLength(2);
+      } else {
+        expect(textOf(followup)).toContain('Please tell me what you need.');
+        expect(model.doGenerateCalls).toHaveLength(4);
+      }
+    });
+  it.each(['next turn', 'shared reset', 'intervening turn', 'change during run'] as const)(
+    'binds a balance referent to the shared session history: %s', async mode => {
+      const relative = proposal({ ...transferProposal, amount: { kind: 'fraction', numerator: '1', denominator: '2' } });
+      const { agent, prepared, wallet, llm, harness } = setup([answer(intentReplyText(prepare)), relative]);
+      const shared = new AIAgent({ llm, harness, session: agent.session });
+      const events = agent.run({ prompt: 'My GNOT balance?' }, { account: ACCOUNT });
+      if (mode === 'change during run') {
+        for await (const event of events) {
+          if (event.type === 'text') agent.session.complete('Other request', 'Other answer');
+        }
+      } else {
+        await collect(events);
+      }
+      if (mode === 'shared reset') shared.reset();
+      if (mode === 'intervening turn') shared.session.complete('Other request', 'Other answer');
+      await collect(agent.run({ prompt: `Send half of it to ${RECIPIENT}.` }, permission));
+      expect(prepared).toHaveLength(mode === 'next turn' ? 1 : 0);
+      expect(wallet.calls).toHaveLength(mode === 'next turn' ? 1 : 0);
+    });
   it.each(['same asset', 'different asset', 'other account'] as const)(
     'uses only a fresh balance of the referenced wallet asset: %s', async mode => {
       const firstPath = 'gno.land/r/a/gns';

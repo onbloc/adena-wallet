@@ -251,9 +251,10 @@ export class AIAgent {
   private active?: { controller: AbortController; expiresAt: number };
   private continuation?: {
     account?: string;
+    history: ChatSession['turns'];
     clarification?: PendingClarification;
     balance?: BalanceReferent;
-    preparation?: { pending: PendingPreparation; history: ChatSession['turns'] };
+    preparation?: PendingPreparation;
   };
   private revision = 0;
   private runs = 0;
@@ -366,8 +367,9 @@ export class AIAgent {
     let answer = '';
     let calls: CallRecord[] = [];
     let completed = false;
-    const continuation = this.continuation?.account === options.account ? this.continuation : undefined;
     let history = this.session.turns;
+    const saved = this.continuation;
+    const continuation = saved && saved.account === options.account && sameHistory(saved.history, history) ? saved : undefined;
     const preparation = continuation?.preparation;
     this.continuation = undefined;
     let nextClarification: PendingClarification | undefined;
@@ -379,8 +381,7 @@ export class AIAgent {
         signal: controller.signal,
         contextTokens,
         budget,
-        pendingPreparation: options.allowTransactionPreparation && preparation && sameHistory(preparation.history, history)
-          ? preparation.pending : undefined,
+        pendingPreparation: options.allowTransactionPreparation ? preparation : undefined,
         onAmbiguousPreparation: (pending) => { nextPreparation = pending; },
         pendingClarification: options.allowTransactionPreparation ? continuation?.clarification : undefined,
         onPreparationClarification: (text, slot) => { nextClarification = { text, slot }; },
@@ -408,13 +409,11 @@ export class AIAgent {
             const unchanged = sameHistory(history, this.session.turns);
             const remember = canRememberTurn(event);
             const remembered = remember && this.session.complete(prompt, withoutToolData(answer), describeToolRecord(calls));
-            if (event.finishReason === 'stop') {
-              this.continuation = { account: options.account,
+            if (event.finishReason === 'stop' && unchanged && (!remember || remembered)) {
+              this.continuation = { account: options.account, history: this.session.turns,
                 clarification: options.allowTransactionPreparation ? nextClarification : undefined,
-                balance: event.verifiedAnswer ? nextBalanceReferent : undefined,
-                // A selection only continues the ambiguity just recorded in this session.
-                preparation: options.allowTransactionPreparation && unchanged && remembered && nextPreparation
-                  ? { pending: nextPreparation, history: this.session.turns } : undefined };
+                balance: remembered && event.verifiedAnswer ? nextBalanceReferent : undefined,
+                preparation: remembered && options.allowTransactionPreparation ? nextPreparation : undefined };
             }
             if (remember && !remembered) {
               yield { ...event, warnings: [...event.warnings, 'This completed answer exceeds conversation storage limits and was not retained. Future turns will not include this exchange.'] };
