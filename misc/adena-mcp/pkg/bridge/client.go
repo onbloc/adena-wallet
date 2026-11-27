@@ -13,11 +13,15 @@ import (
 	"time"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/peercred"
 )
 
 // Client calls the extension through the agent host socket. Each call uses
 // its own connection, so a Client is safe for concurrent use.
 type Client struct {
+	// VerifyHost, when set, checks the process serving SocketPath before any
+	// request (and its token) is written to it.
+	VerifyHost func(*peercred.Process) error
 	SocketPath string
 	token      string
 	mu         sync.Mutex
@@ -82,6 +86,10 @@ func (c *Client) Call(ctx context.Context, method string, params, out any) error
 
 	defer func() { _ = conn.Close() }()
 
+	if verifyErr := c.verifyHost(conn); verifyErr != nil {
+		return verifyErr
+	}
+
 	// Unblocks the exchange once ctx is done, so ctx.Err() is set by then.
 	stop := context.AfterFunc(ctx, func() {
 		if deadlineErr := conn.SetDeadline(time.Now()); deadlineErr != nil {
@@ -113,6 +121,27 @@ func (c *Client) Call(ctx context.Context, method string, params, out any) error
 
 	if err := json.Unmarshal(response.Result, out); err != nil {
 		return fmt.Errorf("decode %s result: %w", method, err)
+	}
+
+	return nil
+}
+
+func (c *Client) verifyHost(conn net.Conn) error {
+	if c.VerifyHost == nil {
+		return nil
+	}
+
+	process, err := peercred.Of(conn)
+	if err == nil {
+		err = c.VerifyHost(process)
+	}
+
+	if err != nil {
+		return &Error{
+			Code: CodeHostUntrusted,
+			Message: c.SocketPath + " is not served by the installed Adena agent host (" + err.Error() +
+				"); stop the program serving it, then reinstall the host with: npx -y @adena-wallet/mcp install-host",
+		}
 	}
 
 	return nil

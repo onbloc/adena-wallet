@@ -1,4 +1,4 @@
-package relay
+package peercred
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const nonDumpableChildEnv = "ADENA_RELAY_NON_DUMPABLE_CHILD"
+const nonDumpableChildEnv = "ADENA_PEERCRED_NON_DUMPABLE_CHILD"
 
 // TestMain lets the test binary act as a hardened child process.
 func TestMain(m *testing.M) {
@@ -70,7 +70,7 @@ func TestStartTimeIsReadableForANonDumpableProcess(t *testing.T) {
 	}
 
 	// The executable is what hardening hides; it is shown only, never trusted.
-	if _, err := executableOf(child.Process.Pid); err == nil {
+	if _, err := Executable(child.Process.Pid); err == nil {
 		t.Log("the executable of a non-dumpable process was readable here (privileged runner?)")
 	}
 }

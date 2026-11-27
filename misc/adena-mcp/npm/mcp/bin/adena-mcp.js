@@ -3,7 +3,7 @@
 // platform package that matches this machine.
 'use strict';
 
-const { spawn } = require('node:child_process');
+const { spawn, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -86,7 +86,7 @@ function secureDir(dir) {
 
 // Browsers launch the host from the path in its manifest, and the npx cache
 // is not a stable path, so the host is copied under the agent home first.
-function installHost(args) {
+function copyHost() {
   const source = path.join(binaryDir(), HOST_BINARY);
   const targetDir = path.join(agentHome(), 'bin');
   const target = path.join(targetDir, HOST_BINARY);
@@ -100,7 +100,100 @@ function installHost(args) {
   fs.renameSync(staging, target);
 
   process.stdout.write(`copied ${HOST_BINARY} to ${target}\n`);
-  run(target, ['install', ...args]);
+  return target;
+}
+
+function installHost(args) {
+  run(copyHost(), ['install', ...args]);
+}
+
+// The installed copy when there is one, so its agent home marker applies.
+function hostBinary() {
+  const installed = path.join(agentHome(), 'bin', HOST_BINARY);
+  return fs.existsSync(installed) ? installed : path.join(binaryDir(), HOST_BINARY);
+}
+
+function packageVersion() {
+  try {
+    return require('../package.json').version;
+  } catch {
+    return '';
+  }
+}
+
+function parseSetupArgs(args) {
+  const options = { only: null, dryRun: false, force: false, clients: true, hostArgs: [] };
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === '--clients') {
+      options.only = (args[(i += 1)] ?? '').split(',').filter(Boolean);
+    } else if (arg.startsWith('--clients=')) {
+      options.only = arg.slice('--clients='.length).split(',').filter(Boolean);
+    } else if (arg === '--no-clients') {
+      options.clients = false;
+    } else if (arg === '--dry-run') {
+      options.dryRun = true;
+    } else if (arg === '--force') {
+      options.force = true;
+    } else if (arg === '--') {
+      options.hostArgs = args.slice(i + 1);
+      break;
+    } else {
+      fail(`unknown setup option ${arg}; see: npx -y @adena-wallet/mcp help`);
+    }
+  }
+  return options;
+}
+
+// One command for a new machine: installs the agent host for every browser,
+// registers this server with the AI clients found, and says what is left.
+function setup(args) {
+  const options = parseSetupArgs(args);
+
+  if (options.dryRun) {
+    process.stdout.write(`would copy ${HOST_BINARY} to ${path.join(agentHome(), 'bin')} and register it\n`);
+  } else {
+    const host = spawnSync(copyHost(), ['install', ...options.hostArgs], { stdio: 'inherit' });
+    if (host.status !== 0) {
+      fail('installing the agent host failed; see the messages above');
+    }
+  }
+
+  if (options.clients) {
+    const { registerClients } = require('./clients');
+    let lines;
+    try {
+      lines = registerClients(packageVersion(), options);
+    } catch (error) {
+      fail(error.message);
+    }
+    process.stdout.write(`\nAI clients:\n${lines.map((line) => `  ${line}`).join('\n')}\n`);
+  }
+
+  process.stdout.write(
+    '\nNext steps:\n' +
+      '  1. In Adena: Settings > Security & Privacy > AI Agent Connection > Enable agent connection\n' +
+      '     (reload Adena if the screen asks).\n' +
+      '  2. Restart your AI client and ask it to "connect my Adena wallet"; approve the connection in Adena.\n',
+  );
+}
+
+function printHelp() {
+  process.stdout.write(`usage: npx -y @adena-wallet/mcp [command]
+
+  (no command)          run the MCP server over stdio
+  setup                 install the agent host and register this server with your AI clients
+      --clients a,b     only these clients (${require('./clients').clientIds().join(', ')})
+      --no-clients      only install the agent host
+      --dry-run         show what would change
+      --force           replace an existing "adena" entry in JSON client configs
+      -- <flags>        flags for the host install, e.g. -- -chrome-extension-id <id>
+  install-host          install the agent host only
+  uninstall-host        remove the agent host
+  extensions [list|add <id>|add -path <dir>|remove <id>|detect [-allow]]
+                        manage the Adena builds besides the store build that may use the agent host
+  version               print the version
+`);
 }
 
 function uninstallHost() {
@@ -120,11 +213,22 @@ function uninstallHost() {
 const [command, ...rest] = process.argv.slice(2);
 
 switch (command) {
+  case 'setup':
+    setup(rest);
+    break;
   case 'install-host':
     installHost(rest);
     break;
   case 'uninstall-host':
     uninstallHost();
+    break;
+  case 'extensions':
+    run(hostBinary(), ['extensions', ...rest]);
+    break;
+  case 'help':
+  case '--help':
+  case '-h':
+    printHelp();
     break;
   default:
     run(path.join(binaryDir(), MCP_BINARY), process.argv.slice(2));

@@ -62,6 +62,10 @@ func TestDecodeSessionAccount(t *testing.T) {
 	if acc.GetAccountNumber() != 7 || acc.GetSequence() != 3 || acc.GetSpendLimit().String() != "5000000ugnot" {
 		t.Fatalf("unexpected account %+v", acc)
 	}
+
+	if len(acc.AllowPaths) != 1 || acc.AllowPaths[0] != "bank/send" {
+		t.Fatalf("allow paths not decoded: %v", acc.AllowPaths)
+	}
 }
 
 func TestCheckSpendRejectsOverLimit(t *testing.T) {

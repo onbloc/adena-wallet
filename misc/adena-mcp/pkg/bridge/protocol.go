@@ -36,7 +36,31 @@ const (
 	// MethodCancel is sent by the host only, when the agent that made a request
 	// goes away, so Adena closes the request's approval popup.
 	MethodCancel = "cancel"
+	// MethodHostInfo is answered by the host itself and never reaches Adena.
+	MethodHostInfo = "host_info"
 )
+
+// HostBusyEvent is the one message a host sends the extension before exiting
+// because another browser already serves the socket.
+const HostBusyEvent = "host_busy"
+
+// HostEvent is a notification from the host to the extension; it carries no
+// id and expects no response.
+type HostEvent struct {
+	Event string `json:"event"`
+	// Browser names the browser already serving agents, when known.
+	Browser string `json:"browser,omitempty"`
+}
+
+// HostInfo describes the host serving the socket and the browser it belongs
+// to, so the agent can tell the user which wallet it is talking to.
+type HostInfo struct {
+	Version string `json:"version"`
+	// Browser is the name of the browser that started the host, best effort.
+	Browser string `json:"browser,omitempty"`
+	// ExtensionID is the extension that started the host.
+	ExtensionID string `json:"extension_id,omitempty"`
+}
 
 // Error codes produced by the host itself; the extension reports its own.
 const (
@@ -45,6 +69,9 @@ const (
 	CodeRejected        = "rejected"
 	// CodeRequestTooLarge means a request line exceeded MaxLineSize.
 	CodeRequestTooLarge = "request_too_large"
+	// CodeHostUntrusted means the socket is served by a process other than an
+	// installed agent host.
+	CodeHostUntrusted = "host_untrusted"
 )
 
 // Peer is the process connected to the host socket, as the operating system
@@ -100,8 +127,11 @@ type AgentParams struct {
 type Status struct {
 	ChainID *string `json:"chain_id"`
 	RPCURL  *string `json:"rpc_url"`
-	Version string  `json:"version"`
-	// MaxSpendLimit is the largest session spend limit the user allows, e.g.
+	// VMRunAllowed is the user's setting for sessions that may sign
+	// /vm.m_run; nil when Adena did not report it (older Adena, or locked).
+	VMRunAllowed *bool  `json:"vm_run_allowed,omitempty"`
+	Version      string `json:"version"`
+	// MaxSpendLimit is the most a session may spend over its lifetime, e.g.
 	// "10000000ugnot".
 	MaxSpendLimit string `json:"max_spend_limit,omitempty"`
 	HasWallet     bool   `json:"has_wallet"`

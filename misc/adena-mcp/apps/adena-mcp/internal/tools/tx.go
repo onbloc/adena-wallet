@@ -427,11 +427,18 @@ func scopeError(messages []txMessage) *server.ToolError {
 		quoted = []byte(strings.Join(needed, ","))
 	}
 
+	message := fmt.Sprintf("no usable session covers these messages; call create_session with allow_paths %s, "+
+		`or call again with signer="wallet" to have the user sign in Adena`, quoted)
+
+	if slices.Contains(needed, session.RouteRun) {
+		message += `. Adena refuses "vm/run" sessions unless the user turned on script sessions ` +
+			`(vm_run_allowed in get_status); prefer /vm.m_call messages, which need only "vm/exec:<realm path>"`
+	}
+
 	return &server.ToolError{
-		Code: "session_required",
-		Message: fmt.Sprintf("no usable session covers these messages; call create_session with allow_paths %s, "+
-			`or call again with signer="wallet" to have the user sign in Adena`, quoted),
-		Extra: map[string]any{"required_allow_paths": needed},
+		Code:    "session_required",
+		Message: message,
+		Extra:   map[string]any{"required_allow_paths": needed},
 	}
 }
 

@@ -3,11 +3,13 @@
 package hostinstall
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 )
@@ -43,10 +45,12 @@ type Browser struct {
 
 // Options configures an installation.
 type Options struct {
-	HostPath           string
-	FirefoxExtensionID string
-	UserHome           string
-	GOOS               string
+	HostPath string
+	// FirefoxExtensionIDs are the Firefox add-on ids to allow; empty allows
+	// the store build only.
+	FirefoxExtensionIDs []string
+	UserHome            string
+	GOOS                string
 	// AgentHome is recorded next to the host, so the browser-launched host
 	// serves the same socket as adena-mcp. Empty leaves it unrecorded.
 	AgentHome          string
@@ -180,7 +184,10 @@ func writeManifest(browser Browser, opts Options) (string, error) {
 	}
 
 	if browser.Firefox {
-		m.AllowedExtensions = []string{opts.FirefoxExtensionID}
+		m.AllowedExtensions = opts.FirefoxExtensionIDs
+		if len(m.AllowedExtensions) == 0 {
+			m.AllowedExtensions = []string{AdenaFirefoxExtensionID}
+		}
 	} else {
 		for _, id := range opts.ChromeExtensionIDs {
 			m.AllowedOrigins = append(m.AllowedOrigins, "chrome-extension://"+id+"/")
@@ -196,12 +203,48 @@ func writeManifest(browser Browser, opts Options) (string, error) {
 		return "", fmt.Errorf("create %s: %w", browser.Dir, err)
 	}
 
+	data = append(data, '\n')
 	path := manifestPath(browser)
-	if err := replaceFile(path, append(data, '\n'), manifestPerm); err != nil {
+
+	// adena-mcp syncs the manifests on every start; leave an identical one be.
+	if current, readErr := os.ReadFile(path); readErr == nil && bytes.Equal(current, data) && ownedByUser(path) {
+		return path, nil
+	}
+
+	if err := replaceFile(path, data, manifestPerm); err != nil {
 		return "", fmt.Errorf("write %s: %w", path, err)
 	}
 
 	return path, nil
+}
+
+func ownedByUser(path string) bool {
+	owned, err := agentpath.IsOwnedByUser(path)
+
+	return err == nil && owned
+}
+
+// InstalledHostPaths returns the host executables the installed manifests
+// point browsers at.
+func InstalledHostPaths(goos, home string) []string {
+	manifests := Installed(goos, home)
+	paths := make([]string, 0, len(manifests))
+
+	for _, manifestFile := range manifests {
+		data, err := os.ReadFile(manifestFile)
+		if err != nil {
+			continue
+		}
+
+		var m manifest
+		if json.Unmarshal(data, &m) != nil || m.Path == "" || slices.Contains(paths, m.Path) {
+			continue
+		}
+
+		paths = append(paths, m.Path)
+	}
+
+	return paths
 }
 
 // replaceFile writes a new file and renames it over path, so an existing file

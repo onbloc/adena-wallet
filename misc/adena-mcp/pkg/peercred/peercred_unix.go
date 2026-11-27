@@ -1,19 +1,17 @@
 //go:build darwin || linux
 
-package relay
+package peercred
 
 import (
 	"errors"
 	"fmt"
 	"net"
 	"os"
-
-	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 )
 
-// peerOf identifies the process on the other end of conn and refuses one
-// running as another user.
-func peerOf(conn net.Conn) (*bridge.Peer, error) {
+// Of identifies the process on the other end of conn and refuses one running
+// as another user.
+func Of(conn net.Conn) (*Process, error) {
 	unixConn, ok := conn.(*net.UnixConn)
 	if !ok {
 		return nil, errors.New("not a unix socket connection")
@@ -41,18 +39,18 @@ func peerOf(conn net.Conn) (*bridge.Peer, error) {
 		return nil, fmt.Errorf("peer runs as uid %d", uid)
 	}
 
-	// Without a start time the extension cannot tell this process from a
-	// later one with the same pid, and refuses to connect it.
-	peer := &bridge.Peer{PID: pid}
+	// Without a start time a pid cannot be told from a later process that
+	// reuses it, so callers that bind to the process must refuse.
+	process := &Process{PID: pid}
 	if start, startErr := startTimeOf(pid); startErr == nil {
-		peer.Start = start
+		process.Start = start
 	}
 
-	// The executable is only shown to the user. Linux refuses to resolve it
-	// for a non-dumpable (hardened) peer, so it may be missing.
-	if exe, exeErr := executableOf(pid); exeErr == nil {
-		peer.Exe = exe
+	// Linux refuses to resolve the executable of a non-dumpable (hardened)
+	// peer, so it may be missing.
+	if exe, exeErr := Executable(pid); exeErr == nil {
+		process.Exe = exe
 	}
 
-	return peer, nil
+	return process, nil
 }

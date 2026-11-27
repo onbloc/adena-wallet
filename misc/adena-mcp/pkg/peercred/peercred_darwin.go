@@ -1,4 +1,4 @@
-package relay
+package peercred
 
 import (
 	"bytes"
@@ -23,9 +23,9 @@ func peerCredentials(fd int) (int, int, error) {
 	return int(cred.Uid), pid, nil
 }
 
-// executableOf reads the executable path from kern.procargs2, which starts
+// Executable reads the executable path from kern.procargs2, which starts
 // with argc followed by the NUL-terminated path.
-func executableOf(pid int) (string, error) {
+func Executable(pid int) (string, error) {
 	data, err := unix.SysctlRaw("kern.procargs2", pid)
 	if err != nil {
 		return "", err

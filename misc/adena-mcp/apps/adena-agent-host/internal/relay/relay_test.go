@@ -60,6 +60,7 @@ func newHarness(t *testing.T) *harness {
 	}
 
 	relay := New(browserIn, browserOut, listener, slog.New(slog.DiscardHandler))
+	relay.Info = bridge.HostInfo{Version: "test", Browser: "Test Browser", ExtensionID: "abc"}
 
 	go func() { h.done <- relay.Run(ctx) }()
 	go func() {
@@ -261,6 +262,35 @@ func TestRelaySetsPeerFromTheOS(t *testing.T) {
 
 	if got != want {
 		t.Fatalf("got exe %q, want %q", request.Peer.Exe, exe)
+	}
+}
+
+func TestRelayAnswersHostInfoItself(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	conn := dialRaw(t, h.socket)
+
+	writeLine(t, conn, `{"id":"7","method":"host_info"}`)
+
+	var response bridge.Response
+	if err := json.NewDecoder(conn).Decode(&response); err != nil {
+		t.Fatal(err)
+	}
+
+	var info bridge.HostInfo
+	if response.ID != "7" || response.Error != nil || json.Unmarshal(response.Result, &info) != nil {
+		t.Fatalf("unexpected response %+v", response)
+	}
+
+	if info.Browser != "Test Browser" || info.ExtensionID != "abc" {
+		t.Fatalf("unexpected info %+v", info)
+	}
+
+	select {
+	case request := <-h.requestsCh:
+		t.Fatalf("host_info must not reach the extension, forwarded %+v", request)
+	case <-time.After(100 * time.Millisecond):
 	}
 }
 

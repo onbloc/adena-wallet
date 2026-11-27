@@ -2,5 +2,16 @@
 
 package hardening
 
-// Apply is a no-op where the unix hardening calls do not exist.
-func Apply() error { return nil }
+import (
+	"fmt"
+	"runtime"
+)
+
+// Apply reports that this platform has no hardening.
+func Apply() Report {
+	var report Report
+
+	report.add(fmt.Errorf("process hardening is not available on %s", runtime.GOOS))
+
+	return report
+}

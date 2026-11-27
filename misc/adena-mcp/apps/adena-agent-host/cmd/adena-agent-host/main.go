@@ -6,8 +6,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -16,10 +16,13 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-agent-host/internal/relay"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/hostinstall"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/nativemsg"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -40,6 +43,8 @@ func run(args []string) error {
 		switch args[0] {
 		case "install":
 			return runInstall(args[1:])
+		case "extensions":
+			return runExtensions(args[1:])
 		case "uninstall":
 			return runUninstall()
 		case "version":
@@ -58,13 +63,17 @@ func run(args []string) error {
 
 func printUsage() {
 	fmt.Fprint(os.Stderr, `usage:
-  adena-agent-host install [-detect=false] [-extension-path dir ...] [-chrome-extension-id id ...]
-                           [-firefox-extension-id id]
+  adena-agent-host install [-detect=false] [-allow-detected] [-extension-path dir ...]
+                           [-chrome-extension-id id ...] [-firefox-extension-id id ...]
+  adena-agent-host extensions [list | add <id>... | add -path <dir> | remove <id>... | detect [-allow]]
   adena-agent-host uninstall
   adena-agent-host version
 
-Browsers start the host themselves after "install". Unpacked Adena builds
-loaded in Chromium profiles are allowed automatically unless -detect=false.
+Browsers start the host themselves after "install". The store builds of Adena
+are always allowed; other builds (unpacked or development ids) are allowed
+once added, and the list in the agent home is kept across installs and
+upgrades. install offers the unpacked Adena builds it finds in Chromium
+profiles and allows only those you confirm.
 `)
 }
 
@@ -74,89 +83,6 @@ func (l *stringList) String() string { return strings.Join(*l, ",") }
 
 func (l *stringList) Set(v string) error {
 	*l = append(*l, v)
-
-	return nil
-}
-
-func runInstall(args []string) error {
-	flags := flag.NewFlagSet("install", flag.ContinueOnError)
-
-	var chromeIDs, extensionPaths stringList
-
-	flags.Var(&chromeIDs, "chrome-extension-id", "additional Chromium extension id to allow (repeatable)")
-	flags.Var(&extensionPaths, "extension-path", "unpacked Adena build directory to allow (repeatable)")
-	detect := flags.Bool("detect", true, "allow unpacked Adena builds loaded in Chromium profiles")
-	firefoxID := flags.String("firefox-extension-id", hostinstall.AdenaFirefoxExtensionID, "Firefox extension id to allow")
-
-	if err := flags.Parse(args); err != nil {
-		return err
-	}
-
-	executable, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("resolve executable: %w", err)
-	}
-
-	hostPath, err := filepath.EvalSymlinks(executable)
-	if err != nil {
-		return fmt.Errorf("resolve executable: %w", err)
-	}
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("resolve user home: %w", err)
-	}
-
-	allowed, err := hostinstall.AllowedChromeIDs(runtime.GOOS, home, chromeIDs, extensionPaths, *detect)
-	if err != nil {
-		return err
-	}
-
-	for _, found := range allowed.Detected {
-		where := found.Path
-		if found.Browser != "" {
-			where = found.Browser + "/" + found.Profile + " (" + found.Path + ")"
-		}
-
-		fmt.Printf("allowing unpacked build %s from %s\n", found.ID, where)
-	}
-
-	agentHome, err := agentpath.Home()
-	if err != nil {
-		return err
-	}
-
-	// The copy npm install-host makes lives in the agent home; browsers run it,
-	// so that directory must be this user's before it is registered.
-	if strings.HasPrefix(hostPath, agentHome+string(filepath.Separator)) {
-		for _, dir := range []string{agentHome, filepath.Dir(hostPath)} {
-			if dirErr := agentpath.EnsureDir(dir); dirErr != nil {
-				return dirErr
-			}
-		}
-
-		if _, statErr := os.Stat(hostPath); statErr != nil {
-			return fmt.Errorf("the host binary is gone after securing %s; run install-host again: %w", agentHome, statErr)
-		}
-	}
-
-	written, err := hostinstall.Install(hostinstall.Options{
-		HostPath:           hostPath,
-		ChromeExtensionIDs: allowed.IDs,
-		FirefoxExtensionID: *firefoxID,
-		UserHome:           home,
-		GOOS:               runtime.GOOS,
-		AgentHome:          agentHome,
-	})
-	for _, path := range written {
-		fmt.Println("installed", path)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("enable Settings > Security & Privacy > AI Agent Connection in Adena to connect")
 
 	return nil
 }
@@ -199,10 +125,17 @@ func serve(args []string) error {
 		return err
 	}
 
-	listener, err := relay.Listen(agentpath.SocketPath(home))
+	socket := agentpath.SocketPath(home)
+
+	listener, err := relay.Listen(socket)
 	if err != nil {
 		if errors.Is(err, relay.ErrHostRunning) {
-			log.Warn("another browser profile already serves agents", "socket", agentpath.SocketPath(home))
+			busy := runningBrowser(socket)
+			log.Warn("another browser already serves agents", "socket", socket, "browser", busy)
+
+			if notifyErr := notifyBusy(busy); notifyErr != nil {
+				log.Warn("could not tell the extension", "error", notifyErr)
+			}
 		}
 
 		return err
@@ -213,5 +146,35 @@ func serve(args []string) error {
 
 	log.Info("agent host started", "version", version, "caller", args, "socket", listener.Addr().String())
 
-	return relay.New(os.Stdin, os.Stdout, listener, log).Run(ctx)
+	r := relay.New(os.Stdin, os.Stdout, listener, log)
+	r.Info = bridge.HostInfo{Version: version, Browser: browserName(), ExtensionID: callerExtensionID(args)}
+
+	return r.Run(ctx)
+}
+
+// runningBrowser asks the host that already serves socket which browser it
+// belongs to.
+func runningBrowser(socket string) string {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	var info bridge.HostInfo
+
+	client := bridge.Client{SocketPath: socket}
+	if client.Call(ctx, bridge.MethodHostInfo, nil, &info) != nil {
+		return ""
+	}
+
+	return info.Browser
+}
+
+// notifyBusy tells this browser's Adena why the host is exiting, so it can
+// show the user which browser serves agents instead.
+func notifyBusy(browser string) error {
+	message, err := json.Marshal(bridge.HostEvent{Event: bridge.HostBusyEvent, Browser: browser})
+	if err != nil {
+		return err
+	}
+
+	return nativemsg.Write(os.Stdout, message)
 }

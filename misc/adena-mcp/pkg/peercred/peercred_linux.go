@@ -1,4 +1,4 @@
-package relay
+package peercred
 
 import (
 	"errors"
@@ -19,7 +19,8 @@ func peerCredentials(fd int) (int, int, error) {
 	return int(cred.Uid), int(cred.Pid), nil
 }
 
-func executableOf(pid int) (string, error) {
+// Executable returns the executable path of pid.
+func Executable(pid int) (string, error) {
 	return os.Readlink("/proc/" + strconv.Itoa(pid) + "/exe")
 }
 

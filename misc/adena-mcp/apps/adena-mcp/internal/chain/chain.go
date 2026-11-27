@@ -216,8 +216,14 @@ func parseGasPrice(data []byte) Price {
 	return Price{Amount: amount, Gas: gas}
 }
 
+// Session is the chain's record of a session account.
+type Session struct {
+	AllowPaths []string
+	std.BaseSessionAccount
+}
+
 // SessionAccount returns the chain's record of a session.
-func (c *Client) SessionAccount(ctx context.Context, rpcURL, master, session string) (*std.BaseSessionAccount, error) {
+func (c *Client) SessionAccount(ctx context.Context, rpcURL, master, session string) (*Session, error) {
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
 
@@ -240,7 +246,7 @@ func (c *Client) SessionAccount(ctx context.Context, rpcURL, master, session str
 // decodeSessionAccount parses the amino JSON session record. The embedded
 // BaseSessionAccount appears under its own key, so it is decoded through a
 // wire struct as gnokey does.
-func decodeSessionAccount(data []byte) (*std.BaseSessionAccount, error) {
+func decodeSessionAccount(data []byte) (*Session, error) {
 	var wire struct {
 		AllowPaths         []string `json:"allow_paths,omitempty"`
 		BaseSessionAccount std.BaseSessionAccount
@@ -250,7 +256,7 @@ func decodeSessionAccount(data []byte) (*std.BaseSessionAccount, error) {
 		return nil, fmt.Errorf("decode session account: %w", err)
 	}
 
-	return &wire.BaseSessionAccount, nil
+	return &Session{AllowPaths: wire.AllowPaths, BaseSessionAccount: wire.BaseSessionAccount}, nil
 }
 
 // Execute measures, signs and broadcasts (or only simulates) the request.
@@ -292,11 +298,12 @@ func (c *Client) Execute(ctx context.Context, req TxRequest) (TxResult, error) {
 		}
 	}
 
-	acc, err := c.SessionAccount(ctx, req.RPCURL, req.Master, req.Signer.Address())
+	session, err := c.SessionAccount(ctx, req.RPCURL, req.Master, req.Signer.Address())
 	if err != nil {
 		return TxResult{}, err
 	}
 
+	acc := &session.BaseSessionAccount
 	signer := txSigner{chainID: req.ChainID, acc: acc, signer: req.Signer, sessionAddr: sessionAddr}
 	price := c.GasPrice(ctx, req.RPCURL)
 

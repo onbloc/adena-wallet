@@ -20,6 +20,7 @@ import (
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/agentpath"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/bridge"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/nativemsg"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/peercred"
 )
 
 const (
@@ -180,10 +181,12 @@ type Relay struct {
 	log        *slog.Logger
 	pending    map[string]pendingCall
 	clients    map[*client]struct{}
-	seq        uint64
-	cancelSeq  uint64
-	outMu      sync.Mutex
-	mu         sync.Mutex
+	// Info answers host_info requests; set it before Run.
+	Info      bridge.HostInfo
+	seq       uint64
+	cancelSeq uint64
+	outMu     sync.Mutex
+	mu        sync.Mutex
 }
 
 // New creates a relay between the browser streams and the socket listener.
@@ -231,6 +234,17 @@ func (r *Relay) Run(ctx context.Context) error {
 	workers.Wait()
 
 	return err
+}
+
+// peerOf identifies the agent process from the OS; the extension binds its
+// connection token to it.
+func peerOf(conn net.Conn) (*bridge.Peer, error) {
+	process, err := peercred.Of(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	return &bridge.Peer{PID: process.PID, Start: process.Start, Exe: process.Exe}, nil
 }
 
 func (r *Relay) acceptLoop() {
@@ -290,6 +304,12 @@ func (r *Relay) serveClient(c *client) {
 			continue
 		}
 
+		if request.Method == bridge.MethodHostInfo {
+			r.sendInfo(c, request.ID)
+
+			continue
+		}
+
 		// Only the host cancels, so one agent cannot close another's approval.
 		if request.Method == bridge.MethodCancel {
 			c.send(bridge.Response{
@@ -310,6 +330,17 @@ func (r *Relay) serveClient(c *client) {
 			Message: fmt.Sprintf("a request line must be under %d bytes", bridge.MaxLineSize),
 		}})
 	}
+}
+
+func (r *Relay) sendInfo(c *client, id string) {
+	result, err := json.Marshal(r.Info)
+	if err != nil {
+		c.send(bridge.Response{ID: id, Error: &bridge.Error{Code: "internal_error", Message: err.Error()}})
+
+		return
+	}
+
+	c.send(bridge.Response{ID: id, Result: result})
 }
 
 func (r *Relay) forward(c *client, request bridge.Request) {

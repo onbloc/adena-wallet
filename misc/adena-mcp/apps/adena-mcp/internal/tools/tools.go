@@ -12,10 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gnolang/gno/tm2/pkg/std"
-
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/chain"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/config"
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/hardening"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/server"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/session"
 	"github.com/onbloc/adena-wallet/misc/adena-mcp/apps/adena-mcp/internal/sessionkey"
@@ -32,7 +31,7 @@ type Bridge interface {
 // Chain signs and broadcasts session transactions and reads session state.
 type Chain interface {
 	Execute(ctx context.Context, req chain.TxRequest) (chain.TxResult, error)
-	SessionAccount(ctx context.Context, rpcURL, master, session string) (*std.BaseSessionAccount, error)
+	SessionAccount(ctx context.Context, rpcURL, master, session string) (*chain.Session, error)
 }
 
 // Host installs and inspects the native messaging host.
@@ -42,6 +41,9 @@ type Host interface {
 	// Install registers the host with the installed browsers and returns the
 	// manifests it wrote.
 	Install() ([]string, error)
+	// Hints explain setup problems found on this machine, such as an Adena
+	// build that is not allowed to start the host.
+	Hints() []string
 }
 
 // Deps are the collaborators shared by every tool.
@@ -52,7 +54,12 @@ type Deps struct {
 	Keys   *sessionkey.Keyring
 	Store  *session.Store
 	Now    func() time.Time
-	Config config.Config
+	// Protection is the process hardening report; create_session needs it full.
+	Protection hardening.Report
+	Config     config.Config
+	// VerifyRetryDelay spaces the on-chain lookups of a new session; zero
+	// means one second.
+	VerifyRetryDelay time.Duration
 }
 
 const statusTimeout = 10 * time.Second

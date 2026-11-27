@@ -8,9 +8,12 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/onbloc/adena-wallet/misc/adena-mcp/pkg/peercred"
 )
 
 // serveOnce answers the first request on a fresh socket with respond.
@@ -259,5 +262,44 @@ func TestCallReadsResponsesLargerThanTheRequestLimit(t *testing.T) {
 
 	if out.SignedTx != signed {
 		t.Fatalf("got %d bytes", len(out.SignedTx))
+	}
+}
+
+func TestCallVerifiesHost(t *testing.T) {
+	t.Parallel()
+
+	received := make(chan Request, 1)
+	path := serveOnce(t, func(r Request) Response {
+		received <- r
+
+		return Response{ID: r.ID, Result: json.RawMessage(`{}`)}
+	})
+
+	var seen *peercred.Process
+
+	client := &Client{SocketPath: path, VerifyHost: func(p *peercred.Process) error {
+		seen = p
+
+		return errors.New("not the agent host")
+	}}
+	client.SetConnectionToken("secret")
+
+	err := client.Call(context.Background(), MethodGetAccount, nil, nil)
+
+	var remote *Error
+	if !errors.As(err, &remote) || remote.Code != CodeHostUntrusted {
+		t.Fatalf("got %v, want %s", err, CodeHostUntrusted)
+	}
+
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" || runtime.GOOS == "windows" {
+		if seen == nil || seen.PID != os.Getpid() {
+			t.Fatalf("the listener is this process, got %+v", seen)
+		}
+	}
+
+	select {
+	case r := <-received:
+		t.Fatalf("a request (with its token) reached an unverified listener: %+v", r)
+	case <-time.After(100 * time.Millisecond):
 	}
 }

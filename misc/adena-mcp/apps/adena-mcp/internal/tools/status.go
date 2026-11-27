@@ -13,6 +13,7 @@ import (
 // Setup states reported by get_status, in the order a user resolves them.
 const (
 	stateHostNotInstalled = "host_not_installed"
+	stateHostUntrusted    = "host_untrusted"
 	stateAdenaUnreachable = "adena_unreachable"
 	stateNoWallet         = "no_wallet"
 	stateLocked           = "locked"
@@ -23,6 +24,8 @@ const (
 var setupSteps = map[string]string{
 	stateHostNotInstalled: "The Adena agent host is not installed. Call connect_wallet to install it " +
 		"automatically, or have the user run: npx -y @adena-wallet/mcp install-host",
+	stateHostUntrusted: "The agent socket is served by a program other than the installed Adena agent " +
+		"host. Ask the user to stop it and reinstall the host: npx -y @adena-wallet/mcp install-host",
 	stateAdenaUnreachable: "Adena is not reachable. Ask the user to open the browser with Adena, unlock it, " +
 		"and turn on Settings > Security & Privacy > AI Agent Connection (reloading Adena if it asks). " +
 		"Adena must be installed from the browser's extension store first.",
@@ -56,6 +59,10 @@ func walletState(ctx context.Context, d *Deps) (string, *bridge.Status, error) {
 	err := d.Bridge.Call(callCtx, bridge.MethodGetStatus, agentParams(ctx), &status)
 	if err != nil {
 		var remote *bridge.Error
+		if errors.As(err, &remote) && remote.Code == bridge.CodeHostUntrusted {
+			return stateHostUntrusted, nil, nil
+		}
+
 		if !errors.As(err, &remote) || remote.Code != bridge.CodeHostUnavailable {
 			return "", nil, bridgeError(err)
 		}
@@ -91,28 +98,28 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 		"host_installed": state != stateHostNotInstalled,
 		"reachable":      status != nil,
 		"agent_name":     agentName(ctx),
+		"key_protection": d.keyProtection(),
 	}
 
 	if status != nil {
-		structured["has_wallet"] = status.HasWallet
-		structured["connected"] = status.Connected
-		structured["adena_version"] = status.Version
-
-		if status.Connected {
-			structured["locked"] = status.Locked
-			structured["master_requests_allowed"] = status.MasterRequestsAllowed
-
-			if status.MaxSpendLimit != "" {
-				structured["max_spend_limit"] = status.MaxSpendLimit
-			}
-		}
+		addWalletStatus(status, structured)
+		addHostInfo(ctx, d, structured)
 	}
 
 	if state != stateReady {
-		structured["next_step"] = setupSteps[state]
+		step := setupSteps[state]
+
+		if state == stateHostNotInstalled || state == stateAdenaUnreachable {
+			if hints := d.Host.Hints(); len(hints) > 0 {
+				structured["hints"] = hints
+				step += "\n" + strings.Join(hints, "\n")
+			}
+		}
+
+		structured["next_step"] = step
 
 		return server.Result{
-			Text:              fmt.Sprintf("State: %s.\n%s\n", state, setupSteps[state]),
+			Text:              fmt.Sprintf("State: %s.\n%s\n", state, step),
 			StructuredContent: structured,
 		}, nil
 	}
@@ -137,6 +144,10 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 
 	fmt.Fprintf(&b, "State: ready. Account %s on %s (%s).\n", account.Address, account.ChainID, account.RPCURL)
 
+	if browser, ok := structured["browser"].(string); ok {
+		fmt.Fprintf(&b, "Adena in %s serves this agent.\n", browser)
+	}
+
 	if status.MasterRequestsAllowed {
 		b.WriteString("Master account requests (signer=wallet): allowed.\n")
 	} else {
@@ -144,7 +155,11 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 	}
 
 	if status.MaxSpendLimit != "" {
-		fmt.Fprintf(&b, "Largest session spend_limit the user allows: %s.\n", status.MaxSpendLimit)
+		fmt.Fprintf(&b, "Most a session may spend over its whole lifetime, gas included: %s.\n", status.MaxSpendLimit)
+	}
+
+	if status.VMRunAllowed != nil && !*status.VMRunAllowed {
+		b.WriteString("Sessions with vm/run (scripts): turned off by the user; use vm/exec:<realm path>.\n")
 	}
 
 	fmt.Fprintf(&b, "Sessions held: %d.\n", len(sessions))
@@ -155,4 +170,47 @@ func getStatus(ctx context.Context, d *Deps) (server.Result, error) {
 	}
 
 	return server.Result{Text: b.String(), StructuredContent: structured}, nil
+}
+
+// addWalletStatus reports what Adena told; lock state and settings reach only
+// a connected agent.
+func addWalletStatus(status *bridge.Status, structured map[string]any) {
+	structured["has_wallet"] = status.HasWallet
+	structured["connected"] = status.Connected
+	structured["adena_version"] = status.Version
+
+	if !status.Connected {
+		return
+	}
+
+	structured["locked"] = status.Locked
+	structured["master_requests_allowed"] = status.MasterRequestsAllowed
+
+	if status.MaxSpendLimit != "" {
+		structured["max_spend_limit"] = status.MaxSpendLimit
+	}
+
+	if status.VMRunAllowed != nil {
+		structured["vm_run_allowed"] = *status.VMRunAllowed
+	}
+}
+
+// addHostInfo names the browser whose Adena answers, so the user knows which
+// wallet the agent uses when several browsers run Adena.
+func addHostInfo(ctx context.Context, d *Deps, structured map[string]any) {
+	callCtx, cancel := context.WithTimeout(ctx, statusTimeout)
+	defer cancel()
+
+	var info bridge.HostInfo
+	if d.Bridge.Call(callCtx, bridge.MethodHostInfo, nil, &info) != nil {
+		return
+	}
+
+	if info.Browser != "" {
+		structured["browser"] = info.Browser
+	}
+
+	if info.ExtensionID != "" {
+		structured["extension_id"] = info.ExtensionID
+	}
 }

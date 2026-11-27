@@ -35,16 +35,21 @@ func registerCreateSession(r *server.Registry, d *Deps) {
 				"items":    map[string]any{"type": "string"},
 				"minItems": 1,
 				"maxItems": 8,
-				"description": `Message types the session may sign: "vm/exec:<realm path>" for calls to a realm ` +
-					`and its sub-paths, "vm/exec" for any realm, "vm/run", "bank/send". "*" is refused by Adena.`,
+				"description": `Message types the session may sign: "vm/exec:<realm path>" for calls to one realm ` +
+					`(a full path such as gno.land/r/demo/counter) and its sub-paths, and "bank/send". "vm/run" ` +
+					`only if the user allows script sessions in Adena (vm_run_allowed in get_status): a script can ` +
+					`call any realm as the user. Adena refuses "*", "vm/exec" without a path, paths broader than ` +
+					`one realm and "bank/multisend".`,
 			},
-			"spend_limit": stringProp(`One ugnot amount the session may spend, gas fees included, e.g. ` +
-				`"5000000ugnot". It cannot exceed the maximum the user set in Adena (max_spend_limit in ` +
-				"get_status). Default: " + config.DefaultSpendLimit + " or that maximum, whichever is lower."),
+			"spend_limit": stringProp(`One ugnot amount the session may spend per period, gas fees included, e.g. ` +
+				`"5000000ugnot". Over the session's lifetime it may spend spend_limit times the number of periods, ` +
+				`and that total cannot exceed the maximum the user set in Adena (max_spend_limit in get_status). ` +
+				"Default: " + config.DefaultSpendLimit + " or that maximum, whichever is lower."),
 			"spend_period": map[string]any{
-				"type":        "integer",
-				"minimum":     0,
-				"description": "Seconds after which the spend limit resets; 0 (default) makes it a lifetime cap.",
+				"type":    "integer",
+				"minimum": 0,
+				"description": "Seconds after which the spend limit resets; 0 (default, recommended) makes " +
+					"spend_limit the cap for the whole session. A period multiplies what the session may spend.",
 			},
 			"expires_in": stringProp(`Session lifetime as a Go duration, e.g. "30m" or "2h". ` +
 				"Default 1h, at most 168h."),
@@ -125,6 +130,10 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		return server.Result{}, err
 	}
 
+	if protectionErr := d.requireKeyProtection(); protectionErr != nil {
+		return server.Result{}, protectionErr
+	}
+
 	approvalCtx, cancel := context.WithTimeout(ctx, d.Config.ApprovalTimeout)
 	defer cancel()
 
@@ -151,6 +160,13 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 		return server.Result{}, err
 	}
 
+	warning, verifyErr := verifyOnChain(approvalCtx, d, &record)
+	if verifyErr != nil {
+		key.Destroy()
+
+		return server.Result{}, rejectUnverified(d, &record, verifyErr)
+	}
+
 	d.Keys.Put(key)
 
 	if err := d.Store.Put(record); err != nil {
@@ -162,6 +178,11 @@ func sessionCreateHandler(ctx context.Context, d *Deps, args map[string]any) (se
 	fmt.Fprintf(&b, "Session %s authorized by %s on %s.\n", record.SessionAddress, record.MasterAddress, record.ChainID)
 	fmt.Fprintf(&b, "Allow paths: %v. Spend limit: %s. Expires: %s.\n",
 		record.AllowPaths, record.SpendLimit, formatTime(record.ExpiresAt))
+
+	if warning != "" {
+		b.WriteString(warning + "\n")
+	}
+
 	b.WriteString("send_transaction and sign_transaction now sign with this session; call revoke_session when done.\n")
 
 	return server.Result{Text: b.String(), StructuredContent: d.publicRecord(&record)}, nil

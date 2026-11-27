@@ -44,7 +44,7 @@ func connectWallet(ctx context.Context, d *Deps) (server.Result, error) {
 		state = stateAdenaUnreachable
 	}
 
-	if state == stateAdenaUnreachable || state == stateNoWallet {
+	if state == stateAdenaUnreachable || state == stateNoWallet || state == stateHostUntrusted {
 		notes = append(notes, setupSteps[state], "Call connect_wallet again once that is done.")
 
 		return server.Result{

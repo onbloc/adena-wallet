@@ -2,10 +2,12 @@
 // and the key material never leaves locked memory in a usable form.
 //
 // A key is generated directly inside a memguard buffer (mlocked, guard pages,
-// outside the Go heap) and sealed into an enclave, which keeps it encrypted
-// while idle. Signing opens the enclave for the duration of one signature and
-// zeroes every copy it made. Keys are never written to disk, logged, or
-// returned to callers; a Key formats as its address only.
+// outside the Go heap), masked with a per-key pad and sealed into an enclave,
+// which keeps it encrypted while idle. Signing opens the enclave for the
+// duration of one signature and zeroes every copy it made. Destroying a key
+// wipes its pad, so the ciphertext left behind no longer yields the key. Keys
+// are never written to disk, logged, or returned to callers; a Key formats as
+// its address only.
 package sessionkey
 
 import (
@@ -38,7 +40,9 @@ type Key struct {
 }
 
 type state struct {
-	enclave   *memguard.Enclave
+	// sealed holds the key XOR pad; without pad it is useless.
+	sealed    *memguard.Enclave
+	pad       *memguard.LockedBuffer
 	address   string
 	publicKey []byte
 	mu        sync.Mutex
@@ -58,14 +62,23 @@ func Generate() (*Key, error) {
 
 		publicKey := derivePublicKey(buf.Bytes())
 
-		// Seal encrypts the key into an enclave and destroys the buffer.
-		enclave := buf.Seal()
-		if enclave == nil {
+		// NewBufferRandom returns frozen buffers; the pad stays frozen.
+		pad := memguard.NewBufferRandom(privateKeySize)
+
+		buf.Melt()
+		xorInto(buf.Bytes(), pad.Bytes())
+
+		// Seal encrypts the masked key into an enclave and destroys the buffer.
+		sealed := buf.Seal()
+		if sealed == nil {
+			pad.Destroy()
+
 			return nil, errors.New("seal session key")
 		}
 
 		return &Key{s: &state{
-			enclave:   enclave,
+			sealed:    sealed,
+			pad:       pad,
 			publicKey: publicKey,
 			address:   tmsecp256k1.PubKeySecp256k1(publicKey).Address().String(),
 		}}, nil
@@ -111,15 +124,18 @@ func (k Key) Sign(msg []byte) ([]byte, error) {
 	k.s.mu.Lock()
 	defer k.s.mu.Unlock()
 
-	if k.s.enclave == nil {
+	if k.s.pad == nil || !k.s.pad.IsAlive() {
 		return nil, ErrDestroyed
 	}
 
-	buf, err := k.s.enclave.Open()
+	buf, err := k.s.sealed.Open()
 	if err != nil {
 		return nil, fmt.Errorf("open session key: %w", err)
 	}
 	defer buf.Destroy()
+
+	buf.Melt()
+	xorInto(buf.Bytes(), k.s.pad.Bytes())
 
 	priv := secp256k1.PrivKeyFromBytes(buf.Bytes())
 	defer priv.Zero()
@@ -135,12 +151,24 @@ func (k Key) Sign(msg []byte) ([]byte, error) {
 	return append([]byte(nil), compact[1:]...), nil
 }
 
-// Destroy discards the key. Later calls to Sign fail.
+// Destroy discards the key by wiping its pad. Later calls to Sign fail.
 func (k Key) Destroy() {
 	k.s.mu.Lock()
 	defer k.s.mu.Unlock()
 
-	k.s.enclave = nil
+	if k.s.pad != nil {
+		k.s.pad.Destroy()
+	}
+
+	k.s.pad = nil
+	k.s.sealed = nil
+}
+
+// xorInto sets dst to dst XOR pad.
+func xorInto(dst, pad []byte) {
+	for i := range dst {
+		dst[i] ^= pad[i]
+	}
 }
 
 // String identifies the key by address only.

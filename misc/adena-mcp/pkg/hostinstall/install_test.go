@@ -24,11 +24,11 @@ func TestInstallWritesManifestsForInstalledBrowsers(t *testing.T) {
 	}
 
 	written, err := Install(Options{
-		HostPath:           "/opt/adena/adena-agent-host",
-		ChromeExtensionIDs: []string{AdenaChromeExtensionID, "devid"},
-		FirefoxExtensionID: AdenaFirefoxExtensionID,
-		UserHome:           home,
-		GOOS:               "linux",
+		HostPath:            "/opt/adena/adena-agent-host",
+		ChromeExtensionIDs:  []string{AdenaChromeExtensionID, "devid"},
+		FirefoxExtensionIDs: []string{AdenaFirefoxExtensionID},
+		UserHome:            home,
+		GOOS:                "linux",
 	})
 	if err != nil {
 		t.Fatal(err)

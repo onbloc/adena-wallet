@@ -2,4 +2,11 @@
 
 package hardening
 
-func denyInspection() error { return nil }
+import (
+	"fmt"
+	"runtime"
+)
+
+func denyInspection() error {
+	return fmt.Errorf("debugger and memory access are not restricted on %s", runtime.GOOS)
+}

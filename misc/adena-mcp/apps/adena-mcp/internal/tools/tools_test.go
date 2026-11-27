@@ -14,6 +14,7 @@ import (
 
 	"github.com/gnolang/gno/gno.land/pkg/sdk/vm"
 	"github.com/gnolang/gno/tm2/pkg/crypto"
+	tmsecp256k1 "github.com/gnolang/gno/tm2/pkg/crypto/secp256k1"
 	"github.com/gnolang/gno/tm2/pkg/sdk/bank"
 	"github.com/gnolang/gno/tm2/pkg/std"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -35,6 +36,7 @@ const (
 var testNow = time.Unix(1_800_000_000, 0)
 
 type fakeBridge struct {
+	hostInfo      *bridge.HostInfo
 	token         string
 	errs          map[string]error
 	params        map[string]json.RawMessage
@@ -70,6 +72,11 @@ func (f *fakeBridge) Call(_ context.Context, method string, params, out any) err
 	switch method {
 	case bridge.MethodGetStatus:
 		result = f.status
+	case bridge.MethodHostInfo:
+		result = bridge.HostInfo{}
+		if f.hostInfo != nil {
+			result = *f.hostInfo
+		}
 	case bridge.MethodGetAccount:
 		result = bridge.Account{Address: testMaster, ChainID: "dev", RPCURL: "http://rpc"}
 	case bridge.MethodConnect:
@@ -99,6 +106,12 @@ func (f *fakeBridge) Call(_ context.Context, method string, params, out any) err
 }
 
 type fakeChain struct {
+	// alter changes what the chain holds for a created session; returning nil
+	// makes it missing.
+	alter    func(*chain.Session) *chain.Session
+	queryErr error
+	bridge   *fakeBridge
+	sessions map[string]*chain.Session
 	missing  map[string]bool
 	requests []chain.TxRequest
 	built    [][]std.Msg
@@ -133,7 +146,7 @@ func (f *fakeChain) Execute(_ context.Context, req chain.TxRequest) (chain.TxRes
 	return chain.TxResult{TxHash: "txhash", Height: 7, GasWanted: 300_000, GasUsed: 200_000, GasFee: "300ugnot"}, nil
 }
 
-func (f *fakeChain) SessionAccount(_ context.Context, _, _, sessionAddress string) (*std.BaseSessionAccount, error) {
+func (f *fakeChain) SessionAccount(_ context.Context, _, _, sessionAddress string) (*chain.Session, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -141,15 +154,85 @@ func (f *fakeChain) SessionAccount(_ context.Context, _, _, sessionAddress strin
 		return nil, chain.ErrSessionNotFound
 	}
 
-	return &std.BaseSessionAccount{}, nil
+	if s, ok := f.sessions[sessionAddress]; ok {
+		return s, nil
+	}
+
+	if f.queryErr != nil {
+		return nil, f.queryErr
+	}
+
+	created := f.createdSession(sessionAddress)
+	if created == nil {
+		return &chain.Session{}, nil
+	}
+
+	if f.alter != nil {
+		if created = f.alter(created); created == nil {
+			return nil, chain.ErrSessionNotFound
+		}
+	}
+
+	return created, nil
+}
+
+func (f *fakeChain) createdSession(sessionAddress string) *chain.Session {
+	if f.bridge == nil {
+		return nil
+	}
+
+	return f.bridge.createdSession(sessionAddress)
+}
+
+// createdSession is the session the chain would hold after a create_session
+// call for sessionAddress went through unchanged.
+func (f *fakeBridge) createdSession(sessionAddress string) *chain.Session {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	var params bridge.CreateSessionParams
+	if json.Unmarshal(f.params[bridge.MethodCreateSession], &params) != nil {
+		return nil
+	}
+
+	pub, err := base64.StdEncoding.DecodeString(params.SessionPublicKey)
+	if err != nil || tmsecp256k1.PubKeySecp256k1(pub).Address().String() != sessionAddress {
+		return nil
+	}
+
+	limit, err := std.ParseCoins(params.SpendLimit)
+	if err != nil {
+		return nil
+	}
+
+	masterAddress := params.MasterAddress
+	if masterAddress == "" {
+		masterAddress = testMaster
+	}
+
+	master, err := crypto.AddressFromBech32(masterAddress)
+	if err != nil {
+		return nil
+	}
+
+	s := &chain.Session{AllowPaths: params.AllowPaths}
+	s.MasterAddress = master
+	s.SpendLimit = limit
+	s.SpendPeriod = params.SpendPeriod
+	s.ExpiresAt = params.ExpiresAt
+
+	return s
 }
 
 type fakeHost struct {
+	hints     []string
 	installs  int
 	installed bool
 }
 
 func (f *fakeHost) Installed() bool { return f.installed }
+
+func (f *fakeHost) Hints() []string { return f.hints }
 
 func (f *fakeHost) Install() ([]string, error) {
 	f.installs++
@@ -183,6 +266,8 @@ func newEnv(t *testing.T) *testEnv {
 		tools: map[string]*server.Tool{},
 	}
 
+	env.chain.bridge = env.bridge
+
 	registry := server.NewRegistry()
 	Register(registry, &Deps{
 		Bridge: env.bridge,
@@ -192,6 +277,8 @@ func newEnv(t *testing.T) *testEnv {
 		Store:  env.store,
 		Now:    func() time.Time { return testNow },
 		Config: config.Config{ApprovalTimeout: time.Minute, GasCeiling: 10_000_000},
+
+		VerifyRetryDelay: time.Millisecond,
 	})
 
 	for _, tool := range registry.All() {
@@ -299,6 +386,57 @@ func TestGetStatusStates(t *testing.T) {
 	}
 }
 
+func TestGetStatusExplainsAnUntrustedHostAndUnallowedBuilds(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.bridge.errs[bridge.MethodGetStatus] = &bridge.Error{Code: bridge.CodeHostUntrusted, Message: "python3"}
+
+	res, err := env.call(t, "get_status", nil)
+	if err != nil || res.StructuredContent["state"] != stateHostUntrusted {
+		t.Fatalf("got %+v %v", res.StructuredContent, err)
+	}
+
+	if _, connectErr := env.call(t, "connect_wallet", nil); connectErr != nil {
+		t.Fatalf("connect_wallet must explain instead of failing: %v", connectErr)
+	}
+
+	if _, called := env.bridge.params[bridge.MethodConnect]; called {
+		t.Fatal("connect must not be sent to an untrusted host")
+	}
+
+	env = newEnv(t)
+	env.host.hints = []string{"An unpacked Adena build x is not allowed"}
+	env.bridge.errs[bridge.MethodGetStatus] = &bridge.Error{Code: bridge.CodeHostUnavailable, Message: "down"}
+
+	res, err = env.call(t, "get_status", nil)
+	if err != nil || !strings.Contains(res.Text, "is not allowed") {
+		t.Fatalf("the hint must reach the agent: %q %v", res.Text, err)
+	}
+}
+
+func TestGetStatusReportsTheServingBrowserAndScriptPolicy(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	off := false
+	env.bridge.status.VMRunAllowed = &off
+	env.bridge.hostInfo = &bridge.HostInfo{Browser: "Brave Browser", ExtensionID: "abc"}
+
+	res, err := env.call(t, "get_status", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.StructuredContent["browser"] != "Brave Browser" || res.StructuredContent["vm_run_allowed"] != false {
+		t.Fatalf("unexpected %+v", res.StructuredContent)
+	}
+
+	if !strings.Contains(res.Text, "Brave Browser") || !strings.Contains(res.Text, "vm/run") {
+		t.Fatalf("unexpected text %q", res.Text)
+	}
+}
+
 func TestStatusSendsClientNameAsAgentName(t *testing.T) {
 	t.Parallel()
 
@@ -396,6 +534,68 @@ func TestCreateSessionStoresApprovedSession(t *testing.T) {
 		if strings.Contains(string(data), field) {
 			t.Fatalf("record contains %q: %s", field, data)
 		}
+	}
+}
+
+func TestCreateSessionRefusesAWidenedSession(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.chain.alter = func(s *chain.Session) *chain.Session {
+		s.AllowPaths = append(s.AllowPaths, "vm/run")
+		s.SpendPeriod = 1
+
+		return s
+	}
+
+	_, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}})
+	if toolErrorCode(err) != "session_mismatch" {
+		t.Fatalf("got %v, want session_mismatch", err)
+	}
+
+	records, err := env.store.List()
+	if err != nil || len(records) != 1 {
+		t.Fatalf("the session must stay recorded for revoke_session, got %+v %v", records, err)
+	}
+
+	if _, held := env.keys.Get(records[0].SessionAddress); held {
+		t.Fatal("the key of a mismatched session must be destroyed")
+	}
+
+	if records[0].SpendPeriod != 1 || len(records[0].AllowPaths) != 2 {
+		t.Fatalf("the record must describe the session on chain, got %+v", records[0])
+	}
+}
+
+func TestCreateSessionRefusesAMissingSession(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.chain.alter = func(*chain.Session) *chain.Session { return nil }
+
+	_, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}})
+	if toolErrorCode(err) != "session_not_found" {
+		t.Fatalf("got %v, want session_not_found", err)
+	}
+
+	if records, listErr := env.store.List(); listErr != nil || len(records) != 0 {
+		t.Fatalf("nothing should be stored, got %+v %v", records, listErr)
+	}
+}
+
+func TestCreateSessionWarnsWhenTheChainIsUnreachable(t *testing.T) {
+	t.Parallel()
+
+	env := newEnv(t)
+	env.chain.queryErr = errors.New("connection refused")
+
+	res, err := env.call(t, "create_session", map[string]any{"allow_paths": []any{"bank/send"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(res.Text, "Could not confirm the session on chain") {
+		t.Fatalf("missing warning in %q", res.Text)
 	}
 }
 
