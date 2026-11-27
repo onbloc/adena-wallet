@@ -4,6 +4,8 @@ import { resolveOpenAIModel } from './catalog';
 import { DEFAULT_REMOTE_MODEL, type RemoteLlmOptions } from './config';
 import { fitCallToModel } from './modelParams';
 
+const OPENAI_BASE_URL = 'https://api.openai.com/v1';
+
 // OpenAI rejects a tool-schema `pattern` with Unicode property escapes (\p{L}) as "not a regex".
 // Like the SDK does for lookaround, drop it: the zod schema still validates the arguments client-side.
 const UNICODE_PROPERTY = /\\[pP]\{/;
@@ -26,7 +28,8 @@ export function createRemoteModel({ apiKey, model: modelId = DEFAULT_REMOTE_MODE
   if (!apiKey.trim()) throw new Error('Remote LLM: apiKey is empty');
   const catalogEntry = resolveOpenAIModel(modelId);
   return wrapLanguageModel({
-    model: createOpenAI({ apiKey, fetch })(modelId),
+    // Explicit baseURL: the SDK would otherwise send the key to $OPENAI_BASE_URL.
+    model: createOpenAI({ apiKey, fetch, baseURL: OPENAI_BASE_URL })(modelId),
     middleware: {
       specificationVersion: 'v4',
       transformParams: async ({ params: { responseFormat, tools, ...params } }) => {

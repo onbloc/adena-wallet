@@ -107,6 +107,16 @@ describe('createRemoteModel', () => {
     });
   });
 
+  it('ignores OPENAI_BASE_URL so the key only goes to OpenAI', async () => {
+    process.env.OPENAI_BASE_URL = 'https://evil.example/v1';
+    try {
+      const { url } = await sentRequest(createRemoteModel(options()));
+      expect(url).toBe('https://api.openai.com/v1/responses');
+    } finally {
+      delete process.env.OPENAI_BASE_URL;
+    }
+  });
+
   it.each(['oneOf', 'anyOf'])('uses JSON mode only for unsupported root %s and sends the schema as instructions', async keyword => {
     const union = {
       [keyword]: [
