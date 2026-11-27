@@ -80,7 +80,12 @@ export type AIAgentOptions = {
 );
 type ClarificationSlot = 'recipient' | 'asset' | 'amount';
 type PendingClarification = { text: string; slot?: ClarificationSlot };
-type BalanceReferent = Extract<BalanceRequest, { kind: 'one' }>['asset'];
+type BalanceReferent = {
+  request: Extract<BalanceRequest, { kind: 'one' }>['asset'];
+  kind: 'native' | 'token';
+  assetId: string;
+  decimals: number;
+};
 function clarificationSlot(question: string): ClarificationSlot | undefined {
   const slots: ClarificationSlot[] = [];
   if (/\b(?:who|recipient|receiver|spender)\b|받는\s*사람|누구/iu.test(question)) slots.push('recipient');
@@ -405,7 +410,8 @@ export class AIAgent {
             const remembered = remember && this.session.complete(prompt, withoutToolData(answer), describeToolRecord(calls));
             if (event.finishReason === 'stop') {
               this.continuation = { account: options.account,
-                clarification: options.allowTransactionPreparation ? nextClarification : undefined, balance: nextBalanceReferent,
+                clarification: options.allowTransactionPreparation ? nextClarification : undefined,
+                balance: event.verifiedAnswer ? nextBalanceReferent : undefined,
                 // A selection only continues the ambiguity just recorded in this session.
                 preparation: options.allowTransactionPreparation && unchanged && remembered && nextPreparation
                   ? { pending: nextPreparation, history: this.session.turns } : undefined };
@@ -545,8 +551,8 @@ export class AIAgent {
       const pending = options.pendingClarification;
       const hasPriorTurn = settings.messages.some(message => message.role === 'user' && message.content === pending?.text);
       const planningReply = options.balanceReferent
-        ? reply.replace(/\bof\s+(?:it|that)\b/iu, `of my ${options.balanceReferent.value}`)
-          .replace(/그\s*(?=절반|전부|일부|반)/u, `내 ${options.balanceReferent.value} `)
+        ? reply.replace(/\bof\s+(?:it|that)\b/iu, `of my ${options.balanceReferent.request.value}`)
+          .replace(/그\s*(?=절반|전부|일부|반)/u, `내 ${options.balanceReferent.request.value} `)
         : reply;
       const messages: ModelMessage[] = pending?.slot && isClarificationReply(reply) && !hasPriorTurn
         ? [{ role: 'user', content: `${pending.text}\n${reply}` }]
@@ -596,10 +602,11 @@ export class AIAgent {
         && !preparationEvidence(prior + '\n' + current, proposal);
       const relative = /(?:\b(?:half|quarter|third|all)\s+of\s+(?:it|that)\b|그\s*(?:절반|전부|일부|반))/iu.test(current);
       const referent = options.balanceReferent;
-      const referencedAsset = relative && referent && proposal.asset.kind === referent.kind
-        && proposal.asset.value.toLowerCase() === referent.value.toLowerCase();
+      const referencedAsset = relative && referent && proposal.asset.kind === referent.request.kind
+        && (proposal.asset.kind === 'id' ? proposal.asset.value === referent.request.value
+          : proposal.asset.value.toLowerCase() === referent.request.value.toLowerCase());
       const authorizedText = continuation ? prior + '\n' + current : referencedAsset
-        ? current.replace(/\bof\s+(?:it|that)\b/iu, `of my ${referent.value}`).replace(/그\s*(?=절반|전부|일부|반)/u, `내 ${referent.value} `)
+        ? current.replace(/\bof\s+(?:it|that)\b/iu, `of my ${referent.request.value}`).replace(/그\s*(?=절반|전부|일부|반)/u, `내 ${referent.request.value} `)
         : current;
       const referentShare = referencedAsset ? balanceShareEvidence(authorizedText) : undefined;
       if (referentShare) proposal = { ...proposal, amount: { kind: 'fraction', ...referentShare } };
@@ -691,7 +698,7 @@ export class AIAgent {
           const recipient = contacts.find(contact => contact.alias.trim().toLowerCase() === proposal.recipient.trim().toLowerCase())?.address
             ?? proposal.recipient;
           options.onAmbiguousPreparation?.({ ...pending, proposal: { ...pending.proposal, recipient } });
-        }, current, options.onPreparationClarification);
+        }, current, options.onPreparationClarification, referentShare ? referent : undefined);
       } catch (error) {
         if (!run.signal.aborted) throw error;
         yield { ...completion, aborted: true };
@@ -701,8 +708,9 @@ export class AIAgent {
 
   private async *prepareEvents(proposal: Exclude<PreparationProposal, { operation: 'clarification' }>,
     run: HarnessRun, completion: DoneEvent, onAmbiguousPreparation: ((pending: PendingPreparation) => void) | undefined,
-    userText: string, onClarification?: (text: string) => void): AsyncGenerator<GenerateEvent> {
+    userText: string, onClarification?: (text: string) => void, referent?: BalanceReferent): AsyncGenerator<GenerateEvent> {
     let amount: string;
+    let token = proposal.asset.value;
     if (proposal.amount.kind === 'fraction') {
       const request: BalanceRequest = Object.freeze({ kind: 'one', asset: Object.freeze(proposal.asset) });
       const id = `${run.operationId}:balance`;
@@ -711,12 +719,15 @@ export class AIAgent {
       yield { type: 'tool-result', id, name: balanceToolDefinition.name, output };
       const result = output.kind === 'result' ? balanceResultSchema.safeParse(output.value) : undefined;
       let failure: string | undefined;
-      if (!result?.success || result.data.status !== 'complete') {
+      const asset = result?.success && result.data.status === 'complete' ? result.data.assets[0] : undefined;
+      if (!asset || referent && (asset.kind !== referent.kind || asset.assetId !== referent.assetId
+        || asset.decimals !== referent.decimals || asset.kind === 'token' && !asset.assetId.includes('/'))) {
         failure = /[\uac00-\ud7a3]/u.test(userText)
           ? '자산의 잔액을 정확히 확인하지 못했습니다. 정확한 토큰 심볼 또는 경로와 수량을 포함해 요청을 다시 말씀해 주시겠어요? 거래는 준비되지 않았습니다.'
           : 'The asset balance could not be verified. Could you restate the request with the exact token symbol or path and amount? No transaction was prepared.';
       } else {
-        const asset = result.data.assets[0];
+        // Display amounts must reach the wallet with the same asset, never an ambiguous symbol or base-unit alias.
+        if (referent) token = asset.kind === 'token' ? asset.assetId : asset.symbol;
         const numerator = BigInt(asset.amount) * BigInt(proposal.amount.numerator);
         const denominator = BigInt(proposal.amount.denominator);
         if (numerator % denominator !== 0n) {
@@ -740,11 +751,11 @@ export class AIAgent {
     const name = proposal.operation;
     const id = `${run.operationId}:${name}`;
     // The host sees the same validated arguments before the call is dispatched.
-    const input = Object.freeze({ [name === 'transfer' ? 'to' : 'spender']: proposal.recipient, amount: amount!, token: proposal.asset.value });
+    const input = Object.freeze({ [name === 'transfer' ? 'to' : 'spender']: proposal.recipient, amount: amount!, token });
     const events = (async function* (): AsyncGenerator<GenerateEvent> {
       yield { type: 'tool-call', id, name, input, invalid: false };
       const output = await run.dispatch({ name, input });
-      if (!run.signal.aborted && !run.auditFailed && proposal.asset.kind === 'symbol' && output.kind === 'result'
+      if (!referent && !run.signal.aborted && !run.auditFailed && proposal.asset.kind === 'symbol' && output.kind === 'result'
         && typeof output.value === 'object' && output.value !== null && 'code' in output.value
         && output.value.code === 'ambiguous_token' && 'candidateIds' in output.value
         && Array.isArray(output.value.candidateIds) && output.value.candidateIds.length >= 2
@@ -875,8 +886,9 @@ export class AIAgent {
         && !run.auditFailed && !run.signal.aborted
         && mentionsIdentifier(this.userText(settings), request.request.asset.value, request.request.asset.kind === 'id')) {
         const result = balanceResultSchema.safeParse(output.value);
-        if (result.success && result.data.status === 'complete' && result.data.assets.length === 1) {
-          options.onBalanceReferent?.(request.request.asset);
+        if (result.success && result.data.status === 'complete') {
+          const { kind, assetId, decimals } = result.data.assets[0];
+          options.onBalanceReferent?.({ request: request.request.asset, kind, assetId, decimals });
         }
       }
     }

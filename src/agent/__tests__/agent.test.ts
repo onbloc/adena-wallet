@@ -604,6 +604,40 @@ describe('integrated request execution', () => {
     await collect(agent.run({ prompt }, permission));
     expect(prepared).toHaveLength(mode === 'next turn' ? 1 : 0);
   });
+  it.each(['same asset', 'different asset', 'other account'] as const)(
+    'uses only a fresh balance of the referenced wallet asset: %s', async mode => {
+      const firstPath = 'gno.land/r/a/gns';
+      const account = mode === 'other account' ? FRIEND.address : ACCOUNT;
+      const token = { symbol: 'GNS', tokenId: firstPath, amount: '20000000', decimals: 6 };
+      const balance = { address: account, items: [token] };
+      const asset = { kind: 'symbol', value: 'GNS' } as const;
+      const { agent, wallet, prepared, mcp } = setup([
+        answer(intentReplyText(prepare)),
+        proposal({ ...transferProposal, asset, amount: { kind: 'fraction', numerator: '1', denominator: '2' } }),
+      ], {
+        intent: { kind: 'lookup', requests: [{ target: 'balance', request: one('GNS') }] },
+        classificationText: JSON.stringify({
+          route: 'lookup', requests: [{ target: 'balance', request: one('GNS') }],
+          ...(mode === 'other account' ? { account } : {}),
+        }),
+        tools: [{ name: 'get_token_balances', output: balance }],
+      });
+      const lookup = await collect(agent.run({
+        prompt: mode === 'other account' ? `What is the GNS balance of ${account}?` : 'My GNS balance?',
+      }, permission));
+      expect(textOf(lookup)).toContain(`20 GNS (${firstPath})`);
+      balance.address = ACCOUNT;
+      token.amount = '12000000';
+      if (mode === 'different asset') token.tokenId = 'gno.land/r/b/gns';
+
+      await collect(agent.run({ prompt: `Send half of it to ${RECIPIENT}.` }, permission));
+      expect(mcp.calls.filter(call => call.name === 'get_token_balances').map(call => call.arguments))
+        .toEqual(mode === 'other account' ? [{ address: account }] : [{ address: account }, { address: ACCOUNT }]);
+      expect(wallet.calls).toEqual(mode === 'same asset' ? [{ method: 'transfer', params: {
+        from: ACCOUNT, to: RECIPIENT, amount: '6', token: firstPath,
+      } }] : []);
+      expect(prepared).toHaveLength(mode === 'same asset' ? 1 : 0);
+    });
   it('retains planner clarification and permits a fully restated follow-up', async () => {
     const question = 'Who should receive 1 GNOT?';
     const { agent, prepared, wallet, fetcher, model } = setup([
