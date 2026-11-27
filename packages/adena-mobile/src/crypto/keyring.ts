@@ -13,7 +13,8 @@ export type KeyringType = (typeof KeyringType)[keyof typeof KeyringType];
 // Secret keyring material. Only ever persisted inside the encrypted vault.
 export type KeyringRecord
   // `seed` caches the BIP39 seed (hex) so unlocking skips PBKDF2; older records may lack it.
-  = | { id: string; type: typeof KeyringType.HD_WALLET; mnemonic: string; seed?: string; createdAt: number }
+  // `hdIndexes` lists the accounts picked when the phrase was imported, for rebuilding a lost account list.
+  = | { id: string; type: typeof KeyringType.HD_WALLET; mnemonic: string; seed?: string; hdIndexes?: number[]; createdAt: number }
     | { id: string; type: typeof KeyringType.PRIVATE_KEY; privateKey: string; createdAt: number };
 
 export interface Keyring {

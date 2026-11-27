@@ -15,7 +15,8 @@ export interface BackupPhrasePageProps {
   // Continue stays off until the words were shown once.
   canContinue: boolean;
   onContinue: () => void;
-  onBack: () => void;
+  // Hidden when there is no going back (the wallet was already created).
+  onBack?: () => void;
 }
 
 export const BackupPhrasePage = ({ words, masked, onReveal, canContinue, onContinue, onBack }: BackupPhrasePageProps): ReactElement => {

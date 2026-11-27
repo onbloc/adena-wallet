@@ -13,6 +13,7 @@ export interface HdAccountCandidate {
 // Holds the seed in memory until destroy().
 export class HdAccountPreview {
   private readonly keyring: HDKeyring;
+  private destroyed = false;
 
   constructor(mnemonic: string, private readonly chainRegistry: ChainRegistry, private readonly network: Network) {
     this.keyring = new HDKeyring('preview', mnemonic);
@@ -22,8 +23,15 @@ export class HdAccountPreview {
     const candidates: HdAccountCandidate[] = [];
     const chain = this.chainRegistry.forNetwork(this.network);
 
-    for (let hdIndex = from; hdIndex < from + count; hdIndex++) {
+    for (let hdIndex = from; hdIndex < from + count && !this.destroyed; hdIndex++) {
       const keyPair = await this.keyring.deriveKeyPair(hdIndex);
+
+      // A derive in flight at destroy() may have re-created the seed; wipe it again.
+      if (this.destroyed) {
+        wipeKeyPair(keyPair);
+        this.keyring.destroy();
+        break;
+      }
 
       try {
         candidates.push({ hdIndex, address: chain.deriveAddress(keyPair.publicKey, this.network) });
@@ -47,6 +55,7 @@ export class HdAccountPreview {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.keyring.destroy();
   }
 }

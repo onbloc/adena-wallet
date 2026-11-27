@@ -41,6 +41,7 @@ describe('CreatePasswordScreen', () => {
   const cloudBackupService = { provider: 'icloud', restoreWallet: jest.fn(), createBackup: jest.fn() };
   let beforeRemove: ((event: { preventDefault: () => void }) => void) | undefined;
   const navigation = {
+    navigate: jest.fn(),
     goBack: jest.fn(),
     popToTop: jest.fn(),
     setOptions: jest.fn(),
@@ -171,7 +172,7 @@ describe('CreatePasswordScreen', () => {
   it('writes the cloud backup chosen earlier once the wallet exists', async () => {
     useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
     walletService.createWallet.mockResolvedValue(undefined);
-    cloudBackupService.createBackup.mockResolvedValue(undefined);
+    cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp' });
     await fillAndSubmit();
 
     await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
@@ -181,14 +182,39 @@ describe('CreatePasswordScreen', () => {
     expect(useToastStore.getState().toast).toBeNull();
   });
 
-  it('still opens the wallet when the cloud backup fails', async () => {
+  it.each([
+    ['throws', () => cloudBackupService.createBackup.mockRejectedValue(new Error('offline'))],
+    ['reports an upload error', () => cloudBackupService.createBackup.mockResolvedValue({ kind: 'backedUp', uploading: { error: new Error('quota') } })],
+  ])('sends the user to write the phrase down when the cloud backup %s', async (_case, arrange) => {
     useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
     walletService.createWallet.mockResolvedValue(undefined);
-    cloudBackupService.createBackup.mockRejectedValue(new Error('offline'));
+    arrange();
     await fillAndSubmit();
 
-    await waitFor(() => expect(useSessionStore.getState().status).toBe(SessionStatus.UNLOCKED));
-    expect(useToastStore.getState().toast).toMatchObject({ tone: 'warning', message: 'iCloud backup failed. Try again in Settings.' });
+    await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('BackupPhrase', { afterCreate: true }));
+    expect(useSessionStore.getState().status).toBe(SessionStatus.EMPTY);
+    // Kept for the manual backup step.
+    expect(useOnboardingStore.getState().mnemonic).toBe(TEST_MNEMONIC);
+    expect(useToastStore.getState().toast).toMatchObject({ tone: 'warning', message: 'iCloud backup did not finish. Write down your recovery phrase now.' });
+  });
+
+  it('stops waiting for a cloud backup that does not finish in time', async () => {
+    jest.useFakeTimers();
+
+    try {
+      useOnboardingStore.setState({ backupPassword: 'violet orbit lantern 42' });
+      walletService.createWallet.mockResolvedValue(undefined);
+      cloudBackupService.createBackup.mockReturnValue(new Promise(() => undefined));
+      await fillAndSubmit();
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(60_000);
+      });
+
+      expect(navigation.navigate).toHaveBeenCalledWith('BackupPhrase', { afterCreate: true });
+    }
+    finally {
+      jest.useRealTimers();
+    }
   });
 
   it('skips the cloud backup when none was chosen', async () => {

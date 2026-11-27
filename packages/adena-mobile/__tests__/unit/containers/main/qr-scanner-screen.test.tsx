@@ -46,13 +46,13 @@ const setup = async (params: { returnKey?: string } | undefined = { returnKey: '
   const route = { key: 'QrScanner-1', name: 'QrScanner', params };
   const Screen = QrScannerScreen as unknown as React.ComponentType<{ navigation: unknown; route: unknown }>;
 
-  await render(
+  const { unmount } = await render(
     <SafeAreaProvider initialMetrics={metrics}>
       <Wrapper><Screen navigation={navigation} route={route} /></Wrapper>
     </SafeAreaProvider>,
   );
 
-  return { navigation };
+  return { navigation, unmount };
 };
 
 describe('QrScannerScreen', () => {
@@ -162,6 +162,47 @@ describe('QrScannerScreen', () => {
     expect(loadImage).toHaveBeenCalledWith({ filePath: 'file:///tmp/qr.png' });
     expect(dispose).toHaveBeenCalledTimes(1);
     expect(navigation.dispatch).toHaveBeenCalledWith(expect.objectContaining({ payload: { params: { scannedAddress: ADDRESS } } }));
+  });
+
+  const deferPhotoScan = (): ((payload: string) => Promise<void>) => {
+    let finish: (barcodes: { rawValue: string }[]) => void = () => undefined;
+
+    (launchImageLibrary as jest.Mock).mockResolvedValue({ assets: [{ uri: 'file:///tmp/qr.png' }] });
+    (loadImage as jest.Mock).mockResolvedValue({ dispose: jest.fn() });
+    (createBarcodeScanner as jest.Mock).mockReturnValue({
+      scanCodesInImageAsync: jest.fn(() => new Promise((resolve) => {
+        finish = resolve;
+      })),
+      dispose: jest.fn(),
+    });
+
+    return payload => act(async () => finish([{ rawValue: payload }]));
+  };
+
+  it('pauses live scans while a photo is decoded, so the photo result is used', async () => {
+    const finishPhoto = deferPhotoScan();
+    const other = 'g1us8428u2a5satrlxzagqqa5m6vmuze025anjlj';
+    const { navigation } = await setup();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'From photos' }));
+    await scan(other);
+    expect(navigation.dispatch).not.toHaveBeenCalled();
+
+    await finishPhoto(ADDRESS);
+    expect(navigation.dispatch).toHaveBeenCalledTimes(1);
+    expect(navigation.dispatch).toHaveBeenCalledWith(expect.objectContaining({ payload: { params: { scannedAddress: ADDRESS } } }));
+  });
+
+  it('drops a photo result that arrives after the scanner was dismissed', async () => {
+    const finishPhoto = deferPhotoScan();
+    const { navigation, unmount } = await setup();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'From photos' }));
+    await unmount();
+    await finishPhoto(ADDRESS);
+
+    expect(navigation.dispatch).not.toHaveBeenCalled();
+    expect(navigation.goBack).not.toHaveBeenCalled();
   });
 
   it('explains a photo without a QR code', async () => {

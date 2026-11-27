@@ -21,6 +21,8 @@ export interface SelectAccountsPageProps {
   // True while the first page of addresses is derived.
   loading: boolean;
   loadingMore: boolean;
+  // Import stays off until every listed balance has loaded, since funded accounts get selected then.
+  checkingBalances?: boolean;
   onToggle: (hdIndex: number) => void;
   onLoadMore: () => void;
   onSubmit: () => void;
@@ -59,7 +61,7 @@ const AccountOptionRow = ({ option, onToggle }: { option: SelectAccountOption; o
   );
 };
 
-export const SelectAccountsPage = ({ accounts, loading, loadingMore, onToggle, onLoadMore, onSubmit, onBack }: SelectAccountsPageProps): ReactElement => {
+export const SelectAccountsPage = ({ accounts, loading, loadingMore, checkingBalances = false, onToggle, onLoadMore, onSubmit, onBack }: SelectAccountsPageProps): ReactElement => {
   const styles = useStyles();
   const selectedCount = accounts.filter(account => account.selected).length;
 
@@ -69,7 +71,9 @@ export const SelectAccountsPage = ({ accounts, loading, loadingMore, onToggle, o
       footer={(
         <Button
           label={selectedCount > 0 ? `Import ${plural(selectedCount)}` : 'Select an account'}
-          disabled={selectedCount === 0}
+          disabled={selectedCount === 0 || checkingBalances}
+          loading={checkingBalances && !loading}
+          loadingLabel='Checking balances…'
           onPress={onSubmit}
           testID='select-accounts-submit'
         />

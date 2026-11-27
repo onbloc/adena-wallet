@@ -5,6 +5,7 @@ import React, { ReactElement } from 'react';
 import { WelcomePage } from '../../../components/pages';
 import { useContainer } from '../../../di/container-provider';
 import { OnboardingStackParamList } from '../../../navigation/types';
+import { useBiometricStatusQuery } from '../../../queries/wallet.queries';
 import { useOnboardingStore } from '../../../stores/onboarding.store';
 import { useCloudProvider } from '../use-cloud-restore';
 
@@ -13,6 +14,9 @@ export const WelcomeScreen = ({ navigation }: NativeStackScreenProps<OnboardingS
   const setMnemonic = useOnboardingStore(state => state.setMnemonic);
   const clearOnboarding = useOnboardingStore(state => state.clear);
   const restoreProvider = useCloudProvider({ forRestore: true });
+
+  // Prefetched so the protect and password steps render with biometric support already known.
+  useBiometricStatusQuery();
 
   // Backing out to the start drops a phrase or decrypted backup that was entered and then abandoned.
   useFocusEffect(clearOnboarding);

@@ -43,6 +43,12 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
   const [error, setError] = useState<string>();
   const [done, setDone] = useState(false);
   const doneRef = useRef(false);
+  // The live camera pauses while a photo is picked and decoded, so it cannot replace the photo's result.
+  const [photoPending, setPhotoPending] = useState(false);
+  const photoPendingRef = useRef(false);
+  // Bumped when the user leaves, so a photo result that settles afterwards is dropped.
+  const photoRequestRef = useRef(0);
+  const latestPhotoRef = useRef(0);
   const { canRequestPermission, requestPermission } = permission;
 
   useEffect(() => {
@@ -54,6 +60,17 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       .then(granted => setDeclined(!granted))
       .catch(() => setDeclined(true));
   }, [canRequestPermission, requestPermission]);
+
+  // Leaving the screen (blur or unmount) invalidates a photo request still being decoded.
+  useEffect(() => {
+    if (!focused) {
+      photoRequestRef.current += 1;
+    }
+  }, [focused]);
+
+  useEffect(() => (): void => {
+    photoRequestRef.current += 1;
+  }, []);
 
   const normalizeAddress = (address: string): string | null => chainRegistry.forNetwork(network).normalizeAddress(address, network);
 
@@ -89,14 +106,30 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
   };
 
   const handleScan = (barcodes: Barcode[]): void => {
+    if (photoPendingRef.current) {
+      return;
+    }
+
     handlePayloads(barcodes.map(barcode => barcode.rawValue ?? barcode.displayValue).filter((value): value is string => Boolean(value)));
   };
 
   const handleFromPhotos = async (): Promise<void> => {
+    if (photoPendingRef.current || doneRef.current) {
+      return;
+    }
+
+    const request = ++photoRequestRef.current;
+    const isCurrent = (): boolean => request === photoRequestRef.current;
+
+    latestPhotoRef.current = request;
+    photoPendingRef.current = true;
+    setPhotoPending(true);
+    setError(undefined);
+
     try {
       const payloads = await scanQrFromPhotos();
 
-      if (payloads === null) {
+      if (!isCurrent() || payloads === null) {
         return;
       }
 
@@ -108,7 +141,16 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
       handlePayloads(payloads);
     }
     catch (photoError) {
-      setError(toErrorMessage(photoError));
+      if (isCurrent()) {
+        setError(toErrorMessage(photoError));
+      }
+    }
+    finally {
+      // Cleared even when the result was dropped, unless a newer photo request is running.
+      if (latestPhotoRef.current === request) {
+        photoPendingRef.current = false;
+        setPhotoPending(false);
+      }
     }
   };
 
@@ -127,7 +169,7 @@ export const QrScannerScreen = ({ navigation, route }: NativeStackScreenProps<Ma
     <QrScannerPage
       status={status}
       camera={device && permission.hasPermission
-        ? <ScannerCamera device={device} isActive={focused && !done} onScan={handleScan} onError={handleCameraError} />
+        ? <ScannerCamera device={device} isActive={focused && !done && !photoPending} onScan={handleScan} onError={handleCameraError} />
         : undefined}
       hint={`${network.chainName} wallet address`}
       error={error}

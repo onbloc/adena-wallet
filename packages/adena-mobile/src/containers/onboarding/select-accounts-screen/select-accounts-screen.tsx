@@ -69,6 +69,10 @@ export const SelectAccountsScreen = ({ navigation }: NativeStackScreenProps<Onbo
       });
     }
     catch (error) {
+      if (previewRef.current !== preview) {
+        return;
+      }
+
       showToast(toErrorMessage(error), 'error');
 
       if (from === 0) {
@@ -113,7 +117,14 @@ export const SelectAccountsScreen = ({ navigation }: NativeStackScreenProps<Onbo
     });
   };
 
+  // Funded accounts are selected as their balances arrive, so Import waits until every listed row has settled.
+  const balancesPending = candidates.some(candidate => candidate.balance === undefined);
+
   const handleSubmit = (): void => {
+    if (balancesPending) {
+      return;
+    }
+
     const indexes = candidates.map(candidate => candidate.hdIndex).filter(hdIndex => selected.has(hdIndex));
 
     if (indexes.length === 0) {
@@ -137,6 +148,7 @@ export const SelectAccountsScreen = ({ navigation }: NativeStackScreenProps<Onbo
       accounts={accounts}
       loading={candidates.length === 0}
       loadingMore={loadingMore}
+      checkingBalances={balancesPending}
       onToggle={handleToggle}
       onLoadMore={() => void load(candidates.length)}
       onSubmit={handleSubmit}

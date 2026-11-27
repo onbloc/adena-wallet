@@ -67,6 +67,52 @@ describe('SelectAccountsScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('ProtectWallet');
   });
 
+  it('holds Import until every listed balance has loaded', async () => {
+    const env = createTestContainer();
+    const addresses = await addressesOf(env, 5);
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const original = HdAccountPreview.prototype.getNativeBalance;
+
+    jest.spyOn(HdAccountPreview.prototype, 'getNativeBalance').mockImplementation(async function (this: HdAccountPreview, address: string) {
+      if (address === addresses[3]) {
+        await gate;
+      }
+
+      return original.call(this, address);
+    });
+    env.gno.state.balances[addresses[3]] = '2000000ugnot';
+    const { navigation } = await renderScreen(SelectAccountsScreen, { env });
+
+    await screen.findByTestId('select-account-4');
+    expect(screen.getByText('Checking balances…')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('select-accounts-submit'));
+    expect(navigation.navigate).not.toHaveBeenCalled();
+
+    release();
+    await fireEvent.press(await screen.findByRole('button', { name: 'Import 2 accounts' }));
+    expect(useOnboardingStore.getState().hdIndexes).toEqual([0, 3]);
+    jest.restoreAllMocks();
+  });
+
+  it('ignores a failed first page once the screen is gone', async () => {
+    let fail: (error: Error) => void = () => undefined;
+
+    jest.spyOn(HdAccountPreview.prototype, 'derive').mockReturnValue(new Promise((_resolve, reject) => {
+      fail = reject;
+    }));
+    const { navigation, unmount } = await renderScreen(SelectAccountsScreen);
+
+    await unmount();
+    fail(new Error('derive failed'));
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(navigation.goBack).not.toHaveBeenCalled();
+    jest.restoreAllMocks();
+  });
+
   it('blocks importing with nothing selected', async () => {
     const { navigation } = await renderScreen(SelectAccountsScreen);
 

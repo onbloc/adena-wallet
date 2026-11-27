@@ -34,4 +34,36 @@ describe('WalletService.createWallet with picked HD indexes', () => {
     expect(isAppError(error, 'INVALID_REQUEST')).toBe(true);
     expect(await container.walletService.getStatus()).toBe('empty');
   });
+
+  it('removes the new wallet when a later account cannot be added', async () => {
+    const { container } = createTestContainer();
+    const append = container.accountService.appendAccount.bind(container.accountService);
+
+    jest.spyOn(container.accountService, 'appendAccount').mockImplementation(async (...args) => {
+      if (args[3]?.hdIndex === 4) {
+        throw new Error('locked meanwhile');
+      }
+
+      return append(...args);
+    });
+
+    await expect(container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, hdIndexes: [0, 4] })).rejects.toThrow('locked meanwhile');
+    expect(await container.walletService.getStatus()).toBe('empty');
+    expect(container.accountService.getAccounts()).toEqual([]);
+  });
+
+  it('rebuilds the picked indexes from the vault when the account list is lost', async () => {
+    const { container } = createTestContainer();
+
+    await container.walletService.createWallet({ mnemonic: TEST_MNEMONIC, password: TEST_PASSWORD, hdIndexes: [2, 7] });
+    const before = container.accountService.getAccounts().map(account => [account.hdIndex, account.publicKey]);
+
+    // e.g. an iOS reinstall: general storage is gone, the Keychain vault survives.
+    container.walletService.lock();
+    container.accountService.clear();
+    await container.walletService.unlock(TEST_PASSWORD);
+
+    expect(container.accountService.getAccounts().map(account => [account.hdIndex, account.publicKey])).toEqual(before);
+    expect(container.accountService.getAccounts().map(account => account.name)).toEqual(['Account 3', 'Account 8']);
+  });
 });

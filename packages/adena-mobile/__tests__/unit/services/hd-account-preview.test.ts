@@ -31,4 +31,16 @@ describe('HdAccountPreview', () => {
     await expect(preview.getNativeBalance(first.address)).resolves.toBeNull();
     preview.destroy();
   });
+
+  it('stops deriving and wipes the seed again once destroyed mid-derive', async () => {
+    const { container } = createTestContainer();
+    const preview = new HdAccountPreview(TEST_MNEMONIC, container.chainRegistry, container.networkService.getCurrentNetwork());
+    const pending = preview.derive(0, 5);
+
+    preview.destroy();
+    const keyring = (preview as unknown as { keyring: { seed: Uint8Array | null } }).keyring;
+
+    expect(await pending).toEqual([]);
+    expect(keyring.seed).toBeNull();
+  });
 });

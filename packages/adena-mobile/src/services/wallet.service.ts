@@ -140,6 +140,8 @@ export class WalletService {
       type: KeyringType.HD_WALLET,
       mnemonic: normalizeMnemonic(mnemonic),
       createdAt: Date.now(),
+      // Kept in the vault so a lost account list (e.g. an iOS reinstall) rebuilds these indexes, not just 0.
+      ...(hdIndexes?.length && { hdIndexes: indexes }),
     };
     const epoch = this.keyringSession.epoch;
 
@@ -148,20 +150,34 @@ export class WalletService {
       this.assertCurrent(epoch);
       const content = await this.vaultService.create([record], password);
 
-      this.assertCurrentOrForget(epoch);
-      this.accountService.clear();
-      this.keyringSession.open(content.keyrings);
-      this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
-      const [first, ...rest] = indexes;
-      // Named by index, so a name matches the account picked on the import list.
-      const account = await this.accountService.appendAccount(record.id, record.type, accountName ?? `Account ${first + 1}`, { hdIndex: first });
+      // All or nothing, like restoreWallet: a wallet missing some of the picked accounts is removed again.
+      try {
+        this.assertCurrentOrForget(epoch);
+        this.accountService.clear();
+        this.keyringSession.open(content.keyrings);
+        this.createdWith = { digest: digestPassword(password), epoch: this.keyringSession.epoch, vaultRevision: this.vaultService.revision };
+        const [first, ...rest] = indexes;
+        // Named by index, so a name matches the account picked on the import list.
+        const account = await this.accountService.appendAccount(record.id, record.type, accountName ?? `Account ${first + 1}`, { hdIndex: first });
 
-      for (const hdIndex of rest) {
-        await this.accountService.appendAccount(record.id, record.type, `Account ${hdIndex + 1}`, { hdIndex });
+        for (const hdIndex of rest) {
+          await this.accountService.appendAccount(record.id, record.type, `Account ${hdIndex + 1}`, { hdIndex });
+        }
+
+        return account;
       }
-
-      return account;
+      catch (error) {
+        await this.undoCreate().catch(() => undefined);
+        throw error;
+      }
     });
+  }
+
+  private async undoCreate(): Promise<void> {
+    this.createdWith = null;
+    this.keyringSession.close();
+    this.accountService.clear();
+    await this.vaultService.destroy();
   }
 
   // Rebuilds a wallet from a decrypted backup: one new vault holding every keyring, then each account at its index.
@@ -521,12 +537,19 @@ export class WalletService {
 
     for (const keyring of keyrings) {
       if (!accounts.some(account => account.keyringId === keyring.id)) {
-        // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
-        await this.accountService.appendAccount(keyring.id, keyring.type).catch((error: unknown) => {
-          if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
-            throw error;
-          }
-        });
+        // An imported phrase records the indexes the user picked; anything else rebuilds index 0.
+        const indexes = keyring.type === KeyringType.HD_WALLET && keyring.hdIndexes?.every(isHdIndex) ? keyring.hdIndexes : [0];
+
+        for (const hdIndex of indexes) {
+          // The same key can sit in two keyrings (a phrase and its exported private key); one account is enough.
+          const name = keyring.type === KeyringType.HD_WALLET && keyring.hdIndexes ? `Account ${hdIndex + 1}` : undefined;
+
+          await this.accountService.appendAccount(keyring.id, keyring.type, name, keyring.type === KeyringType.HD_WALLET ? { hdIndex } : {}).catch((error: unknown) => {
+            if (!isAppError(error, AppErrorCode.WALLET_ALREADY_EXISTS)) {
+              throw error;
+            }
+          });
+        }
       }
     }
   }
