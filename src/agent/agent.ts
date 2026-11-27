@@ -683,7 +683,7 @@ export class AIAgent {
     userText: string, onClarification?: (text: string) => void): AsyncGenerator<GenerateEvent> {
     let amount: string;
     if (proposal.amount.kind === 'fraction') {
-      const request: BalanceRequest = { kind: 'one', asset: proposal.asset };
+      const request: BalanceRequest = Object.freeze({ kind: 'one', asset: Object.freeze(proposal.asset) });
       const id = `${run.operationId}:balance`;
       yield { type: 'tool-call', id, name: balanceToolDefinition.name, input: request, invalid: false };
       const output = await this.balanceDecision(run, request);
@@ -718,7 +718,8 @@ export class AIAgent {
     }
     const name = proposal.operation;
     const id = `${run.operationId}:${name}`;
-    const input = { [name === 'transfer' ? 'to' : 'spender']: proposal.recipient, amount: amount!, token: proposal.asset.value };
+    // The host sees the same validated arguments before the call is dispatched.
+    const input = Object.freeze({ [name === 'transfer' ? 'to' : 'spender']: proposal.recipient, amount: amount!, token: proposal.asset.value });
     const events = (async function* (): AsyncGenerator<GenerateEvent> {
       yield { type: 'tool-call', id, name, input, invalid: false };
       const output = await run.dispatch({ name, input });

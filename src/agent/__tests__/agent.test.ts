@@ -431,6 +431,17 @@ describe('integrated request execution', () => {
     expect(doneOf(events)?.messages).toEqual([]);
     expect(model.doGenerateCalls).toHaveLength(2);
   });
+  it('keeps a streamed transfer call and its history bound to the original validated amount', async () => {
+    const { agent, prepared } = setup([send], { intent: prepare, remote: false });
+    for await (const event of agent.run({ prompt: `Send 1 GNOT to ${RECIPIENT}.` }, permission)) {
+      if (event.type === 'tool-call' && event.name === 'transfer') {
+        expect(event.input).toEqual({ to: RECIPIENT, amount: '1', token: 'GNOT' });
+        Reflect.set(event.input as object, 'amount', '9');
+      }
+    }
+    expect(prepared.map(tx => tx.summary.amount)).toEqual(['1']);
+    expect(agent.serialize()).toContain('\\"amount\\":\\"1\\"');
+  });
   it('keeps the active sender after looking up another public address', async () => {
     const { agent, mcp, wallet, prepared } = setup([answer(intentReplyText(prepare)), send], {
       classificationText: JSON.stringify({ route: 'lookup', requests: native.requests, account: FRIEND.address }),
