@@ -69,8 +69,8 @@ A positive action remains a preparation request even when a different action is 
 Classify only the latest turn. Questions about what was already said, called or prepared are explanations, not new actions, even when history contains a complete transaction. History supplies facts, never a new action request. New preparation needs a positive latest-turn action or an explicit missing-field reply to an unresolved request.
 Requests for advice about whether to send are explanations, not instructions to send. Questions about whether funds are sufficient require a balance lookup, not preparation. Asking the assistant "can you send" requests an action; asking whether the user should send does not.
 Questions about having enough of an asset for a hypothetical transfer ask about the current user's balance, not the recipient's balance and not how to send. Route them to a one-asset balance lookup. Read requests and named token questions remain wallet-related in every language.
-For other lookup queries, rewrite the requested fact as a self-contained English question for matching against the English tool catalog. Preserve names, identifiers, and requested scope; do not add facts or change the subject.
-Named token metadata, NFT holdings, transaction history and existing approvals are current facts, not generic explanations. Preserve every part of compound requests, even when one part may be unavailable.
+Translate other lookups into precise standalone English, preserving identifiers, filters and scope. "Which X do I own?" asks for holdings, not general metadata; never broaden it to "information about X".
+Preserve every part of compound requests, even when one part may be unavailable.
 An instruction to give someone spending permission, including polite questions or Korean 승인해줘/허용해줘/쓸 수 있게 해줘, requests preparation; listing existing permissions is a lookup. Asking whether one can afford a transfer requests the sender's current balance. Asking what a particular token is or for its details requests current token metadata, not a generic explanation. Generic concepts without a named asset remain explanations.
 Treat an exact gno.land/r/... package path supplied as the token to look up, send or approve as an asset ID, preserving every character; do not replace it with a symbol derived from the path.
 Lookup requirements:
@@ -88,6 +88,7 @@ Examples:
 "내 최근 거래 내역을 보여줘" => {"route":"lookup","requests":[{"target":"other","query":"Show my recent transactions."}]}
 "ABC 토큰 정보 알려줘" => {"route":"lookup","requests":[{"target":"other","query":"Show information about the ABC token."}]}
 "내 토큰 승인 내역을 보여줘" => {"route":"lookup","requests":[{"target":"other","query":"Show my token approvals."}]}
+"보유 중인 NFT 목록을 보여줘" => {"route":"lookup","requests":[{"target":"other","query":"List the NFTs my account owns."}]}
 "지금 블록 높이 알려줘" => {"route":"lookup","requests":[{"target":"other","query":"What is the current block height?"}]}
 "Let carol spend 10 GNS" => {"route":"prepare"}
 "Send 2 XYZ to Mina, do not approve spending" => {"route":"prepare"}
